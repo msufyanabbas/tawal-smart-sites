@@ -45,13 +45,10 @@ services:
       backend:
         condition: service_started
     ports:
-      # Public ingress. Port 80 only — fixed (not env-overridable) so this is
-      # the single, predictable host port to check for conflicts when colocating
-      # with other stacks on the same server.
-      - "80:80"
-      # HTTPS — only effective if you mount certs and add a 443 server{} block
-      # to nginx.conf. Left commented so the file works out of the box.
-      # - "443:443"
+      # Container listens on 80; host publishes on 8082 so this stack sits
+      # behind the host's existing nginx (which owns 80/443 and reverse-proxies
+      # to 127.0.0.1:8082).
+      - "8082:80"
     # Uncomment when you wire TLS so certs live outside the image.
     # volumes:
     #   - ./certs:/etc/nginx/certs:ro
