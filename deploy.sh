@@ -6,6 +6,11 @@ set -e
 #
 # Run from your workstation: bash deploy.sh
 #
+# Auth: password-based SSH via sshpass. You'll be prompted once at the start;
+# the password is then exported as $SSHPASS and consumed by `sshpass -e`
+# (which reads from the env var, so the password never appears on argv or
+# in the process list).
+#
 # Flow:
 #   Step 0  Upload local env files + docker-compose.yml to the server
 #   Step 1  SSH in, clone the latest code from GitHub
@@ -17,19 +22,36 @@ set -e
 #   Step 7  Print container status + tail recent logs
 # ─────────────────────────────────────────────────────────────────────────────
 
-SERVER="ubuntu@3.142.74.95"
-KEY="$HOME/Downloads/tawal-key.pem"
+SERVER="root@147.79.114.76"
 GITHUB_REPO="https://github.com/msufyanabbas/tawal-smart-sites.git"
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REMOTE_DIR="~/tawal-package"
 FRONTEND_API_URL="https://tawal.smart-life.sa"
 
-SSH_OPTS="-i $KEY \
+# StrictHostKeyChecking=no is intentional: with password auth and no pinned
+# known_hosts entry, this avoids interactive host-key prompts on first
+# connection or after server rebuilds. Tradeoff: no MITM protection. If you
+# trust your network path, this is fine; otherwise run `ssh-keyscan` once
+# and remove this line.
+SSH_OPTS="-o PasswordAuthentication=yes \
   -o ServerAliveInterval=30 \
   -o ServerAliveCountMax=20 \
   -o TCPKeepAlive=yes \
   -o ConnectTimeout=30 \
   -o StrictHostKeyChecking=no"
+
+# Check sshpass is installed
+if ! command -v sshpass &> /dev/null; then
+  echo "❌ sshpass not installed. Run: brew install sshpass (mac) or apt install sshpass (linux) or use Git Bash on Windows"
+  exit 1
+fi
+
+# Prompt once; export so `sshpass -e` (env-var mode) picks it up. Env-var
+# mode is preferred over `-p` because `-p` puts the password on argv,
+# visible to anyone who can read /proc on this machine.
+read -s -p "🔑 Enter SSH password for $SERVER: " SSH_PASS
+echo ""
+export SSHPASS=$SSH_PASS
 
 echo "🚀 Deploying tawal-smart-sites to production..."
 echo "📡 Connecting to $SERVER..."
@@ -41,7 +63,7 @@ echo "📤 Step 0: Uploading env files + docker-compose.yml to server..."
 # Backend container env → ~/tawal-package/.env (consumed by `env_file:` in compose).
 if [ -f "$ROOT_DIR/cctv-backend-for-new/.env.prod" ]; then
   echo "   Using cctv-backend-for-new/.env.prod for backend container env..."
-  scp $SSH_OPTS \
+  sshpass -e scp $SSH_OPTS \
     "$ROOT_DIR/cctv-backend-for-new/.env.prod" \
     "$SERVER:$REMOTE_DIR/.env"
 elif [ -f "$ROOT_DIR/cctv-backend-for-new/.env" ]; then
@@ -50,7 +72,7 @@ elif [ -f "$ROOT_DIR/cctv-backend-for-new/.env" ]; then
     "$ROOT_DIR/cctv-backend-for-new/.env" > /tmp/tawal-prod.env
   # Append NODE_ENV if the source file didn't have a line to overwrite.
   grep -q '^NODE_ENV=' /tmp/tawal-prod.env || echo 'NODE_ENV=production' >> /tmp/tawal-prod.env
-  scp $SSH_OPTS \
+  sshpass -e scp $SSH_OPTS \
     /tmp/tawal-prod.env \
     "$SERVER:$REMOTE_DIR/.env"
   rm -f /tmp/tawal-prod.env
@@ -62,7 +84,7 @@ fi
 # Compose-level interpolation vars (WEB_HTTP_PORT, etc.) → ~/tawal-package/.env.compose.
 # Loaded via `docker compose --env-file .env.compose`.
 if [ -f "$ROOT_DIR/.env" ]; then
-  scp $SSH_OPTS \
+  sshpass -e scp $SSH_OPTS \
     "$ROOT_DIR/.env" \
     "$SERVER:$REMOTE_DIR/.env.compose"
   echo "   Uploaded root .env → .env.compose"
@@ -70,13 +92,13 @@ else
   echo "   ⚠️  Root .env not found — compose will use built-in defaults for \${...} vars."
 fi
 
-scp $SSH_OPTS \
+sshpass -e scp $SSH_OPTS \
   "$ROOT_DIR/docker-compose.yml" \
   "$SERVER:$REMOTE_DIR/docker-compose.yml"
 echo "   ✅ Env files + docker-compose.yml uploaded"
 
 # ── Steps 1-7: run remotely over SSH ────────────────────────────────────────
-ssh $SSH_OPTS "$SERVER" bash << REMOTE
+sshpass -e ssh $SSH_OPTS "$SERVER" bash << REMOTE
 set -e
 
 echo ""
