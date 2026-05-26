@@ -1,0 +1,82 @@
+# Deploy on push to main.
+#
+# Flow: a runner SSHes into the VPS, pulls the latest code, then runs
+# `docker compose up --build -d`. The runner does NOT build images —
+# building happens on the server so the produced image matches the host
+# arch and we avoid pushing to a registry.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   VPS_HOST     — hostname or IP of the target server
+#   VPS_USER     — SSH user (must be in the docker group OR have passwordless sudo)
+#   VPS_SSH_KEY  — private key (PEM) authorized for VPS_USER@VPS_HOST
+#
+# Optional repo variables (Settings → Secrets and variables → Actions → Variables):
+#   VPS_PORT       — SSH port (default 22)
+#   PROJECT_DIR    — checkout path on the server (default /opt/tawal-smart-sites)
+#   BRANCH         — branch to deploy (default main)
+
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # manual "Run workflow" button
+
+# Prevent overlapping deploys (a slow build + a fast follow-up commit would
+# otherwise race for the docker socket). `cancel-in-progress: false` lets the
+# in-flight deploy finish before the next one starts.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ vars.VPS_PORT || 22 }}
+          # Fail loudly on any error and echo every command for log clarity.
+          script_stop: true
+          envs: PROJECT_DIR,BRANCH
+          script: |
+            set -euo pipefail
+
+            PROJECT_DIR="${{ vars.PROJECT_DIR || '/opt/tawal-smart-sites' }}"
+            BRANCH="${{ vars.BRANCH || 'main' }}"
+
+            if [ ! -d "$PROJECT_DIR/.git" ]; then
+              echo "✗ $PROJECT_DIR is not a git checkout."
+              echo "  Run deploy.sh once on the server to bootstrap, then re-run this job."
+              exit 1
+            fi
+
+            cd "$PROJECT_DIR"
+
+            echo "▶ Fetching latest $BRANCH"
+            git fetch --prune origin
+            git checkout "$BRANCH"
+            git reset --hard "origin/$BRANCH"
+
+            if [ ! -f .env ]; then
+              echo "✗ .env missing on the server."
+              echo "  Copy .env.example to .env and fill in secrets before deploying."
+              exit 1
+            fi
+
+            echo "▶ Building and starting containers"
+            docker compose pull --ignore-pull-failures || true
+            docker compose up --build -d --remove-orphans
+
+            echo "▶ Pruning dangling images"
+            docker image prune -f >/dev/null
+
+            echo "▶ Current status:"
+            docker compose ps

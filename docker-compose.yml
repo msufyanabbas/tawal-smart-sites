@@ -1,0 +1,70 @@
+# docker-compose.yml — root deployment for tawal-smart-sites.
+#
+# Architecture:
+#   browser ──HTTP/HTTPS──▶ web (nginx)
+#                                │
+#                                ├── serves React SPA from /usr/share/nginx/html
+#                                └── reverse-proxies /api/* to backend:3000
+#
+# Backend is NOT exposed to the host by default — only the web tier is.
+# That keeps the API reachable on the internal docker network only, with
+# nginx as the single ingress point.
+#
+# Images are built by deploy.sh BEFORE this file is brought up, so the
+# services only reference them by tag (`image:`) — no `build:` block here.
+# Compose-level variable interpolation (e.g. ${WEB_HTTP_PORT}) reads from
+# .env.compose (passed via `docker compose --env-file .env.compose`).
+
+services:
+  backend:
+    image: tawal-backend:latest
+    container_name: tawal-backend
+    restart: unless-stopped
+    # Backend container env (Mongo URI, JWT secrets, SMTP, etc.).
+    env_file:
+      - .env
+    # No `ports:` block — the API is only reachable through the docker network
+    # via the `backend` hostname. Uncomment to expose for local debugging:
+    # ports:
+    #   - "3000:3000"
+    networks:
+      - tawal-net
+    healthcheck:
+      # Mirror of the Dockerfile healthcheck so compose surfaces "healthy".
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:3000/auth/login',r=>process.exit(r.statusCode?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  web:
+    image: tawal-frontend:latest
+    container_name: tawal-web
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      # HTTP. Map to the public port you want on the host.
+      - "${WEB_HTTP_PORT:-80}:80"
+      # HTTPS — only effective if you mount certs and add a 443 server{} block
+      # to nginx.conf. Left commented so the file works out of the box.
+      # - "${WEB_HTTPS_PORT:-443}:443"
+    # Uncomment when you wire TLS so certs live outside the image.
+    # volumes:
+    #   - ./certs:/etc/nginx/certs:ro
+    networks:
+      - tawal-net
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+networks:
+  # Single user-defined bridge so containers can resolve each other by name
+  # (web → "backend" hostname). Isolated from other compose projects.
+  tawal-net:
+    driver: bridge
+    name: tawal-net

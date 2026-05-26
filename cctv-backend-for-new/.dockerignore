@@ -1,0 +1,19 @@
+# Keep the build context small and prevent leaking secrets into the image.
+node_modules
+dist
+coverage
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+.DS_Store
+.vscode
+.idea
+README.md
+test
+**/*.spec.ts
+Dockerfile
+.dockerignore

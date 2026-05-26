@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "cctv-records-app",
+    "slug": "cctv-records-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b03fc"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.msufyanabbas.cctvrecordsapp",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#0b03fc"
+      },
+      "package": "com.msufyanabbas.cctvrecordsapp",
+      "versionCode": 1
+    },
+    "web": {
+      "favicon": "./assets/icon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bd36d27e-09ae-4eb7-8fc2-cb1f9cac1743"
+      }
+    },
+    "owner": "msufyanabbas"
+  }
+}
