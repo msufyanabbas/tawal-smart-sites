@@ -49,8 +49,8 @@ interface UnitGroup {
 const relevantUnitGroups = (site: Site): UnitGroup[] => {
   const out: UnitGroup[] = [];
   if (site.rmsScope === RmsScope.RMS) {
-    out.push({ key: 'rmsUnits', label: 'RMS Units', count: site.numberOfRms, needs: { serial: false, tag: true } });
-    out.push({ key: 'expanderUnits', label: 'Expanders', count: site.numberOfExpanders, needs: { serial: false, tag: true } });
+    out.push({ key: 'rmsUnits', label: 'RMS Units', count: site.numberOfRms, needs: { serial: true, tag: true } });
+    out.push({ key: 'expanderUnits', label: 'Expanders', count: site.numberOfExpanders, needs: { serial: true, tag: true } });
     out.push({ key: 'simCards', label: 'SIM Cards', count: site.numberOfSims, needs: { serial: true, tag: false } });
     if (site.hasSmartLock) {
       out.push({ key: 'fenceLockUnits', label: 'Fence Locks', count: site.numberOfFenceLocks, needs: { serial: true, tag: true } });
@@ -79,15 +79,15 @@ const SUBMITTED_GROUPS: Array<{
   key: keyof SiteUnitsPayload;
   label: string;
 }> = [
-  { key: 'rmsUnits', label: 'RMS Units' },
-  { key: 'expanderUnits', label: 'Expanders' },
-  { key: 'simCards', label: 'SIM Cards' },
-  { key: 'fenceLockUnits', label: 'Fence Locks' },
-  { key: 'oduUnits', label: 'ODUs' },
-  { key: 'smartMeterUnits', label: 'Smart Meters' },
-  { key: 'ctSplitUnits', label: 'CT Splits' },
-  { key: 'silboGatewayUnits', label: 'Silbo Gateways' },
-];
+    { key: 'rmsUnits', label: 'RMS Units' },
+    { key: 'expanderUnits', label: 'Expanders' },
+    { key: 'simCards', label: 'SIM Cards' },
+    { key: 'fenceLockUnits', label: 'Fence Locks' },
+    { key: 'oduUnits', label: 'ODUs' },
+    { key: 'smartMeterUnits', label: 'Smart Meters' },
+    { key: 'ctSplitUnits', label: 'CT Splits' },
+    { key: 'silboGatewayUnits', label: 'Silbo Gateways' },
+  ];
 
 // ── Status timeline ─────────────────────────────────────────────────────────
 
