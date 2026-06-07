@@ -50,7 +50,7 @@ import {
 
 const API_BASE_URL =
   (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined) ??
-  'http://192.168.1.125:3000';
+  'https://tawal-site.smart-life.sa/';
 
 interface PastReport {
   filters: ReportFilters;

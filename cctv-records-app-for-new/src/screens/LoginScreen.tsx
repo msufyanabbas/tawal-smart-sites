@@ -37,9 +37,11 @@ const LoginScreen: React.FC = () => {
     setError('');
     const res = await loginUser({ email, password });
     setBusy(false);
+    console.log('[Login Response]', res);
     if (res.success && res.data?.access_token) {
       await login(res.data.access_token, res.data.refresh_token, res.data.user);
     } else {
+      console.error('[Login Error]', res.message, res);
       setError(res.message ?? 'Login failed');
     }
   };

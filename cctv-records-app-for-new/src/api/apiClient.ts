@@ -7,7 +7,7 @@ import { callExternalLogout } from '../contexts/AuthContext'; // <-- adjust path
 // Falls back to the LAN dev address so the existing dev workflow keeps working.
 const API_BASE_URL =
   (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined) ??
-  'http://192.168.1.125:3000';
+  'https://tawal-site.smart-life.sa/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
