@@ -42,7 +42,7 @@ interface UnitGroup {
   key: keyof SiteUnitsPayload;
   label: string;
   count: number;
-  needs: { serial: boolean; tag: boolean };
+  needs: { serial: boolean; tag: boolean }; 
 }
 
 // Which unit arrays are relevant given the site scope + smart lock/meter flags.
