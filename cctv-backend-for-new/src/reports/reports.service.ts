@@ -56,8 +56,15 @@ export class ReportsService {
     });
   }
 
+  private joinUnitField(units: Array<{ serialNumber?: string; tagNumber?: string }>, field: 'serialNumber' | 'tagNumber') {
+    return units
+      .map((unit) => unit[field]?.toString().trim())
+      .filter(Boolean)
+      .join('\n');
+  }
+
   // Build an Excel workbook with one row per site (units summarized as counts;
-  // detailed unit data would make the sheet unwieldy).
+  // detailed unit serial/tag data is exported in dedicated columns).
   async buildExcel(q: ReportQueryDto): Promise<Buffer> {
     const sites = await this.listSites(q);
 
@@ -72,16 +79,32 @@ export class ReportsService {
       { header: 'TCN', key: 'tcnNumber', width: 14 },
       { header: 'Scope', key: 'rmsScope', width: 14 },
       { header: '# RMS', key: 'numberOfRms', width: 8 },
+      { header: 'RMS Serials', key: 'rmsSerials', width: 30 },
+      { header: 'RMS Tags', key: 'rmsTags', width: 30 },
       { header: '# Expanders', key: 'numberOfExpanders', width: 11 },
+      { header: 'Expander Serials', key: 'expanderSerials', width: 30 },
+      { header: 'Expander Tags', key: 'expanderTags', width: 30 },
       { header: '# SIMs', key: 'numberOfSims', width: 8 },
+      { header: 'SIM Serials', key: 'simCardSerials', width: 30 },
+      { header: 'SIM Tags', key: 'simCardTags', width: 30 },
       { header: 'Smart Lock', key: 'hasSmartLock', width: 11 },
       { header: '# Fence Locks', key: 'numberOfFenceLocks', width: 13 },
+      { header: 'Fence Lock Serials', key: 'fenceLockSerials', width: 30 },
+      { header: 'Fence Lock Tags', key: 'fenceLockTags', width: 30 },
       { header: '# ODUs', key: 'numberOfOdus', width: 9 },
+      { header: 'ODU Serials', key: 'oduSerials', width: 30 },
+      { header: 'ODU Tags', key: 'oduTags', width: 30 },
       { header: 'Smart Meter', key: 'hasSmartMeter', width: 12 },
       { header: '# Tenants', key: 'numberOfTenants', width: 10 },
       { header: '# Smart Meters', key: 'numberOfSmartMeters', width: 13 },
+      { header: 'Smart Meter Serials', key: 'smartMeterSerials', width: 30 },
+      { header: 'Smart Meter Tags', key: 'smartMeterTags', width: 30 },
       { header: '# CT Splits', key: 'numberOfCtSplits', width: 11 },
+      { header: 'CT Split Serials', key: 'ctSplitSerials', width: 30 },
+      { header: 'CT Split Tags', key: 'ctSplitTags', width: 30 },
       { header: '# Silbo GW', key: 'numberOfSilboGateways', width: 11 },
+      { header: 'Silbo GW Serials', key: 'silboGatewaySerials', width: 30 },
+      { header: 'Silbo GW Tags', key: 'silboGatewayTags', width: 30 },
       { header: 'Created', key: '_created', width: 10 },
       { header: 'Assigned', key: '_assigned', width: 10 },
       { header: 'Processing', key: '_processing', width: 11 },
@@ -90,12 +113,33 @@ export class ReportsService {
       { header: 'Created At', key: 'createdAt', width: 22 },
     ];
     sheet.getRow(1).font = { bold: true };
+    sheet.columns.forEach((col) => {
+      if (typeof col.width === 'number') {
+        col.alignment = { wrapText: true, vertical: 'top' };
+      }
+    });
 
     for (const s of sites) {
       sheet.addRow({
         ...s,
         hasSmartLock: s.hasSmartLock ? 'Yes' : 'No',
         hasSmartMeter: s.hasSmartMeter ? 'Yes' : 'No',
+        rmsSerials: this.joinUnitField(s.rmsUnits || [], 'serialNumber'),
+        rmsTags: this.joinUnitField(s.rmsUnits || [], 'tagNumber'),
+        expanderSerials: this.joinUnitField(s.expanderUnits || [], 'serialNumber'),
+        expanderTags: this.joinUnitField(s.expanderUnits || [], 'tagNumber'),
+        simCardSerials: this.joinUnitField(s.simCards || [], 'serialNumber'),
+        simCardTags: this.joinUnitField(s.simCards || [], 'tagNumber'),
+        fenceLockSerials: this.joinUnitField(s.fenceLockUnits || [], 'serialNumber'),
+        fenceLockTags: this.joinUnitField(s.fenceLockUnits || [], 'tagNumber'),
+        oduSerials: this.joinUnitField(s.oduUnits || [], 'serialNumber'),
+        oduTags: this.joinUnitField(s.oduUnits || [], 'tagNumber'),
+        smartMeterSerials: this.joinUnitField(s.smartMeterUnits || [], 'serialNumber'),
+        smartMeterTags: this.joinUnitField(s.smartMeterUnits || [], 'tagNumber'),
+        ctSplitSerials: this.joinUnitField(s.ctSplitUnits || [], 'serialNumber'),
+        ctSplitTags: this.joinUnitField(s.ctSplitUnits || [], 'tagNumber'),
+        silboGatewaySerials: this.joinUnitField(s.silboGatewayUnits || [], 'serialNumber'),
+        silboGatewayTags: this.joinUnitField(s.silboGatewayUnits || [], 'tagNumber'),
         _created: s.status?.created?.done ? '✓' : '',
         _assigned: s.status?.assigned?.done ? '✓' : '',
         _processing: s.status?.processing?.done ? '✓' : '',
