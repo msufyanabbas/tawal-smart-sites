@@ -3,7 +3,6 @@
     "name": "cctv-records-app",
     "slug": "cctv-records-app",
     "version": "1.0.0",
-   
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -37,18 +36,12 @@
       }
     },
     "owner": "msufyanabbas",
-    "plugins": [
-      [
-        "expo-build-properties",
-       {
-          "android": {
-            "kotlinVersion": "2.1.0",
-            "compilerOptions": {
-              "jvmTarget": "17"
-            }
-          }
-        }
-      ]
-    ]
+ "plugins": [],
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/bd36d27e-09ae-4eb7-8fc2-cb1f9cac1743"
+    }
   }
 }
