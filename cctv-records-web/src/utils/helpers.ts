@@ -10,6 +10,7 @@ export const rmsScopeLabel = (scope: RmsScope): string => {
     case RmsScope.SMART_LOCK: return 'Smart Lock';
     case RmsScope.SMART_METER: return 'Smart Meter';
     case RmsScope.RMS_SERVICE: return 'RMS Service';
+    case RmsScope.SIM_SWAP: return 'SIM Swap';
     default: return String(scope);
   }
 };
@@ -48,12 +49,12 @@ export const STATUS_STEPS: Array<{
   key: keyof SiteStatus;
   label: string;
 }> = [
-  { key: 'created', label: 'Created' },
-  { key: 'assigned', label: 'Assigned' },
-  { key: 'processing', label: 'Processing' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'reviewed', label: 'Reviewed' },
-];
+    { key: 'created', label: 'Created' },
+    { key: 'assigned', label: 'Assigned' },
+    { key: 'processing', label: 'Processing' },
+    { key: 'completed', label: 'Completed' },
+    { key: 'reviewed', label: 'Reviewed' },
+  ];
 
 // "Current stage" — the deepest milestone that's still done.
 export const currentStage = (site: Site): string => {

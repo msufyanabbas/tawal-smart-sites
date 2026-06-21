@@ -11,6 +11,7 @@ export enum RmsScope {
   SMART_LOCK = 'SMART_LOCK',
   SMART_METER = 'SMART_METER',
   RMS_SERVICE = 'RMS_SERVICE',
+  SIM_SWAP = 'SIM_SWAP',
 }
 
 export enum SiteStatusFilter {
@@ -75,6 +76,7 @@ export interface Site {
   numberOfSmartMeters: number;
   numberOfCtSplits: number;
   numberOfSilboGateways: number;
+  simSwapComments?: string;
 
   status: SiteStatus;
 
@@ -108,6 +110,7 @@ export interface SiteCreatePayload {
   numberOfOdus?: number;
   hasSmartMeter?: boolean;
   numberOfTenants?: number;
+  simSwapComments?: string;
 }
 
 export type SiteUpdatePayload = Partial<SiteCreatePayload>;
@@ -122,6 +125,7 @@ export interface SiteUnitsPayload {
   smartMeterUnits?: ImagedSerialTag[];
   ctSplitUnits?: ImagedSerialTag[];
   silboGatewayUnits?: ImagedSerialTag[];
+  simSwapComments?: string;
 }
 
 export interface AuthUser {
@@ -172,3 +176,12 @@ export interface ReportFilters {
   from?: string;
   to?: string;
 }
+
+
+
+
+
+
+
+
+

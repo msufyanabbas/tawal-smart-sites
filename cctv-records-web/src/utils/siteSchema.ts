@@ -28,6 +28,7 @@ export const siteCreateSchema = z.object({
 
   hasSmartMeter: z.boolean().optional(),
   numberOfTenants: nonNegInt.optional(),
+  comments: z.string().optional(),
 });
 
 export type SiteCreateValues = z.infer<typeof siteCreateSchema>;

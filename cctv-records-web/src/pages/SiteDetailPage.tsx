@@ -8,6 +8,7 @@ import {
   useAssignSiteMutation,
   useDeleteSiteMutation,
   useReviewSiteMutation,
+  useUpdateSiteMutation,
   useSaveSiteDraftMutation,
   useSiteQuery,
   useSubmitSiteMutation,
@@ -69,7 +70,18 @@ const relevantUnitGroups = (site: Site): UnitGroup[] => {
     out.push({ key: 'silboGatewayUnits', label: 'Silbo Gateways', count: site.numberOfSilboGateways, needs: { serial: true, tag: true } });
     // Smart-meter sites always ship with one SIM card for the Silbo gateway.
     out.push({ key: 'simCards', label: 'SIM Cards', count: site.numberOfSims, needs: { serial: true, tag: false } });
+  } else if (site.rmsScope === RmsScope.SIM_SWAP) {
+    out.push({ key: 'simCards', label: 'SIM Cards', count: site.numberOfSims, needs: { serial: true, tag: false } });
+      if (site.hasSmartLock) {
+      out.push({ key: 'fenceLockUnits', label: 'Fence Locks', count: site.numberOfFenceLocks, needs: { serial: true, tag: true } });
+      out.push({ key: 'oduUnits', label: 'ODUs', count: site.numberOfOdus, needs: { serial: true, tag: false } });
+    }
+    if (site.hasSmartMeter) {
+      out.push({ key: 'smartMeterUnits', label: 'Smart Meters', count: site.numberOfSmartMeters, needs: { serial: true, tag: true } });
+      out.push({ key: 'ctSplitUnits', label: 'CT Splits', count: site.numberOfCtSplits, needs: { serial: true, tag: true } });
+      out.push({ key: 'silboGatewayUnits', label: 'Silbo Gateways', count: site.numberOfSilboGateways, needs: { serial: true, tag: true } });
   }
+}
   return out;
 };
 
@@ -212,6 +224,8 @@ const AssignPanel: React.FC<{ site: Site }> = ({ site }) => {
   );
 };
 
+ 
+
 // ── Submitted data (admin/manager read-only) ────────────────────────────────
 
 // Lightboxable image thumbnail — click toggles a fullscreen overlay.
@@ -336,6 +350,8 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
       const seeded = blanks.map((blank, i) => existing?.[i] ?? blank);
       out[g.key] = seeded;
     }
+    // carry over any existing free-text comments
+    (out as any).simSwapComments = (site as any).simSwapComments ?? '';
     return out;
   }, [site, groups]);
 
@@ -356,7 +372,7 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
 
   const onSaveDraft = async () => {
     try {
-      await saveDraft.mutateAsync({ id: site._id, payload: values });
+      await saveDraft.mutateAsync({ id: site._id, payload: values as SiteUnitsPayload });
       toast.success('Draft saved');
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to save draft'));
@@ -366,7 +382,7 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
   const onSubmit = async () => {
     if (!window.confirm('Submit field data? You will not be able to edit afterward.')) return;
     try {
-      await submit.mutateAsync({ id: site._id, payload: values });
+      await submit.mutateAsync({ id: site._id, payload: values as SiteUnitsPayload });
       toast.success('Site submitted for review');
     } catch (err) {
       toast.error(apiErrorMessage(err, 'Failed to submit'));
@@ -385,6 +401,22 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
 
   return (
     <div className="space-y-5">
+      <div className="card">
+        <div className="card-body">
+          <label className="label" htmlFor="sim-swap-comments">
+            Comments (optional)
+          </label>
+          <textarea
+            id="sim-swap-comments"
+            className="input min-h-[88px] resize-y"
+            placeholder="Add any notes, comments or SIM swap details..."
+            value={(values as any).simSwapComments ?? ''}
+            onChange={(e) => setValues((prev) => ({ ...(prev ?? {}), simSwapComments: e.target.value }))}
+            maxLength={2000}
+            disabled={readOnly}
+          />
+        </div>
+      </div>
       {groups.map((g) => {
         const arr = values[g.key] ?? [];
         const singular = g.label.endsWith('s') ? g.label.slice(0, -1) : g.label;
@@ -479,7 +511,7 @@ export const SiteDetailPage: React.FC = () => {
   const accept = useAcceptSiteMutation();
   const review = useReviewSiteMutation();
   const del = useDeleteSiteMutation();
-
+console.log('site', site)
   // Free-text notes the reviewer can attach when approving. State is local —
   // the panel only renders while the site is reviewable, so we don't need
   // it sticking around after approval.
@@ -605,6 +637,7 @@ export const SiteDetailPage: React.FC = () => {
 
       <SiteInfoCard site={site} />
       <CountsCard site={site} />
+
 
       {canAssign && <AssignPanel site={site} />}
 
