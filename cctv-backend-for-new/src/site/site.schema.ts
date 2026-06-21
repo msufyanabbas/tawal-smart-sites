@@ -10,6 +10,7 @@ export enum RmsScope {
   SMART_LOCK = 'SMART_LOCK',
   SMART_METER = 'SMART_METER',
   RMS_SERVICE = 'RMS_SERVICE',
+  SIM_SWAP = 'SIM_SWAP',
 }
 
 export const ALL_RMS_SCOPES: RmsScope[] = [
@@ -17,6 +18,7 @@ export const ALL_RMS_SCOPES: RmsScope[] = [
   RmsScope.SMART_LOCK,
   RmsScope.SMART_METER,
   RmsScope.RMS_SERVICE,
+  RmsScope.SIM_SWAP,
 ];
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -152,6 +154,9 @@ export class Site {
   @Prop({ type: [ImagedSerialTagSchema], default: [] }) smartMeterUnits: ImagedSerialTag[];
   @Prop({ type: [ImagedSerialTagSchema], default: [] }) ctSplitUnits: ImagedSerialTag[];
   @Prop({ type: [ImagedSerialTagSchema], default: [] }) silboGatewayUnits: ImagedSerialTag[];
+
+  // ── SIM_SWAP specific fields ───────────────────────────────────────────
+  @Prop({ type: String, default: '' }) simSwapComments?: string;
 
   // ── Audit ──────────────────────────────────────────────────────────────
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })

@@ -91,6 +91,19 @@ export class SiteService {
     } else if (scope === RmsScope.RMS_SERVICE) {
       out.numberOfTenants = input.numberOfTenants ?? 0;
     }
+    else if (scope === RmsScope.SIM_SWAP) {
+      out.numberOfSims = input.numberOfSims ?? 0;
+      // add number of tenants if provided, otherwise default to 0
+      // has smart meter  
+     out.hasSmartMeter = !!input.hasSmartMeter;
+      if (out.hasSmartMeter) {
+        const tenants = input.numberOfTenants ?? 0;
+        out.numberOfTenants = tenants;
+        out.numberOfSmartMeters = SiteService.smartMetersFor(tenants);
+        out.numberOfCtSplits = tenants * 3;
+        // RMS scope intentionally excludes silbo gateways.
+      }
+    }
 
     return out;
   }
@@ -372,6 +385,7 @@ export class SiteService {
       'smartMeterUnits',
       'ctSplitUnits',
       'silboGatewayUnits',
+      'simSwapComments',
     ];
     for (const k of keys) {
       if (dto[k] !== undefined) (doc as any)[k] = dto[k];

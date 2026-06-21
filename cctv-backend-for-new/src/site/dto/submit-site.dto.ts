@@ -37,6 +37,9 @@ export class SubmitSiteDto {
 
   @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ImagedSerialTagDto)
   silboGatewayUnits?: ImagedSerialTagDto[];
+
+  @IsOptional() @IsString()
+  simSwapComments?: string;
 }
 
 // A draft save is identical in shape to a final submit; we just don't flip the
