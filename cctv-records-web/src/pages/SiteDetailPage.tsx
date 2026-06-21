@@ -39,11 +39,13 @@ import {
 const emptyUnits = (count: number): ImagedSerialTag[] =>
   Array.from({ length: Math.max(count, 0) }, () => ({}));
 
+type UnitGroupKey = Exclude<keyof SiteUnitsPayload, 'simSwapComments'>;
+
 interface UnitGroup {
-  key: keyof SiteUnitsPayload;
+  key: UnitGroupKey;
   label: string;
   count: number;
-  needs: { serial: boolean; tag: boolean }; 
+  needs: { serial: boolean; tag: boolean };
 }
 
 // Which unit arrays are relevant given the site scope + smart lock/meter flags.
@@ -359,7 +361,7 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
   useEffect(() => { setValues(initial); }, [initial]);
 
   const updateUnit = (
-    groupKey: keyof SiteUnitsPayload,
+    groupKey: UnitGroupKey,
     idx: number,
     patch: Partial<ImagedSerialTag>,
   ) => {
