@@ -29,6 +29,11 @@ export const siteCreateSchema = z.object({
   hasSmartMeter: z.boolean().optional(),
   numberOfTenants: nonNegInt.optional(),
   comments: z.string().optional(),
+
+  // SIM swap fields (admin can optionally set site type and location)
+  simSwapSiteType: z.string().optional(),
+  simSwapLatitude: z.coerce.number().optional(),
+  simSwapLongitude: z.coerce.number().optional(),
 });
 
 export type SiteCreateValues = z.infer<typeof siteCreateSchema>;

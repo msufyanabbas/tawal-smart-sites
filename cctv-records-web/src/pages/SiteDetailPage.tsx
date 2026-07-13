@@ -23,6 +23,7 @@ import {
   type ImagedSerialTag,
   Role,
   RmsScope,
+  type SimSwapSiteType,
   type SiteUnitsPayload,
   type Site,
 } from '@/types';
@@ -39,7 +40,15 @@ import {
 const emptyUnits = (count: number): ImagedSerialTag[] =>
   Array.from({ length: Math.max(count, 0) }, () => ({}));
 
-type UnitGroupKey = Exclude<keyof SiteUnitsPayload, 'simSwapComments'>;
+type UnitGroupKey =
+  | 'rmsUnits'
+  | 'expanderUnits'
+  | 'simCards'
+  | 'fenceLockUnits'
+  | 'oduUnits'
+  | 'smartMeterUnits'
+  | 'ctSplitUnits'
+  | 'silboGatewayUnits';
 
 interface UnitGroup {
   key: UnitGroupKey;
@@ -342,7 +351,14 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
   const submit = useSubmitSiteMutation();
   const readOnly = site.status?.completed?.done;
 
-  const groups = useMemo(() => relevantUnitGroups(site), [site]);
+  const groups = useMemo(() => {
+    let all = relevantUnitGroups(site);
+    // Exclude simCards for SIM_SWAP scope since they use the dedicated SIM swap pairs form instead
+    if (site.rmsScope === RmsScope.SIM_SWAP) {
+      all = all.filter((g) => g.key !== 'simCards');
+    }
+    return all;
+  }, [site]);
 
   const initial = useMemo<SiteUnitsPayload>(() => {
     const out: SiteUnitsPayload = {};
@@ -350,14 +366,20 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
       const existing = (site as any)[g.key] as ImagedSerialTag[] | undefined;
       const blanks = emptyUnits(g.count);
       const seeded = blanks.map((blank, i) => existing?.[i] ?? blank);
-      out[g.key] = seeded;
+      (out as Record<UnitGroupKey, ImagedSerialTag[]>)[g.key] = seeded;
     }
-    // carry over any existing free-text comments
+    // carry over any existing SIM swap specific details
     (out as any).simSwapComments = (site as any).simSwapComments ?? '';
+    (out as any).simSwapPairs = (site as any).simSwapPairs ?? [];
+    (out as any).simSwapSiteType = (site as any).simSwapSiteType ?? '';
+    (out as any).simSwapLatitude = (site as any).simSwapLatitude ?? null;
+    (out as any).simSwapLongitude = (site as any).simSwapLongitude ?? null;
     return out;
   }, [site, groups]);
 
   const [values, setValues] = useState<SiteUnitsPayload>(initial);
+  const [locationBusy, setLocationBusy] = useState(false);
+  const [locationError, setLocationError] = useState('');
   useEffect(() => { setValues(initial); }, [initial]);
 
   const updateUnit = (
@@ -366,7 +388,7 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
     patch: Partial<ImagedSerialTag>,
   ) => {
     setValues((prev) => {
-      const arr = [...(prev[groupKey] ?? [])];
+      const arr = [...((prev[groupKey] as ImagedSerialTag[] | undefined) ?? [])];
       arr[idx] = { ...arr[idx], ...patch };
       return { ...prev, [groupKey]: arr };
     });
@@ -381,7 +403,39 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
     }
   };
 
+  const onGetLocation = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setLocationError('Geolocation is not supported in this browser.');
+      return;
+    }
+
+    setLocationBusy(true);
+    setLocationError('');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setValues((prev) => ({
+          ...(prev ?? {}),
+          simSwapLatitude: position.coords.latitude,
+          simSwapLongitude: position.coords.longitude,
+        }));
+        setLocationBusy(false);
+      },
+      (error) => {
+        setLocationBusy(false);
+        setLocationError(error.message || 'Unable to fetch your current location.');
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+    );
+  };
+
   const onSubmit = async () => {
+    // Validate required SIM swap fields
+    if (site.rmsScope === RmsScope.SIM_SWAP) {
+      if (!(values as any).simSwapSiteType) {
+        toast.error('Site type is required');
+        return;
+      }
+    }
     if (!window.confirm('Submit field data? You will not be able to edit afterward.')) return;
     try {
       await submit.mutateAsync({ id: site._id, payload: values as SiteUnitsPayload });
@@ -419,8 +473,105 @@ const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
           />
         </div>
       </div>
+      {site.rmsScope === RmsScope.SIM_SWAP && (
+        <div className="card">
+          <div className="card-body space-y-4">
+            <h3 className="card-title">SIM swap details</h3>
+            
+            {/* SIM Pairs - repeat for each SIM */}
+            {Array.from({ length: site.numberOfSims }, (_, i) => {
+              const pairs = (values as any).simSwapPairs ?? [];
+              const pair = pairs[i] ?? {};
+              
+              const updatePair = (idx: number, patch: Partial<typeof pair>) => {
+                setValues((prev) => {
+                  const newPairs = [...((prev as any).simSwapPairs ?? [])];
+                  newPairs[idx] = { ...newPairs[idx], ...patch };
+                  return { ...(prev ?? {}), simSwapPairs: newPairs };
+                });
+              };
+              
+              return (
+                <div key={i} className="rounded-lg border border-slate-200 p-4">
+                  <p className="mb-3 text-sm font-semibold text-slate-700">SIM #{i + 1}</p>
+                  
+                  <div className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <TextField
+                        label="New SIM serial number"
+                        value={pair.newSerialNumber ?? ''}
+                        disabled={readOnly}
+                        onChange={(e) => updatePair(i, { newSerialNumber: e.target.value })}
+                      />
+                      {!readOnly ? (
+                        <ImageUploadField
+                          label="New SIM image"
+                          value={pair.newSerialImage}
+                          onChange={(v) => updatePair(i, { newSerialImage: v })}
+                        />
+                      ) : pair.newSerialImage ? (
+                        <div>
+                          <p className="label">New SIM image</p>
+                          <img src={pair.newSerialImage} alt="New SIM" className="h-24 w-24 rounded-lg object-cover" />
+                        </div>
+                      ) : null}
+                    </div>
+                    
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <TextField
+                        label="Old SIM serial number"
+                        value={pair.oldSerialNumber ?? ''}
+                        disabled={readOnly}
+                        onChange={(e) => updatePair(i, { oldSerialNumber: e.target.value })}
+                      />
+                      {!readOnly ? (
+                        <ImageUploadField
+                          label="Old SIM image"
+                          value={pair.oldSerialImage}
+                          onChange={(v) => updatePair(i, { oldSerialImage: v })}
+                        />
+                      ) : pair.oldSerialImage ? (
+                        <div>
+                          <p className="label">Old SIM image</p>
+                          <img src={pair.oldSerialImage} alt="Old SIM" className="h-24 w-24 rounded-lg object-cover" />
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Site Type and Location - shown once */}
+            <SelectField
+              label="Site type *"
+              placeholder="Select site type"
+              value={(values as any).simSwapSiteType ?? ''}
+              disabled={readOnly}
+              onChange={(e) => setValues((prev) => ({ ...(prev ?? {}), simSwapSiteType: e.target.value as SimSwapSiteType }))}
+              options={[
+                { label: 'Green field', value: 'green_field' },
+                { label: 'Roof top', value: 'roof_top' },
+              ]}
+            />
+            <div className="space-y-2">
+              {!readOnly && (
+                <Button type="button" variant="secondary" onClick={onGetLocation} loading={locationBusy}>
+                  Get current location
+                </Button>
+              )}
+              {locationError && <p className="text-sm text-red-600">{locationError}</p>}
+              {typeof (values as any).simSwapLatitude === 'number' && typeof (values as any).simSwapLongitude === 'number' && (
+                <p className="text-sm text-slate-700 px-2 py-1 rounded-lg bg-slate-200">
+                  Latitude: {(values as any).simSwapLatitude} | Longitude: {(values as any).simSwapLongitude}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {groups.map((g) => {
-        const arr = values[g.key] ?? [];
+        const arr = (values[g.key] as ImagedSerialTag[] | undefined) ?? [];
         const singular = g.label.endsWith('s') ? g.label.slice(0, -1) : g.label;
         return (
           <div key={g.key} className="card">

@@ -29,6 +29,15 @@ export interface ImagedSerialTag {
   tagImage?: string;
 }
 
+export interface SimSwapPair {
+  newSerialNumber?: string;
+  newSerialImage?: string;
+  oldSerialNumber?: string;
+  oldSerialImage?: string;
+}
+
+export type SimSwapSiteType = 'green_field' | 'roof_top';
+
 export interface StatusFlag {
   done: boolean;
   at?: string;
@@ -77,6 +86,10 @@ export interface Site {
   numberOfCtSplits: number;
   numberOfSilboGateways: number;
   simSwapComments?: string;
+  simSwapPairs?: SimSwapPair[];
+  simSwapSiteType?: SimSwapSiteType;
+  simSwapLatitude?: number | null;
+  simSwapLongitude?: number | null;
 
   status: SiteStatus;
 
@@ -111,6 +124,13 @@ export interface SiteCreatePayload {
   hasSmartMeter?: boolean;
   numberOfTenants?: number;
   simSwapComments?: string;
+  simSwapNewSerialNumber?: string;
+  simSwapNewSerialImage?: string;
+  simSwapOldSerialNumber?: string;
+  simSwapOldSerialImage?: string;
+  simSwapSiteType?: SimSwapSiteType;
+  simSwapLatitude?: number | null;
+  simSwapLongitude?: number | null;
 }
 
 export type SiteUpdatePayload = Partial<SiteCreatePayload>;
@@ -126,6 +146,10 @@ export interface SiteUnitsPayload {
   ctSplitUnits?: ImagedSerialTag[];
   silboGatewayUnits?: ImagedSerialTag[];
   simSwapComments?: string;
+  simSwapPairs?: SimSwapPair[];
+  simSwapSiteType?: SimSwapSiteType;
+  simSwapLatitude?: number | null;
+  simSwapLongitude?: number | null;
 }
 
 export interface AuthUser {

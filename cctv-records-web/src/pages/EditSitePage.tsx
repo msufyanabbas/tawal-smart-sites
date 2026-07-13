@@ -70,6 +70,9 @@ export const EditSitePage: React.FC = () => {
       numberOfOdus: site.numberOfOdus,
       hasSmartMeter: site.hasSmartMeter,
       numberOfTenants: site.numberOfTenants,
+      simSwapSiteType: site.simSwapSiteType,
+      simSwapLatitude: site.simSwapLatitude ?? undefined,
+      simSwapLongitude: site.simSwapLongitude ?? undefined,
     });
   }, [site, reset]);
 
@@ -119,6 +122,12 @@ export const EditSitePage: React.FC = () => {
       payload.numberOfTenants = values.numberOfTenants ?? 0;
     } else if (values.rmsScope === RmsScope.RMS_SERVICE) {
       payload.numberOfTenants = values.numberOfTenants ?? 0;
+    } else if (values.rmsScope === RmsScope.SIM_SWAP) {
+      payload.numberOfSims = values.numberOfSims ?? 0;
+      payload.hasSmartMeter = !!values.hasSmartMeter;
+      if (values.hasSmartMeter) {
+        payload.numberOfTenants = values.numberOfTenants ?? 0;
+      }
     }
 
     try {
@@ -323,6 +332,47 @@ export const EditSitePage: React.FC = () => {
                     label="Number of tenants"
                     {...register('numberOfTenants', { valueAsNumber: true })}
                   />
+                </div>
+              )}
+
+              {scope === RmsScope.SIM_SWAP && (
+                <div className="space-y-4">
+                  <TextField
+                    type="number"
+                    min={0}
+                    label="Number of SIM cards"
+                    {...register('numberOfSims', { valueAsNumber: true })}
+                  />
+
+                  <div className="rounded-lg border border-slate-200 p-4">
+                    <Controller
+                      control={control}
+                      name="hasSmartMeter"
+                      render={({ field }) => (
+                        <ToggleField
+                          label="Includes smart meter"
+                          value={!!field.value}
+                          onChange={field.onChange}
+                        />
+                      )}
+                    />
+                    {hasSmartMeter && (
+                      <>
+                        <div className="mt-3 grid gap-4 md:grid-cols-3">
+                          <TextField
+                            type="number"
+                            min={0}
+                            label="Number of tenants"
+                            {...register('numberOfTenants', { valueAsNumber: true })}
+                          />
+                        </div>
+                        <div className="mt-3 grid gap-3 md:grid-cols-2">
+                          <ReadOnlyStat label="Smart meters (computed)" value={derived.smartMeters} />
+                          <ReadOnlyStat label="CT splits (computed)" value={derived.ctSplits} />
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
