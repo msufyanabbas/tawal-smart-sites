@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsNumber,
   IsOptional,
   IsString,
   ValidateNested,
@@ -11,6 +12,13 @@ export class ImagedSerialTagDto {
   @IsOptional() @IsString() serialImage?: string;
   @IsOptional() @IsString() tagNumber?: string;
   @IsOptional() @IsString() tagImage?: string;
+}
+
+export class SimSwapPairDto {
+  @IsOptional() @IsString() newSerialNumber?: string;
+  @IsOptional() @IsString() newSerialImage?: string;
+  @IsOptional() @IsString() oldSerialNumber?: string;
+  @IsOptional() @IsString() oldSerialImage?: string;
 }
 
 export class SubmitSiteDto {
@@ -40,6 +48,18 @@ export class SubmitSiteDto {
 
   @IsOptional() @IsString()
   simSwapComments?: string;
+
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SimSwapPairDto)
+  simSwapPairs?: SimSwapPairDto[];
+
+  @IsOptional() @IsString()
+  simSwapSiteType?: string;
+
+  @IsOptional() @IsNumber()
+  simSwapLatitude?: number | null;
+
+  @IsOptional() @IsNumber()
+  simSwapLongitude?: number | null;
 }
 
 // A draft save is identical in shape to a final submit; we just don't flip the

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   FlatList,
@@ -11,12 +11,18 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from 'react-native';
-import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+} from "react-native";
+import {
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 
-import AppText from '../components/AppText';
+import AppText from "../components/AppText";
 import {
   Button,
   Card,
@@ -25,9 +31,10 @@ import {
   Field,
   LoadingState,
   ErrorState,
-} from '../components/ui';
-import CustomImagePicker from '../components/ImagePicker';
-import { useAuth } from '../contexts/AuthContext';
+  PickerField,
+} from "../components/ui";
+import CustomImagePicker from "../components/ImagePicker";
+import { useAuth } from "../contexts/AuthContext";
 import {
   acceptSite,
   assignSite,
@@ -36,9 +43,9 @@ import {
   reviewSite,
   saveSiteDraft,
   submitSite,
-} from '../api/siteService';
-import { listUsers } from '../api/userService';
-import { SitesStackParamList } from '../navigation';
+} from "../api/siteService";
+import { listUsers } from "../api/userService";
+import { SitesStackParamList } from "../navigation";
 import {
   AppUser,
   ImagedSerialTag,
@@ -46,13 +53,15 @@ import {
   RmsScope,
   Site,
   SiteUnitsPayload,
-} from '../types';
+  SimSwapPair,
+  SimSwapSiteType,
+} from "../types";
 import {
   STATUS_STEPS,
   formatDateTime,
   formatErrorMessage,
   rmsScopeLabel,
-} from '../utils/helpers';
+} from "../utils/helpers";
 import {
   colors,
   fontSize,
@@ -61,10 +70,10 @@ import {
   shadow,
   spacing,
   statusColor,
-} from '../theme';
+} from "../theme";
 
-type Nav = NativeStackNavigationProp<SitesStackParamList, 'SiteDetail'>;
-type Rt = RouteProp<SitesStackParamList, 'SiteDetail'>;
+type Nav = NativeStackNavigationProp<SitesStackParamList, "SiteDetail">;
+type Rt = RouteProp<SitesStackParamList, "SiteDetail">;
 
 // ── Unit groups (mirrors web SiteDetailPage.relevantUnitGroups) ────────────
 
@@ -78,25 +87,90 @@ interface UnitGroup {
 const relevantUnitGroups = (site: Site): UnitGroup[] => {
   const out: UnitGroup[] = [];
   if (site.rmsScope === RmsScope.RMS) {
-    out.push({ key: 'rmsUnits', label: 'RMS Units', count: site.numberOfRms, needs: { serial: true, tag: true } });
-    out.push({ key: 'expanderUnits', label: 'Expanders', count: site.numberOfExpanders, needs: { serial: true, tag: true } });
-    out.push({ key: 'simCards', label: 'SIM Cards', count: site.numberOfSims, needs: { serial: true, tag: false } });
+    out.push({
+      key: "rmsUnits",
+      label: "RMS Units",
+      count: site.numberOfRms,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "expanderUnits",
+      label: "Expanders",
+      count: site.numberOfExpanders,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "simCards",
+      label: "SIM Cards",
+      count: site.numberOfSims,
+      needs: { serial: true, tag: false },
+    });
     if (site.hasSmartLock) {
-      out.push({ key: 'fenceLockUnits', label: 'Fence Locks', count: site.numberOfFenceLocks, needs: { serial: true, tag: true } });
-      out.push({ key: 'oduUnits', label: 'ODUs', count: site.numberOfOdus, needs: { serial: true, tag: false } });
+      out.push({
+        key: "fenceLockUnits",
+        label: "Fence Locks",
+        count: site.numberOfFenceLocks,
+        needs: { serial: true, tag: true },
+      });
+      out.push({
+        key: "oduUnits",
+        label: "ODUs",
+        count: site.numberOfOdus,
+        needs: { serial: true, tag: false },
+      });
     }
     if (site.hasSmartMeter) {
-      out.push({ key: 'smartMeterUnits', label: 'Smart Meters', count: site.numberOfSmartMeters, needs: { serial: true, tag: true } });
-      out.push({ key: 'ctSplitUnits', label: 'CT Splits', count: site.numberOfCtSplits, needs: { serial: true, tag: true } });
+      out.push({
+        key: "smartMeterUnits",
+        label: "Smart Meters",
+        count: site.numberOfSmartMeters,
+        needs: { serial: true, tag: true },
+      });
+      out.push({
+        key: "ctSplitUnits",
+        label: "CT Splits",
+        count: site.numberOfCtSplits,
+        needs: { serial: true, tag: true },
+      });
     }
   } else if (site.rmsScope === RmsScope.SMART_LOCK) {
-    out.push({ key: 'fenceLockUnits', label: 'Fence Locks', count: site.numberOfFenceLocks, needs: { serial: true, tag: true } });
-    out.push({ key: 'oduUnits', label: 'ODUs', count: site.numberOfOdus, needs: { serial: true, tag: false } });
+    out.push({
+      key: "fenceLockUnits",
+      label: "Fence Locks",
+      count: site.numberOfFenceLocks,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "oduUnits",
+      label: "ODUs",
+      count: site.numberOfOdus,
+      needs: { serial: true, tag: false },
+    });
   } else if (site.rmsScope === RmsScope.SMART_METER) {
-    out.push({ key: 'smartMeterUnits', label: 'Smart Meters', count: site.numberOfSmartMeters, needs: { serial: true, tag: true } });
-    out.push({ key: 'ctSplitUnits', label: 'CT Splits', count: site.numberOfCtSplits, needs: { serial: true, tag: true } });
-    out.push({ key: 'silboGatewayUnits', label: 'Silbo Gateways', count: site.numberOfSilboGateways, needs: { serial: true, tag: true } });
-    out.push({ key: 'simCards', label: 'SIM Cards', count: site.numberOfSims, needs: { serial: true, tag: false } });
+    out.push({
+      key: "smartMeterUnits",
+      label: "Smart Meters",
+      count: site.numberOfSmartMeters,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "ctSplitUnits",
+      label: "CT Splits",
+      count: site.numberOfCtSplits,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "silboGatewayUnits",
+      label: "Silbo Gateways",
+      count: site.numberOfSilboGateways,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "simCards",
+      label: "SIM Cards",
+      count: site.numberOfSims,
+      needs: { serial: true, tag: false },
+    });
   }
   return out;
 };
@@ -114,25 +188,31 @@ const StatusTimeline: React.FC<{ site: Site }> = ({ site }) => (
             <View
               style={[
                 styles.timelineDot,
-                done ? { backgroundColor: statusColor[step.key] } : styles.timelineDotPending,
+                done
+                  ? { backgroundColor: statusColor[step.key] }
+                  : styles.timelineDotPending,
               ]}
             >
               {done ? (
                 <Ionicons name="checkmark" size={16} color="#fff" />
               ) : (
-                <AppText style={{ color: colors.textFaint, fontWeight: '700' }}>{i + 1}</AppText>
+                <AppText style={{ color: colors.textFaint, fontWeight: "700" }}>
+                  {i + 1}
+                </AppText>
               )}
             </View>
             <AppText
               style={[
                 styles.timelineLabel,
-                done && { color: colors.text, fontWeight: '700' },
+                done && { color: colors.text, fontWeight: "700" },
               ]}
             >
               {step.label}
             </AppText>
             {flag?.at && (
-              <AppText style={styles.timelineAt}>{formatDateTime(flag.at)}</AppText>
+              <AppText style={styles.timelineAt}>
+                {formatDateTime(flag.at)}
+              </AppText>
             )}
           </View>
           {i < STATUS_STEPS.length - 1 && (
@@ -155,10 +235,19 @@ const ImageViewer: React.FC<{
   uri?: string;
   onClose: () => void;
 }> = ({ uri, onClose }) => (
-  <Modal visible={!!uri} animationType="fade" transparent onRequestClose={onClose}>
+  <Modal
+    visible={!!uri}
+    animationType="fade"
+    transparent
+    onRequestClose={onClose}
+  >
     <Pressable style={styles.viewerBackdrop} onPress={onClose}>
       {uri && (
-        <Image source={{ uri }} style={styles.viewerImage} resizeMode="contain" />
+        <Image
+          source={{ uri }}
+          style={styles.viewerImage}
+          resizeMode="contain"
+        />
       )}
       <View style={styles.viewerClose} pointerEvents="none">
         <Ionicons name="close" size={28} color="#fff" />
@@ -183,7 +272,9 @@ const SubmittedDataView: React.FC<{
   if (groups.length === 0) {
     return (
       <Card>
-        <AppText style={styles.muted}>The technician has not submitted any field data.</AppText>
+        <AppText style={styles.muted}>
+          The technician has not submitted any field data.
+        </AppText>
       </Card>
     );
   }
@@ -191,7 +282,7 @@ const SubmittedDataView: React.FC<{
   return (
     <>
       {groups.map((g) => {
-        const singular = g.label.endsWith('s') ? g.label.slice(0, -1) : g.label;
+        const singular = g.label.endsWith("s") ? g.label.slice(0, -1) : g.label;
         return (
           <Card key={g.key}>
             <AppText style={styles.cardTitle}>
@@ -199,7 +290,10 @@ const SubmittedDataView: React.FC<{
             </AppText>
             {g.units.map((u, idx) => {
               const hasAny =
-                !!u.serialNumber || !!u.serialImage || !!u.tagNumber || !!u.tagImage;
+                !!u.serialNumber ||
+                !!u.serialImage ||
+                !!u.tagNumber ||
+                !!u.tagImage;
               return (
                 <View key={idx} style={styles.dataUnit}>
                   <AppText style={styles.unitHeading}>
@@ -211,26 +305,44 @@ const SubmittedDataView: React.FC<{
                     <>
                       {!!u.serialNumber && (
                         <View style={styles.dataRow}>
-                          <AppText style={styles.dataKey}>Serial number</AppText>
-                          <AppText style={styles.dataVal}>{u.serialNumber}</AppText>
+                          <AppText style={styles.dataKey}>
+                            Serial number
+                          </AppText>
+                          <AppText style={styles.dataVal}>
+                            {u.serialNumber}
+                          </AppText>
                         </View>
                       )}
                       {!!u.tagNumber && (
                         <View style={styles.dataRow}>
                           <AppText style={styles.dataKey}>Tag number</AppText>
-                          <AppText style={styles.dataVal}>{u.tagNumber}</AppText>
+                          <AppText style={styles.dataVal}>
+                            {u.tagNumber}
+                          </AppText>
                         </View>
                       )}
                       <View style={styles.thumbRow}>
                         {!!u.serialImage && (
-                          <TouchableOpacity onPress={() => onOpenImage(u.serialImage!)}>
-                            <Image source={{ uri: u.serialImage }} style={styles.thumb} />
-                            <AppText style={styles.thumbCaption}>Serial</AppText>
+                          <TouchableOpacity
+                            onPress={() => onOpenImage(u.serialImage!)}
+                          >
+                            <Image
+                              source={{ uri: u.serialImage }}
+                              style={styles.thumb}
+                            />
+                            <AppText style={styles.thumbCaption}>
+                              Serial
+                            </AppText>
                           </TouchableOpacity>
                         )}
                         {!!u.tagImage && (
-                          <TouchableOpacity onPress={() => onOpenImage(u.tagImage!)}>
-                            <Image source={{ uri: u.tagImage }} style={styles.thumb} />
+                          <TouchableOpacity
+                            onPress={() => onOpenImage(u.tagImage!)}
+                          >
+                            <Image
+                              source={{ uri: u.tagImage }}
+                              style={styles.thumb}
+                            />
                             <AppText style={styles.thumbCaption}>Tag</AppText>
                           </TouchableOpacity>
                         )}
@@ -252,19 +364,196 @@ const SubmittedDataView: React.FC<{
 const FieldEntryForm: React.FC<{
   site: Site;
   values: SiteUnitsPayload;
-  onChange: (k: keyof SiteUnitsPayload, idx: number, patch: Partial<ImagedSerialTag>) => void;
+  onChange: (
+    k: keyof SiteUnitsPayload,
+    idx: number,
+    patch: Partial<ImagedSerialTag>,
+  ) => void;
+  onUpdateSimSwapPair: (idx: number, patch: Partial<SimSwapPair>) => void;
+  onUpdateSimSwapField: (
+    field: "simSwapSiteType" | "simSwapLatitude" | "simSwapLongitude",
+    value: any,
+  ) => void;
+  onGetLocation: () => void;
+  locationBusy: boolean;
   onOpenImage: (uri: string) => void;
   saving: boolean;
   onSaveDraft: () => void;
   onSubmit: () => void;
-}> = ({ site, values, onChange, onOpenImage, saving, onSaveDraft, onSubmit }) => {
+}> = ({
+  site,
+  values,
+  onChange,
+  onUpdateSimSwapPair,
+  onUpdateSimSwapField,
+  onGetLocation,
+  locationBusy,
+  onOpenImage,
+  saving,
+  onSaveDraft,
+  onSubmit,
+}) => {
   const groups = useMemo(() => relevantUnitGroups(site), [site]);
+  const pairs = useMemo(() => values.simSwapPairs ?? [], [values.simSwapPairs]);
 
+  // For SIM_SWAP scope, show SIM pairs + site type + location
+  if (site.rmsScope === RmsScope.SIM_SWAP) {
+    return (
+      <>
+        <Card>
+          <AppText style={styles.cardTitle}>SIM Swap details</AppText>
+
+          {/* SIM Pairs */}
+          {Array.from({ length: site.numberOfSims }, (_, i) => {
+            const pair = pairs[i] ?? {};
+            return (
+              <View key={i} style={styles.entryUnit}>
+                <AppText style={styles.unitHeading}>SIM #{i + 1}</AppText>
+
+                {/* New SIM */}
+                <Field
+                  label="New SIM serial number"
+                  value={pair.newSerialNumber ?? ""}
+                  onChangeText={(t) =>
+                    onUpdateSimSwapPair(i, { newSerialNumber: t })
+                  }
+                />
+                <AppText style={styles.imgLabel}>New SIM image</AppText>
+                {pair.newSerialImage ? (
+                  <TouchableOpacity
+                    onPress={() => onOpenImage(pair.newSerialImage!)}
+                    onLongPress={() =>
+                      Alert.alert("Replace image?", "", [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Replace",
+                          onPress: () =>
+                            onUpdateSimSwapPair(i, {
+                              newSerialImage: undefined,
+                            }),
+                        },
+                      ])
+                    }
+                  >
+                    <Image
+                      source={{ uri: pair.newSerialImage }}
+                      style={styles.thumbLg}
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <CustomImagePicker
+                    imageUri={pair.newSerialImage}
+                    onImageSelected={(uri) =>
+                      onUpdateSimSwapPair(i, { newSerialImage: uri })
+                    }
+                    label="Tap to add"
+                  />
+                )}
+
+                {/* Old SIM */}
+                <Field
+                  label="Old SIM serial number"
+                  value={pair.oldSerialNumber ?? ""}
+                  onChangeText={(t) =>
+                    onUpdateSimSwapPair(i, { oldSerialNumber: t })
+                  }
+                />
+                <AppText style={styles.imgLabel}>Old SIM image</AppText>
+                {pair.oldSerialImage ? (
+                  <TouchableOpacity
+                    onPress={() => onOpenImage(pair.oldSerialImage!)}
+                    onLongPress={() =>
+                      Alert.alert("Replace image?", "", [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Replace",
+                          onPress: () =>
+                            onUpdateSimSwapPair(i, {
+                              oldSerialImage: undefined,
+                            }),
+                        },
+                      ])
+                    }
+                  >
+                    <Image
+                      source={{ uri: pair.oldSerialImage }}
+                      style={styles.thumbLg}
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <CustomImagePicker
+                    imageUri={pair.oldSerialImage}
+                    onImageSelected={(uri) =>
+                      onUpdateSimSwapPair(i, { oldSerialImage: uri })
+                    }
+                    label="Tap to add"
+                  />
+                )}
+              </View>
+            );
+          })}
+
+          {/* Site Type */}
+          <View style={{ marginTop: spacing.md }}>
+            <PickerField
+              label="Site type *"
+              value={
+                values.simSwapSiteType === "green_field"
+                  ? "Green field"
+                  : values.simSwapSiteType === "roof_top"
+                    ? "Roof top"
+                    : undefined
+              }
+              options={["Green field", "Roof top"]}
+              onChange={(val) => {
+                onUpdateSimSwapField(
+                  "simSwapSiteType",
+                  val === "Green field" ? "green_field" : "roof_top",
+                );
+              }}
+            />
+          </View>
+
+          {/* Location Button */}
+          <View style={{ marginTop: spacing.md }}>
+            <Button
+              title="Get current location"
+              variant="secondary"
+              onPress={onGetLocation}
+              loading={locationBusy}
+            />
+            {typeof values.simSwapLatitude === "number" &&
+              typeof values.simSwapLongitude === "number" && (
+                <AppText style={styles.locationText}>
+                  Lat: {values.simSwapLatitude.toFixed(6)} | Lng:{" "}
+                  {values.simSwapLongitude.toFixed(6)}
+                </AppText>
+              )}
+          </View>
+        </Card>
+
+        <Card>
+          <Button
+            title="Save draft"
+            variant="secondary"
+            onPress={onSaveDraft}
+            loading={saving}
+          />
+          <View style={{ marginTop: spacing.sm }}>
+            <Button title="Submit work" onPress={onSubmit} loading={saving} />
+          </View>
+        </Card>
+      </>
+    );
+  }
+
+  // Regular scope form (RMS, SMART_LOCK, SMART_METER, RMS_SERVICE)
   if (groups.length === 0) {
     return (
       <Card>
         <AppText style={styles.muted}>
-          No field unit data is required for this scope. You can submit directly.
+          No field unit data is required for this scope. You can submit
+          directly.
         </AppText>
         <View style={{ marginTop: spacing.md }}>
           <Button title="Submit work" onPress={onSubmit} loading={saving} />
@@ -276,8 +565,8 @@ const FieldEntryForm: React.FC<{
   return (
     <>
       {groups.map((g) => {
-        const arr = values[g.key] ?? [];
-        const singular = g.label.endsWith('s') ? g.label.slice(0, -1) : g.label;
+        const arr = (values[g.key] as ImagedSerialTag[]) ?? [];
+        const singular = g.label.endsWith("s") ? g.label.slice(0, -1) : g.label;
         return (
           <Card key={g.key}>
             <AppText style={styles.cardTitle}>
@@ -292,29 +581,39 @@ const FieldEntryForm: React.FC<{
                   <>
                     <Field
                       label="Serial number"
-                      value={u.serialNumber ?? ''}
-                      onChangeText={(t) => onChange(g.key, idx, { serialNumber: t })}
+                      value={u.serialNumber ?? ""}
+                      onChangeText={(t) =>
+                        onChange(g.key, idx, { serialNumber: t })
+                      }
                     />
                     <AppText style={styles.imgLabel}>Serial image</AppText>
                     {u.serialImage ? (
                       <TouchableOpacity
                         onPress={() => onOpenImage(u.serialImage!)}
                         onLongPress={() =>
-                          Alert.alert('Replace image?', '', [
-                            { text: 'Cancel', style: 'cancel' },
+                          Alert.alert("Replace image?", "", [
+                            { text: "Cancel", style: "cancel" },
                             {
-                              text: 'Replace',
-                              onPress: () => onChange(g.key, idx, { serialImage: undefined }),
+                              text: "Replace",
+                              onPress: () =>
+                                onChange(g.key, idx, {
+                                  serialImage: undefined,
+                                }),
                             },
                           ])
                         }
                       >
-                        <Image source={{ uri: u.serialImage }} style={styles.thumbLg} />
+                        <Image
+                          source={{ uri: u.serialImage }}
+                          style={styles.thumbLg}
+                        />
                       </TouchableOpacity>
                     ) : (
                       <CustomImagePicker
                         imageUri={u.serialImage}
-                        onImageSelected={(uri) => onChange(g.key, idx, { serialImage: uri })}
+                        onImageSelected={(uri) =>
+                          onChange(g.key, idx, { serialImage: uri })
+                        }
                         label="Tap to add"
                       />
                     )}
@@ -324,29 +623,37 @@ const FieldEntryForm: React.FC<{
                   <>
                     <Field
                       label="Tag number"
-                      value={u.tagNumber ?? ''}
-                      onChangeText={(t) => onChange(g.key, idx, { tagNumber: t })}
+                      value={u.tagNumber ?? ""}
+                      onChangeText={(t) =>
+                        onChange(g.key, idx, { tagNumber: t })
+                      }
                     />
                     <AppText style={styles.imgLabel}>Tag image</AppText>
                     {u.tagImage ? (
                       <TouchableOpacity
                         onPress={() => onOpenImage(u.tagImage!)}
                         onLongPress={() =>
-                          Alert.alert('Replace image?', '', [
-                            { text: 'Cancel', style: 'cancel' },
+                          Alert.alert("Replace image?", "", [
+                            { text: "Cancel", style: "cancel" },
                             {
-                              text: 'Replace',
-                              onPress: () => onChange(g.key, idx, { tagImage: undefined }),
+                              text: "Replace",
+                              onPress: () =>
+                                onChange(g.key, idx, { tagImage: undefined }),
                             },
                           ])
                         }
                       >
-                        <Image source={{ uri: u.tagImage }} style={styles.thumbLg} />
+                        <Image
+                          source={{ uri: u.tagImage }}
+                          style={styles.thumbLg}
+                        />
                       </TouchableOpacity>
                     ) : (
                       <CustomImagePicker
                         imageUri={u.tagImage}
-                        onImageSelected={(uri) => onChange(g.key, idx, { tagImage: uri })}
+                        onImageSelected={(uri) =>
+                          onChange(g.key, idx, { tagImage: uri })
+                        }
                         label="Tap to add"
                       />
                     )}
@@ -355,7 +662,9 @@ const FieldEntryForm: React.FC<{
               </View>
             ))}
             {arr.length === 0 && (
-              <AppText style={styles.muted}>No units configured for this group.</AppText>
+              <AppText style={styles.muted}>
+                No units configured for this group.
+              </AppText>
             )}
           </Card>
         );
@@ -374,7 +683,7 @@ const AssignSheet: React.FC<{
   onClose: () => void;
   onPick: (id: string) => void;
 }> = ({ open, technicians, loading, currentId, onClose, onPick }) => {
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     if (!needle) return technicians;
@@ -384,7 +693,12 @@ const AssignSheet: React.FC<{
   }, [q, technicians]);
 
   return (
-    <Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal
+      visible={open}
+      animationType="slide"
+      transparent
+      onRequestClose={onClose}
+    >
       <View style={styles.modalBackdrop}>
         <View style={styles.modalCard}>
           <View style={styles.modalHead}>
@@ -413,8 +727,8 @@ const AssignSheet: React.FC<{
                   title="No technicians found"
                   subtitle={
                     technicians.length === 0
-                      ? 'Ask the admin to create a technician.'
-                      : 'Adjust your search.'
+                      ? "Ask the admin to create a technician."
+                      : "Adjust your search."
                   }
                 />
               }
@@ -432,10 +746,14 @@ const AssignSheet: React.FC<{
                       </AppText>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <AppText style={styles.techName}>{item.name || '—'}</AppText>
+                      <AppText style={styles.techName}>
+                        {item.name || "—"}
+                      </AppText>
                       <AppText style={styles.techEmail}>{item.email}</AppText>
                     </View>
-                    {isCurrent && <Chip label="Current" color={colors.cyan} small />}
+                    {isCurrent && (
+                      <Chip label="Current" color={colors.cyan} small />
+                    )}
                   </TouchableOpacity>
                 );
               }}
@@ -464,6 +782,7 @@ const SiteDetailScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
+  const [locationBusy, setLocationBusy] = useState(false);
   const [unitValues, setUnitValues] = useState<SiteUnitsPayload>({});
 
   const [techs, setTechs] = useState<AppUser[]>([]);
@@ -472,29 +791,41 @@ const SiteDetailScreen: React.FC = () => {
   const [viewerUri, setViewerUri] = useState<string | undefined>();
   // Reviewer notes drafted while the panel is open. Cleared after a
   // successful approval so the panel disappears with the right state.
-  const [reviewRemarks, setReviewRemarks] = useState('');
+  const [reviewRemarks, setReviewRemarks] = useState("");
 
-  const load = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-    setError(null);
-    const res = await getSiteById(siteId);
-    if (res.success && res.data) {
-      setSite(res.data);
-      const groups = relevantUnitGroups(res.data);
-      const seeded: SiteUnitsPayload = {};
-      for (const g of groups) {
-        const existing = (res.data as any)[g.key] as ImagedSerialTag[] | undefined;
-        seeded[g.key] = Array.from({ length: g.count }, (_, i) => existing?.[i] ?? {});
+  const load = useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      setError(null);
+      const res = await getSiteById(siteId);
+      if (res.success && res.data) {
+        setSite(res.data);
+        const groups = relevantUnitGroups(res.data);
+        const seeded: SiteUnitsPayload = {};
+        for (const g of groups) {
+          const existing = (res.data as any)[g.key] as
+            | ImagedSerialTag[]
+            | undefined;
+          (seeded as any)[g.key] = Array.from(
+            { length: g.count },
+            (_, i) => existing?.[i] ?? {},
+          );
+        }
+        setUnitValues(seeded);
+      } else {
+        setError(res.message ?? "Failed to load site");
       }
-      setUnitValues(seeded);
-    } else {
-      setError(res.message ?? 'Failed to load site');
-    }
-    setLoading(false);
-    setRefreshing(false);
-  }, [siteId]);
+      setLoading(false);
+      setRefreshing(false);
+    },
+    [siteId],
+  );
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   // Pre-load technicians for managers so the assign sheet opens instantly.
   useEffect(() => {
@@ -512,10 +843,44 @@ const SiteDetailScreen: React.FC = () => {
     patch: Partial<ImagedSerialTag>,
   ) => {
     setUnitValues((prev) => {
-      const arr = [...(prev[groupKey] ?? [])];
+      const existing = prev[groupKey] as ImagedSerialTag[] | undefined;
+      const arr = [...(existing ?? [])];
       arr[idx] = { ...arr[idx], ...patch };
       return { ...prev, [groupKey]: arr };
     });
+  };
+
+  const updateSimSwapPair = (idx: number, patch: Partial<SimSwapPair>) => {
+    setUnitValues((prev) => {
+      const pairs = [...(prev.simSwapPairs ?? [])];
+      pairs[idx] = { ...pairs[idx], ...patch };
+      return { ...prev, simSwapPairs: pairs };
+    });
+  };
+
+  const updateSimSwapField = (
+    field: "simSwapSiteType" | "simSwapLatitude" | "simSwapLongitude",
+    value: any,
+  ) => {
+    setUnitValues((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleGetLocation = async () => {
+    setLocationBusy(true);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission denied", "Location permission is required.");
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({});
+      updateSimSwapField("simSwapLatitude", loc.coords.latitude);
+      updateSimSwapField("simSwapLongitude", loc.coords.longitude);
+    } catch (e: any) {
+      Alert.alert("Error", e.message || "Failed to get location");
+    } finally {
+      setLocationBusy(false);
+    }
   };
 
   // Status actions
@@ -526,8 +891,8 @@ const SiteDetailScreen: React.FC = () => {
     setActionBusy(false);
     if (res.success && res.data) {
       setSite(res.data);
-      Alert.alert('Accepted', 'You can now enter field data.');
-    } else Alert.alert('Error', formatErrorMessage(res.message));
+      Alert.alert("Accepted", "You can now enter field data.");
+    } else Alert.alert("Error", formatErrorMessage(res.message));
   };
 
   const handleAssign = async (techId: string) => {
@@ -538,25 +903,25 @@ const SiteDetailScreen: React.FC = () => {
     setActionBusy(false);
     if (res.success && res.data) {
       setSite(res.data);
-      Alert.alert('Assigned', 'Site assigned to technician.');
-    } else Alert.alert('Error', formatErrorMessage(res.message));
+      Alert.alert("Assigned", "Site assigned to technician.");
+    } else Alert.alert("Error", formatErrorMessage(res.message));
   };
 
   const handleReview = () => {
     if (!site) return;
-    Alert.alert('Approve work?', 'This marks the site as reviewed.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert("Approve work?", "This marks the site as reviewed.", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Approve',
+        text: "Approve",
         onPress: async () => {
           setActionBusy(true);
           const res = await reviewSite(site._id, reviewRemarks);
           setActionBusy(false);
           if (res.success && res.data) {
             setSite(res.data);
-            setReviewRemarks('');
-            Alert.alert('Approved', 'Site marked as reviewed.');
-          } else Alert.alert('Error', formatErrorMessage(res.message));
+            setReviewRemarks("");
+            Alert.alert("Approved", "Site marked as reviewed.");
+          } else Alert.alert("Error", formatErrorMessage(res.message));
         },
       },
     ]);
@@ -564,17 +929,17 @@ const SiteDetailScreen: React.FC = () => {
 
   const handleDelete = () => {
     if (!site) return;
-    Alert.alert('Delete site?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert("Delete site?", "This cannot be undone.", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Delete',
-        style: 'destructive',
+        text: "Delete",
+        style: "destructive",
         onPress: async () => {
           const res = await deleteSite(site._id);
           if (res.success) {
-            Alert.alert('Deleted', 'Site removed.');
+            Alert.alert("Deleted", "Site removed.");
             navigation.popToTop();
-          } else Alert.alert('Error', formatErrorMessage(res.message));
+          } else Alert.alert("Error", formatErrorMessage(res.message));
         },
       },
     ]);
@@ -585,25 +950,25 @@ const SiteDetailScreen: React.FC = () => {
     setActionBusy(true);
     const res = await saveSiteDraft(site._id, unitValues);
     setActionBusy(false);
-    if (res.success) Alert.alert('Saved', 'Draft saved.');
-    else Alert.alert('Error', formatErrorMessage(res.message));
+    if (res.success) Alert.alert("Saved", "Draft saved.");
+    else Alert.alert("Error", formatErrorMessage(res.message));
   };
 
   const handleSubmitWork = () => {
     if (!site) return;
-    Alert.alert('Submit work?', 'You will not be able to edit afterward.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert("Submit work?", "You will not be able to edit afterward.", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Submit',
-        style: 'destructive',
+        text: "Submit",
+        style: "destructive",
         onPress: async () => {
           setActionBusy(true);
           const res = await submitSite(site._id, unitValues);
           setActionBusy(false);
           if (res.success && res.data) {
             setSite(res.data);
-            Alert.alert('Submitted', 'The site is now pending review.');
-          } else Alert.alert('Error', formatErrorMessage(res.message));
+            Alert.alert("Submitted", "The site is now pending review.");
+          } else Alert.alert("Error", formatErrorMessage(res.message));
         },
       },
     ]);
@@ -611,25 +976,40 @@ const SiteDetailScreen: React.FC = () => {
 
   if (loading) return <LoadingState />;
   if (error || !site) {
-    return <ErrorState message={error ?? 'Site not found'} onRetry={() => load()} />;
+    return (
+      <ErrorState message={error ?? "Site not found"} onRetry={() => load()} />
+    );
   }
 
-  const canAccept = isTech && site.status?.assigned?.done && !site.status?.processing?.done;
-  const canReview = (isManager || isAdmin) && site.status?.completed?.done && !site.status?.reviewed?.done;
+  const canAccept =
+    isTech && site.status?.assigned?.done && !site.status?.processing?.done;
+  const canReview =
+    (isManager || isAdmin) &&
+    site.status?.completed?.done &&
+    !site.status?.reviewed?.done;
   const canAssign = (isManager || isAdmin) && !site.status?.reviewed?.done;
   // Editing site identity/counts is admin-only; managers still assign + review.
   const canEdit = isAdmin;
-  const showEntry = isTech && site.status?.processing?.done && !site.status?.completed?.done;
-  const showSubmitted = (isAdmin || isManager) && (!!site.status?.completed?.done || !!site.status?.reviewed?.done);
+  const showEntry =
+    isTech && site.status?.processing?.done && !site.status?.completed?.done;
+  const showSubmitted =
+    (isAdmin || isManager) &&
+    (!!site.status?.completed?.done || !!site.status?.reviewed?.done);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView
-        contentContainerStyle={{ padding: spacing.lg, paddingBottom: showEntry ? 120 : 40 }}
+        contentContainerStyle={{
+          padding: spacing.lg,
+          paddingBottom: showEntry ? 120 : 40,
+        }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => { setRefreshing(true); load(true); }}
+            onRefresh={() => {
+              setRefreshing(true);
+              load(true);
+            }}
             tintColor={colors.brand}
           />
         }
@@ -672,7 +1052,11 @@ const SiteDetailScreen: React.FC = () => {
             <AppText style={styles.cardTitle}>Actions</AppText>
             {canAssign && (
               <Button
-                title={site.status?.assigned?.done ? 'Reassign technician' : 'Assign to technician'}
+                title={
+                  site.status?.assigned?.done
+                    ? "Reassign technician"
+                    : "Assign to technician"
+                }
                 onPress={() => setAssignOpen(true)}
               />
             )}
@@ -680,11 +1064,17 @@ const SiteDetailScreen: React.FC = () => {
               <Button
                 title="Edit site"
                 variant="secondary"
-                onPress={() => navigation.navigate('EditSite', { siteId: site._id })}
+                onPress={() =>
+                  navigation.navigate("EditSite", { siteId: site._id })
+                }
               />
             )}
             {isAdmin && (
-              <Button title="Delete site" variant="danger" onPress={handleDelete} />
+              <Button
+                title="Delete site"
+                variant="danger"
+                onPress={handleDelete}
+              />
             )}
           </Card>
         )}
@@ -732,7 +1122,11 @@ const SiteDetailScreen: React.FC = () => {
               Accept the site to unlock field data entry.
             </AppText>
             <View style={{ marginTop: spacing.md }}>
-              <Button title="Accept site" onPress={handleAccept} loading={actionBusy} />
+              <Button
+                title="Accept site"
+                onPress={handleAccept}
+                loading={actionBusy}
+              />
             </View>
           </Card>
         )}
@@ -751,6 +1145,10 @@ const SiteDetailScreen: React.FC = () => {
             site={site}
             values={unitValues}
             onChange={updateUnit}
+            onUpdateSimSwapPair={updateSimSwapPair}
+            onUpdateSimSwapField={updateSimSwapField}
+            onGetLocation={handleGetLocation}
+            locationBusy={locationBusy}
             onOpenImage={(u) => setViewerUri(u)}
             saving={actionBusy}
             onSaveDraft={handleSaveDraft}
@@ -801,7 +1199,10 @@ const SiteDetailScreen: React.FC = () => {
 
 export default SiteDetailScreen;
 
-const InfoCell: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+const InfoCell: React.FC<{ label: string; value: string }> = ({
+  label,
+  value,
+}) => (
   <View style={styles.infoCell}>
     <AppText style={styles.infoKey}>{label}</AppText>
     <AppText style={styles.infoVal}>{value}</AppText>
@@ -810,16 +1211,18 @@ const InfoCell: React.FC<{ label: string; value: string }> = ({ label, value }) 
 
 const CountsCard: React.FC<{ site: Site }> = ({ site }) => {
   const items: Array<[string, number]> = [];
-  const push = (k: string, v: number) => { if (v > 0) items.push([k, v]); };
-  push('RMS units', site.numberOfRms);
-  push('Expanders', site.numberOfExpanders);
-  push('SIMs', site.numberOfSims);
-  push('Fence Locks', site.numberOfFenceLocks);
-  push('ODUs', site.numberOfOdus);
-  push('Tenants', site.numberOfTenants);
-  push('Smart Meters', site.numberOfSmartMeters);
-  push('CT Splits', site.numberOfCtSplits);
-  push('Silbo Gateways', site.numberOfSilboGateways);
+  const push = (k: string, v: number) => {
+    if (v > 0) items.push([k, v]);
+  };
+  push("RMS units", site.numberOfRms);
+  push("Expanders", site.numberOfExpanders);
+  push("SIMs", site.numberOfSims);
+  push("Fence Locks", site.numberOfFenceLocks);
+  push("ODUs", site.numberOfOdus);
+  push("Tenants", site.numberOfTenants);
+  push("Smart Meters", site.numberOfSmartMeters);
+  push("CT Splits", site.numberOfCtSplits);
+  push("Silbo Gateways", site.numberOfSilboGateways);
   if (items.length === 0) return null;
   return (
     <Card>
@@ -837,42 +1240,71 @@ const CountsCard: React.FC<{ site: Site }> = ({ site }) => {
 };
 
 const styles = StyleSheet.create({
-  cardTitle: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
+  cardTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
   muted: { color: colors.textMuted, fontSize: fontSize.sm },
-  signedAs: { textAlign: 'right', color: colors.textFaint, fontSize: fontSize.xs, marginTop: spacing.sm },
+  signedAs: {
+    textAlign: "right",
+    color: colors.textFaint,
+    fontSize: fontSize.xs,
+    marginTop: spacing.sm,
+  },
 
   // Header card
-  headerCardTop: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.md },
-  siteTitle: { fontSize: fontSize.h1, fontWeight: '700', color: colors.text },
+  headerCardTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: spacing.md,
+  },
+  siteTitle: { fontSize: fontSize.h1, fontWeight: "700", color: colors.text },
   siteSub: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 4 },
 
-  infoGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
+  infoGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 },
   infoCell: {
-    flexBasis: '50%',
+    flexBasis: "50%",
     paddingHorizontal: 4,
     paddingVertical: spacing.xs,
   },
   infoKey: {
     fontSize: fontSize.xs,
     color: colors.textMuted,
-    textTransform: 'uppercase',
-    fontWeight: '600',
+    textTransform: "uppercase",
+    fontWeight: "600",
   },
-  infoVal: { fontSize: fontSize.body, color: colors.text, marginTop: 2, fontWeight: '500' },
+  infoVal: {
+    fontSize: fontSize.body,
+    color: colors.text,
+    marginTop: 2,
+    fontWeight: "500",
+  },
 
   // Timeline
-  timelineRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  timelineItem: { alignItems: 'center', width: 56 },
+  timelineRow: { flexDirection: "row", alignItems: "flex-start" },
+  timelineItem: { alignItems: "center", width: 56 },
   timelineDot: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   timelineDotPending: { backgroundColor: colors.border },
-  timelineLabel: { fontSize: 10, color: colors.textMuted, marginTop: 4, textAlign: 'center' },
-  timelineAt: { fontSize: 8, color: colors.textFaint, marginTop: 2, textAlign: 'center' },
+  timelineLabel: {
+    fontSize: 10,
+    color: colors.textMuted,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  timelineAt: {
+    fontSize: 8,
+    color: colors.textFaint,
+    marginTop: 2,
+    textAlign: "center",
+  },
   timelineConnector: {
     flex: 1,
     height: 2,
@@ -881,13 +1313,23 @@ const styles = StyleSheet.create({
   },
 
   // Counts
-  countsGrid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -4 },
+  countsGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 },
   countBox: {
-    flexBasis: '33%',
+    flexBasis: "33%",
     padding: 4,
   },
-  countLabel: { fontSize: 10, color: colors.textMuted, textTransform: 'uppercase', fontWeight: '600' },
-  countValue: { fontSize: fontSize.h2, fontWeight: '700', color: colors.text, marginTop: 2 },
+  countLabel: {
+    fontSize: 10,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    fontWeight: "600",
+  },
+  countValue: {
+    fontSize: fontSize.h2,
+    fontWeight: "700",
+    color: colors.text,
+    marginTop: 2,
+  },
 
   // Submitted data
   dataUnit: {
@@ -895,13 +1337,33 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
-  unitHeading: { fontWeight: '700', color: colors.text, marginBottom: 6 },
-  dataRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 },
+  unitHeading: { fontWeight: "700", color: colors.text, marginBottom: 6 },
+  dataRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 2,
+  },
   dataKey: { color: colors.textMuted, fontSize: fontSize.sm },
-  dataVal: { color: colors.text, fontSize: fontSize.sm, fontWeight: '500', flexShrink: 1, textAlign: 'right' },
-  thumbRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  thumb: { width: 64, height: 64, borderRadius: radius.md, backgroundColor: colors.border },
-  thumbCaption: { fontSize: 10, color: colors.textMuted, marginTop: 2, textAlign: 'center' },
+  dataVal: {
+    color: colors.text,
+    fontSize: fontSize.sm,
+    fontWeight: "500",
+    flexShrink: 1,
+    textAlign: "right",
+  },
+  thumbRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
+  thumb: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.md,
+    backgroundColor: colors.border,
+  },
+  thumbCaption: {
+    fontSize: 10,
+    color: colors.textMuted,
+    marginTop: 2,
+    textAlign: "center",
+  },
 
   // Entry
   entryUnit: {
@@ -910,7 +1372,17 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginBottom: spacing.sm,
   },
-  imgLabel: { fontSize: fontSize.sm, color: colors.textMuted, fontWeight: '600', marginTop: spacing.sm },
+  locationText: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  imgLabel: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    fontWeight: "600",
+    marginTop: spacing.sm,
+  },
   remarksInput: {
     minHeight: 88,
     borderWidth: 1,
@@ -919,7 +1391,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     color: colors.text,
     backgroundColor: colors.bg,
-    textAlignVertical: 'top',
+    textAlignVertical: "top",
     marginTop: 6,
   },
   remarksText: {
@@ -927,39 +1399,49 @@ const styles = StyleSheet.create({
     fontSize: fontSize.body,
     lineHeight: 20,
   },
-  thumbLg: { width: 120, height: 120, borderRadius: radius.md, backgroundColor: colors.border, marginTop: 6 },
+  thumbLg: {
+    width: 120,
+    height: 120,
+    borderRadius: radius.md,
+    backgroundColor: colors.border,
+    marginTop: 6,
+  },
 
   // Sticky bar
   stickyBar: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: spacing.sm,
     padding: spacing.md,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: colors.border,
     ...shadow.card,
   },
 
   // Assign modal
-  modalBackdrop: { flex: 1, backgroundColor: 'rgba(15,26,46,0.55)', justifyContent: 'flex-end' },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15,26,46,0.55)",
+    justifyContent: "flex-end",
+  },
   modalCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     padding: spacing.lg,
-    maxHeight: '85%',
+    maxHeight: "85%",
   },
   modalHead: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: spacing.md,
   },
-  modalTitle: { fontSize: fontSize.h2, fontWeight: '700', color: colors.text },
+  modalTitle: { fontSize: fontSize.h2, fontWeight: "700", color: colors.text },
   searchInput: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -971,8 +1453,8 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   techRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
@@ -983,30 +1465,30 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: colors.brandLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
-  avatarText: { color: colors.brand, fontWeight: '700' },
-  techName: { fontSize: fontSize.body, fontWeight: '600', color: colors.text },
+  avatarText: { color: colors.brand, fontWeight: "700" },
+  techName: { fontSize: fontSize.body, fontWeight: "600", color: colors.text },
   techEmail: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
 
   // Image viewer
   viewerBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.92)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(0,0,0,0.92)",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  viewerImage: { width: '100%', height: '85%' },
+  viewerImage: { width: "100%", height: "85%" },
   viewerClose: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 16,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

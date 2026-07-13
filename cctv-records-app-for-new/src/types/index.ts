@@ -11,6 +11,7 @@ export enum RmsScope {
   SMART_LOCK = 'SMART_LOCK',
   SMART_METER = 'SMART_METER',
   RMS_SERVICE = 'RMS_SERVICE',
+  SIM_SWAP = 'SIM_SWAP',
 }
 
 export enum SiteStatusFilter {
@@ -27,6 +28,15 @@ export interface ImagedSerialTag {
   tagNumber?: string;
   tagImage?: string;
 }
+
+export interface SimSwapPair {
+  newSerialNumber?: string;
+  newSerialImage?: string;
+  oldSerialNumber?: string;
+  oldSerialImage?: string;
+}
+
+export type SimSwapSiteType = 'green_field' | 'roof_top';
 
 export interface StatusFlag {
   done: boolean;
@@ -72,6 +82,12 @@ export interface Site {
   numberOfCtSplits: number;
   numberOfSilboGateways: number;
 
+  // SIM swap fields
+  simSwapPairs?: SimSwapPair[];
+  simSwapSiteType?: SimSwapSiteType;
+  simSwapLatitude?: number | null;
+  simSwapLongitude?: number | null;
+
   status: SiteStatus;
 
   rmsUnits: ImagedSerialTag[];
@@ -115,6 +131,12 @@ export interface SiteUnitsPayload {
   smartMeterUnits?: ImagedSerialTag[];
   ctSplitUnits?: ImagedSerialTag[];
   silboGatewayUnits?: ImagedSerialTag[];
+  
+  // SIM swap fields
+  simSwapPairs?: SimSwapPair[];
+  simSwapSiteType?: SimSwapSiteType;
+  simSwapLatitude?: number | null;
+  simSwapLongitude?: number | null;
 }
 
 export interface AuthUser {

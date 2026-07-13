@@ -386,6 +386,10 @@ export class SiteService {
       'ctSplitUnits',
       'silboGatewayUnits',
       'simSwapComments',
+      'simSwapPairs',
+      'simSwapSiteType',
+      'simSwapLatitude',
+      'simSwapLongitude',
     ];
     for (const k of keys) {
       if (dto[k] !== undefined) (doc as any)[k] = dto[k];

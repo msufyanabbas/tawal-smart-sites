@@ -157,6 +157,26 @@ export class Site {
 
   // ── SIM_SWAP specific fields ───────────────────────────────────────────
   @Prop({ type: String, default: '' }) simSwapComments?: string;
+  @Prop({
+    type: [
+      {
+        newSerialNumber: { type: String, default: '' },
+        newSerialImage: { type: String, default: '' },
+        oldSerialNumber: { type: String, default: '' },
+        oldSerialImage: { type: String, default: '' },
+      },
+    ],
+    default: [],
+  })
+  simSwapPairs?: Array<{
+    newSerialNumber?: string;
+    newSerialImage?: string;
+    oldSerialNumber?: string;
+    oldSerialImage?: string;
+  }>;
+  @Prop({ type: String, default: '' }) simSwapSiteType?: string;
+  @Prop({ type: Number, default: null }) simSwapLatitude?: number | null;
+  @Prop({ type: Number, default: null }) simSwapLongitude?: number | null;
 
   // ── Audit ──────────────────────────────────────────────────────────────
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })

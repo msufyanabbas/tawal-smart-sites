@@ -105,6 +105,7 @@ export const scopeColor: Record<RmsScope, string> = {
   SMART_LOCK: colors.brand, // orange
   SMART_METER: colors.success, // green
   RMS_SERVICE: colors.violet,  // purple
+  SIM_SWAP: colors.cyan,    // cyan
 };
 
 export const roleColor: Record<Role, string> = {

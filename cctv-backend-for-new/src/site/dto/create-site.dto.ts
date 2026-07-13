@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Matches,
@@ -47,4 +48,13 @@ export class CreateSiteDto {
 
   @IsOptional() @IsBoolean() hasSmartMeter?: boolean;
   @IsOptional() @IsInt() @Min(0) numberOfTenants?: number;
+
+  // ── SIM swap fields ───────────────────────────────────────────────────
+  @IsOptional() @IsString() simSwapNewSerialNumber?: string;
+  @IsOptional() @IsString() simSwapNewSerialImage?: string;
+  @IsOptional() @IsString() simSwapOldSerialNumber?: string;
+  @IsOptional() @IsString() simSwapOldSerialImage?: string;
+  @IsOptional() @IsString() simSwapSiteType?: string;
+  @IsOptional() @IsNumber() simSwapLatitude?: number | null;
+  @IsOptional() @IsNumber() simSwapLongitude?: number | null;
 }

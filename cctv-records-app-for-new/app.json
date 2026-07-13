@@ -25,18 +25,19 @@
         "backgroundColor": "#0b03fc"
       },
       "package": "com.msufyanabbas.cctvrecordsapp",
-      "versionCode": 1
+      "versionCode": 2
     },
     "web": {
       "favicon": "./assets/icon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "bd36d27e-09ae-4eb7-8fc2-cb1f9cac1743"
-      }
+        "projectId": "ba863d17-b1f5-42b4-8a9c-cb81968fccff"
+      },
+      "apiUrl": "http://localhost:3000"
     },
-    "owner": "msufyanabbas",
- "plugins": [],
+    "owner": "usman02s-team",
+    "plugins": [],
     "runtimeVersion": {
       "policy": "appVersion"
     },
