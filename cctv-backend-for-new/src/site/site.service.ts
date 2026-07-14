@@ -217,7 +217,40 @@ export class SiteService {
     }
 
     const docs = await this.siteModel.find(filter).sort({ createdAt: -1 });
-    return docs.map((d) => this.serialize(d));
+    // Strip image data from bulk responses
+    const sanitizeArray = (arr: any[]) =>
+      arr.map((u) => {
+        const copy = { ...u };
+        delete copy.serialImage;
+        delete copy.tagImage;
+        return copy;
+      });
+    const imageKeys = [
+      'rmsUnits',
+      'expanderUnits',
+      'simCards',
+      'fenceLockUnits',
+      'oduUnits',
+      'smartMeterUnits',
+      'ctSplitUnits',
+      'silboGatewayUnits',
+    ];
+    const sanitized = docs.map((d) => {
+      const s = this.serialize(d);
+      imageKeys.forEach((k) => {
+        if (Array.isArray(s[k])) s[k] = sanitizeArray(s[k]);
+      });
+      if (Array.isArray(s.simSwapPairs)) {
+        s.simSwapPairs = s.simSwapPairs.map((p: any) => {
+          const copy = { ...p };
+          delete copy.newSerialImage;
+          delete copy.oldSerialImage;
+          return copy;
+        });
+      }
+      return s;
+    });
+    return sanitized;
   }
 
   async findOne(id: string, actor: CurrentUserPayload) {

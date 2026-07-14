@@ -5,7 +5,6 @@ import * as bodyParser from 'body-parser';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -25,11 +24,13 @@ async function bootstrap() {
   });
 
   // Activate the class-validator decorators declared on DTOs.
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: false,
-    transform: true,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+    }),
+  );
 
   await app.listen(3000);
 }
