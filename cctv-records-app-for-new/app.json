@@ -25,7 +25,7 @@
         "backgroundColor": "#0b03fc"
       },
       "package": "com.msufyanabbas.cctvrecordsapp",
-      "versionCode": 2
+      "versionCode": 3
     },
     "web": {
       "favicon": "./assets/icon.png"

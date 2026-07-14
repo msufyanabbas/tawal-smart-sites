@@ -171,6 +171,41 @@ const relevantUnitGroups = (site: Site): UnitGroup[] => {
       count: site.numberOfSims,
       needs: { serial: true, tag: false },
     });
+  } else if (site.rmsScope === RmsScope.SIM_SWAP) {
+    if (site.hasSmartLock) {
+      out.push({
+        key: "fenceLockUnits",
+        label: "Fence Locks",
+        count: site.numberOfFenceLocks,
+        needs: { serial: true, tag: true },
+      });
+      out.push({
+        key: "oduUnits",
+        label: "ODUs",
+        count: site.numberOfOdus,
+        needs: { serial: true, tag: false },
+      });
+    }
+    if (site.hasSmartMeter) {
+      out.push({
+        key: "smartMeterUnits",
+        label: "Smart Meters",
+        count: site.numberOfSmartMeters,
+        needs: { serial: true, tag: true },
+      });
+      out.push({
+        key: "ctSplitUnits",
+        label: "CT Splits",
+        count: site.numberOfCtSplits,
+        needs: { serial: true, tag: true },
+      });
+      out.push({
+        key: "silboGatewayUnits",
+        label: "Silbo Gateways",
+        count: site.numberOfSilboGateways,
+        needs: { serial: true, tag: true },
+      });
+    }
   }
   return out;
 };
@@ -395,11 +430,11 @@ const FieldEntryForm: React.FC<{
 }) => {
   const groups = useMemo(() => relevantUnitGroups(site), [site]);
   const pairs = useMemo(() => values.simSwapPairs ?? [], [values.simSwapPairs]);
+  const isSimSwap = site.rmsScope === RmsScope.SIM_SWAP;
 
-  // For SIM_SWAP scope, show SIM pairs + site type + location
-  if (site.rmsScope === RmsScope.SIM_SWAP) {
-    return (
-      <>
+  return (
+    <>
+      {isSimSwap && (
         <Card>
           <AppText style={styles.cardTitle}>SIM Swap details</AppText>
 
@@ -531,39 +566,17 @@ const FieldEntryForm: React.FC<{
               )}
           </View>
         </Card>
+      )}
 
+      {!isSimSwap && groups.length === 0 && (
         <Card>
-          <Button
-            title="Save draft"
-            variant="secondary"
-            onPress={onSaveDraft}
-            loading={saving}
-          />
-          <View style={{ marginTop: spacing.sm }}>
-            <Button title="Submit work" onPress={onSubmit} loading={saving} />
-          </View>
+          <AppText style={styles.muted}>
+            No field unit data is required for this scope. You can submit
+            directly.
+          </AppText>
         </Card>
-      </>
-    );
-  }
+      )}
 
-  // Regular scope form (RMS, SMART_LOCK, SMART_METER, RMS_SERVICE)
-  if (groups.length === 0) {
-    return (
-      <Card>
-        <AppText style={styles.muted}>
-          No field unit data is required for this scope. You can submit
-          directly.
-        </AppText>
-        <View style={{ marginTop: spacing.md }}>
-          <Button title="Submit work" onPress={onSubmit} loading={saving} />
-        </View>
-      </Card>
-    );
-  }
-
-  return (
-    <>
       {groups.map((g) => {
         const arr = (values[g.key] as ImagedSerialTag[]) ?? [];
         const singular = g.label.endsWith("s") ? g.label.slice(0, -1) : g.label;

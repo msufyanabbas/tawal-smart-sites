@@ -1,22 +1,28 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import * as api from '@/api/sites';
-import type { SiteCreatePayload, SiteUnitsPayload, SiteUpdatePayload } from '@/types';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import * as api from "@/api/sites";
+import type {
+  SiteCreatePayload,
+  SiteUnitsPayload,
+  SiteUpdatePayload,
+} from "@/types";
 
 export const sitesKeys = {
-  all: ['sites'] as const,
-  list: (filters: api.ListSitesFilters) => ['sites', 'list', filters] as const,
-  detail: (id: string) => ['sites', id] as const,
+  all: ["sites"] as const,
+  list: (filters: api.ListSitesFilters) => ["sites", "list", filters] as const,
+  detail: (id: string) => ["sites", id] as const,
 };
 
 export const useSitesQuery = (filters: api.ListSitesFilters = {}) =>
   useQuery({
     queryKey: sitesKeys.list(filters),
     queryFn: () => api.listSites(filters),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 
 export const useSiteQuery = (id: string | undefined) =>
   useQuery({
-    queryKey: id ? sitesKeys.detail(id) : ['sites', 'none'],
+    queryKey: id ? sitesKeys.detail(id) : ["sites", "none"],
     queryFn: () => api.getSite(id as string),
     enabled: !!id,
   });
@@ -25,7 +31,9 @@ export const useCreateSiteMutation = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload: SiteCreatePayload) => api.createSite(payload),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: sitesKeys.all }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: sitesKeys.all });
+    },
   });
 };
 
@@ -45,7 +53,9 @@ export const useDeleteSiteMutation = () => {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.deleteSite(id),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: sitesKeys.all }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: sitesKeys.all });
+    },
   });
 };
 

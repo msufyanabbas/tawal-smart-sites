@@ -90,12 +90,11 @@ export class SiteService {
       out.numberOfSims = 1;
     } else if (scope === RmsScope.RMS_SERVICE) {
       out.numberOfTenants = input.numberOfTenants ?? 0;
-    }
-    else if (scope === RmsScope.SIM_SWAP) {
+    } else if (scope === RmsScope.SIM_SWAP) {
       out.numberOfSims = input.numberOfSims ?? 0;
       // add number of tenants if provided, otherwise default to 0
-      // has smart meter  
-     out.hasSmartMeter = !!input.hasSmartMeter;
+      // has smart meter
+      out.hasSmartMeter = !!input.hasSmartMeter;
       if (out.hasSmartMeter) {
         const tenants = input.numberOfTenants ?? 0;
         out.numberOfTenants = tenants;
@@ -136,7 +135,10 @@ export class SiteService {
   async bulkCreate(
     dtos: CreateSiteDto[],
     actor: CurrentUserPayload,
-  ): Promise<{ created: number; failed: Array<{ row: number; reason: string }> }> {
+  ): Promise<{
+    created: number;
+    failed: Array<{ row: number; reason: string }>;
+  }> {
     if (actor.role !== Role.ADMIN) {
       throw new ForbiddenException('Only admins can import sites');
     }

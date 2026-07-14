@@ -1,25 +1,21 @@
-import { useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useSitesQuery } from '@/hooks/useSites';
-import { FullPageSpinner } from '@/components/Spinner';
-import {
-  Role,
-  type Site,
-  type RmsScope,
-} from '@/types';
+import { useMemo } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useSitesQuery } from "@/hooks/useSites";
+import { FullPageSpinner } from "@/components/Spinner";
+import { Role, type Site, type RmsScope } from "@/types";
 import {
   apiErrorMessage,
   currentStage,
   formatDateTime,
   rmsScopeLabel,
-} from '@/utils/helpers';
+} from "@/utils/helpers";
 
-const StatCard: React.FC<{ label: string; value: number | string; sub?: string }> = ({
-  label,
-  value,
-  sub,
-}) => (
+const StatCard: React.FC<{
+  label: string;
+  value: number | string;
+  sub?: string;
+}> = ({ label, value, sub }) => (
   <div className="card">
     <div className="card-body">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
@@ -80,7 +76,9 @@ const SitesByRegion: React.FC<{ sites: Site[] }> = ({ sites }) => {
       </h3>
       {counts.length === 0 ? (
         <div className="card">
-          <div className="card-body text-sm text-slate-500">No sites created yet</div>
+          <div className="card-body text-sm text-slate-500">
+            No sites created yet
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -97,7 +95,7 @@ const AdminDashboard: React.FC<{ sites: Site[] }> = ({ sites }) => {
   const byScope = groupBy(sites, (s) => s.rmsScope);
   const byStage = groupBy(sites, (s) => currentStage(s));
   const recent = [...sites]
-    .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
     .slice(0, 6);
 
   return (
@@ -116,13 +114,20 @@ const AdminDashboard: React.FC<{ sites: Site[] }> = ({ sites }) => {
           <h3 className="card-title">Sites by scope</h3>
           <ul className="mt-4 divide-y divide-slate-100">
             {(Object.keys(byScope) as RmsScope[]).map((k) => (
-              <li key={k} className="flex items-center justify-between py-2 text-sm">
+              <li
+                key={k}
+                className="flex items-center justify-between py-2 text-sm"
+              >
                 <span className="text-slate-700">{rmsScopeLabel(k)}</span>
-                <span className="font-semibold text-slate-900">{byScope[k]}</span>
+                <span className="font-semibold text-slate-900">
+                  {byScope[k]}
+                </span>
               </li>
             ))}
             {Object.keys(byScope).length === 0 && (
-              <li className="py-4 text-center text-sm text-slate-500">No sites yet</li>
+              <li className="py-4 text-center text-sm text-slate-500">
+                No sites yet
+              </li>
             )}
           </ul>
         </div>
@@ -133,21 +138,35 @@ const AdminDashboard: React.FC<{ sites: Site[] }> = ({ sites }) => {
           <h3 className="card-title">Recent activity</h3>
           <ul className="mt-4 divide-y divide-slate-100">
             {recent.map((s) => (
-              <li key={s._id} className="flex items-center justify-between py-3 text-sm">
+              <li
+                key={s._id}
+                className="flex items-center justify-between py-3 text-sm"
+              >
                 <div>
-                  <Link to={`/sites/${s._id}`} className="font-medium text-brand-700 hover:underline">
+                  <Link
+                    to={`/sites/${s._id}`}
+                    className="font-medium text-brand-700 hover:underline"
+                  >
                     {s.siteName}
                   </Link>
-                  <span className="ml-2 text-xs text-slate-500">{s.tawalId}</span>
+                  <span className="ml-2 text-xs text-slate-500">
+                    {s.tawalId}
+                  </span>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs font-medium text-slate-700">{currentStage(s)}</p>
-                  <p className="text-xs text-slate-500">{formatDateTime(s.createdAt)}</p>
+                  <p className="text-xs font-medium text-slate-700">
+                    {currentStage(s)}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {formatDateTime(s.createdAt)}
+                  </p>
                 </div>
               </li>
             ))}
             {recent.length === 0 && (
-              <li className="py-4 text-center text-sm text-slate-500">Nothing here yet</li>
+              <li className="py-4 text-center text-sm text-slate-500">
+                Nothing here yet
+              </li>
             )}
           </ul>
         </div>
@@ -184,11 +203,19 @@ const ManagerDashboard: React.FC<{ sites: Site[] }> = ({ sites }) => {
           <h3 className="card-title">Sites pending your review</h3>
           <ul className="mt-3 divide-y divide-slate-100">
             {sites
-              .filter((s) => s.status?.completed?.done && !s.status?.reviewed?.done)
+              .filter(
+                (s) => s.status?.completed?.done && !s.status?.reviewed?.done,
+              )
               .slice(0, 8)
               .map((s) => (
-                <li key={s._id} className="flex items-center justify-between py-3 text-sm">
-                  <Link to={`/sites/${s._id}`} className="font-medium text-brand-700 hover:underline">
+                <li
+                  key={s._id}
+                  className="flex items-center justify-between py-3 text-sm"
+                >
+                  <Link
+                    to={`/sites/${s._id}`}
+                    className="font-medium text-brand-700 hover:underline"
+                  >
                     {s.siteName}
                   </Link>
                   <span className="text-xs text-slate-500">
@@ -232,8 +259,14 @@ const TechnicianDashboard: React.FC<{ sites: Site[] }> = ({ sites }) => {
           <h3 className="card-title">Sites awaiting your acceptance</h3>
           <ul className="mt-3 divide-y divide-slate-100">
             {pendingAccept.map((s) => (
-              <li key={s._id} className="flex items-center justify-between py-3 text-sm">
-                <Link to={`/sites/${s._id}`} className="font-medium text-brand-700 hover:underline">
+              <li
+                key={s._id}
+                className="flex items-center justify-between py-3 text-sm"
+              >
+                <Link
+                  to={`/sites/${s._id}`}
+                  className="font-medium text-brand-700 hover:underline"
+                >
                   {s.siteName}
                 </Link>
                 <span className="text-xs text-slate-500">
@@ -242,7 +275,9 @@ const TechnicianDashboard: React.FC<{ sites: Site[] }> = ({ sites }) => {
               </li>
             ))}
             {pendingAccept.length === 0 && (
-              <li className="py-4 text-center text-sm text-slate-500">All caught up</li>
+              <li className="py-4 text-center text-sm text-slate-500">
+                All caught up
+              </li>
             )}
           </ul>
         </div>
@@ -253,8 +288,14 @@ const TechnicianDashboard: React.FC<{ sites: Site[] }> = ({ sites }) => {
           <h3 className="card-title">In progress</h3>
           <ul className="mt-3 divide-y divide-slate-100">
             {inProgress.map((s) => (
-              <li key={s._id} className="flex items-center justify-between py-3 text-sm">
-                <Link to={`/sites/${s._id}`} className="font-medium text-brand-700 hover:underline">
+              <li
+                key={s._id}
+                className="flex items-center justify-between py-3 text-sm"
+              >
+                <Link
+                  to={`/sites/${s._id}`}
+                  className="font-medium text-brand-700 hover:underline"
+                >
                   {s.siteName}
                 </Link>
                 <span className="text-xs text-slate-500">
@@ -263,7 +304,9 @@ const TechnicianDashboard: React.FC<{ sites: Site[] }> = ({ sites }) => {
               </li>
             ))}
             {inProgress.length === 0 && (
-              <li className="py-4 text-center text-sm text-slate-500">Nothing in progress</li>
+              <li className="py-4 text-center text-sm text-slate-500">
+                Nothing in progress
+              </li>
             )}
           </ul>
         </div>
@@ -291,7 +334,7 @@ export const DashboardPage: React.FC = () => {
       {error && (
         <div className="card border-red-200 bg-red-50">
           <div className="card-body text-sm text-red-700">
-            {apiErrorMessage(error, 'Could not load dashboard data')}
+            {apiErrorMessage(error, "Could not load dashboard data")}
           </div>
         </div>
       )}

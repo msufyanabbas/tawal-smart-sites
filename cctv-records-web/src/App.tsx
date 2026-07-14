@@ -1,24 +1,24 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from "react-router-dom";
 import {
   ProtectedRoute,
   PublicOnlyRoute,
   RequireRole,
-} from '@/components/ProtectedRoute';
-import { AuthLayout } from '@/components/AuthLayout';
-import { Layout } from '@/components/Layout';
-import { Role } from '@/types';
+} from "@/components/ProtectedRoute";
+import { AuthLayout } from "@/components/AuthLayout";
+import { Layout } from "@/components/Layout";
+import { Role } from "@/types";
 
-import { LoginPage } from '@/pages/LoginPage';
-import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
-import { ChangePasswordPage } from '@/pages/ChangePasswordPage';
-import { DashboardPage } from '@/pages/DashboardPage';
-import { SitesListPage } from '@/pages/SitesListPage';
-import { SiteDetailPage } from '@/pages/SiteDetailPage';
-import { EditSitePage } from '@/pages/EditSitePage';
-import { NewSitePage } from '@/pages/NewSitePage';
-import { UsersPage } from '@/pages/UsersPage';
-import { ReportsPage } from '@/pages/ReportsPage';
-import { NotFoundPage } from '@/pages/NotFoundPage';
+import { LoginPage } from "@/pages/LoginPage";
+import { ForgotPasswordPage } from "@/pages/ForgotPasswordPage";
+import { ChangePasswordPage } from "@/pages/ChangePasswordPage";
+import { DashboardPage } from "@/pages/DashboardPage";
+import { SitesListPage } from "@/pages/SitesListPage";
+import { SiteDetailPage } from "@/pages/SiteDetailPage";
+import { EditSitePage } from "@/pages/EditSitePage";
+import { NewSitePage } from "@/pages/NewSitePage";
+import { UsersPage } from "@/pages/UsersPage";
+import { ReportsPage } from "@/pages/ReportsPage";
+import { NotFoundPage } from "@/pages/NotFoundPage";
 
 const App: React.FC = () => (
   <Routes>
