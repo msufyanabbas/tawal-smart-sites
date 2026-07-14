@@ -1,4 +1,4 @@
-export const CountsCard: React.FC<{ site: Site }> = ({ site }) => {
+export const CountsCard: React.FC<{ site: any }> = ({ site }) => {
   const counts: Array<[string, number]> = [];
   const push = (label: string, val: number) => {
     if (val > 0) counts.push([label, val]);
