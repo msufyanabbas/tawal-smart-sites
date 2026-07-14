@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSitesQuery } from "@/hooks/useSites";
@@ -52,6 +52,16 @@ export const SitesListPage: React.FC = () => {
   const initialRegion = searchParams.get("region") ?? "";
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(value.trim());
+    }, 300);
+  };
   const [region, setRegion] = useState<string>(initialRegion);
   const [city, setCity] = useState<string>("");
   const [rmsScope, setRmsScope] = useState<RmsScope | "">("");
@@ -76,9 +86,9 @@ export const SitesListPage: React.FC = () => {
       ...(region ? { region } : {}),
       ...(rmsScope ? { rmsScope } : {}),
       ...(status ? { status } : {}),
-      ...(search.trim() ? { search: search.trim() } : {}),
+      ...(debouncedSearch ? { search: debouncedSearch } : {}),
     }),
-    [region, rmsScope, status, search],
+    [region, rmsScope, status, debouncedSearch],
   );
 
   const { data, isLoading, error } = useSitesQuery(filters);
@@ -220,7 +230,8 @@ export const SitesListPage: React.FC = () => {
             label="Search"
             placeholder="Site name, Tawal ID, city, TCN…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            autoFocus={true}
           />
           <SelectField
             label="Region"
