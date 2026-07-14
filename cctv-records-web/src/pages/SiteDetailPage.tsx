@@ -125,7 +125,13 @@ const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
     units: ((site as any)[g.key] as ImagedSerialTag[] | undefined) ?? [],
   })).filter((g) => g.units.length > 0);
 
-  if (groups.length === 0) {
+  const isSimSwap = site.rmsScope === RmsScope.SIM_SWAP;
+  const hasSimSwapPairs = isSimSwap && (site.simSwapPairs?.length ?? 0) > 0;
+  const hasSimSwapFields =
+    isSimSwap &&
+    (site.simSwapSiteType || site.simSwapComments || hasSimSwapPairs);
+
+  if (groups.length === 0 && !hasSimSwapFields) {
     return (
       <div className="card">
         <div className="card-body text-sm text-slate-500">
@@ -137,6 +143,148 @@ const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
 
   return (
     <div className="space-y-5">
+      {hasSimSwapFields && (
+        <div className="card">
+          <div className="card-body space-y-4">
+            <h3 className="card-title">SIM Swap Details</h3>
+
+            {site.simSwapComments && (
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                  Comments
+                </p>
+                <p className="text-sm text-slate-800 whitespace-pre-wrap">
+                  {site.simSwapComments}
+                </p>
+              </div>
+            )}
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {site.simSwapSiteType && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                    Site Type
+                  </p>
+                  <p className="mt-0.5 font-medium text-slate-800">
+                    {site.simSwapSiteType === "green_field"
+                      ? "Green Field"
+                      : "Roof Top"}
+                  </p>
+                </div>
+              )}
+
+              {typeof site.simSwapLatitude === "number" &&
+                typeof site.simSwapLongitude === "number" && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-slate-500">
+                      Location
+                    </p>
+                    <p className="mt-0.5 font-medium text-slate-800">
+                      {site.simSwapLatitude}, {site.simSwapLongitude}
+                    </p>
+                  </div>
+                )}
+            </div>
+
+            {hasSimSwapPairs && (
+              <div className="space-y-4 mt-4">
+                {site.simSwapPairs!.map((pair, idx) => {
+                  const hasNew =
+                    !!pair.newSerialNumber || !!pair.newSerialImage;
+                  const hasOld =
+                    !!pair.oldSerialNumber || !!pair.oldSerialImage;
+
+                  return (
+                    <div
+                      key={idx}
+                      className="rounded-lg border border-slate-200 p-4"
+                    >
+                      <p className="mb-3 text-sm font-semibold text-slate-700">
+                        SIM Pair #{idx + 1}
+                      </p>
+
+                      <div className="grid gap-6 md:grid-cols-2">
+                        {/* New SIM */}
+                        <div className="space-y-3">
+                          <p className="text-sm font-medium text-slate-600 border-b pb-1">
+                            New SIM
+                          </p>
+                          {!hasNew ? (
+                            <p className="text-sm italic text-slate-500">
+                              No data.
+                            </p>
+                          ) : (
+                            <div className="space-y-3">
+                              {pair.newSerialNumber && (
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                                    Serial Number
+                                  </p>
+                                  <p className="mt-0.5 font-medium text-slate-800 break-all">
+                                    {pair.newSerialNumber}
+                                  </p>
+                                </div>
+                              )}
+                              {pair.newSerialImage && (
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                    Image
+                                  </p>
+                                  <ZoomableImage
+                                    src={pair.newSerialImage}
+                                    alt={`New SIM #${idx + 1}`}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Old SIM */}
+                        <div className="space-y-3">
+                          <p className="text-sm font-medium text-slate-600 border-b pb-1">
+                            Old SIM
+                          </p>
+                          {!hasOld ? (
+                            <p className="text-sm italic text-slate-500">
+                              No data.
+                            </p>
+                          ) : (
+                            <div className="space-y-3">
+                              {pair.oldSerialNumber && (
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                                    Serial Number
+                                  </p>
+                                  <p className="mt-0.5 font-medium text-slate-800 break-all">
+                                    {pair.oldSerialNumber}
+                                  </p>
+                                </div>
+                              )}
+                              {pair.oldSerialImage && (
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                    Image
+                                  </p>
+                                  <ZoomableImage
+                                    src={pair.oldSerialImage}
+                                    alt={`Old SIM #${idx + 1}`}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {groups.map((g) => {
         const singular = g.label.endsWith("s") ? g.label.slice(0, -1) : g.label;
         return (
