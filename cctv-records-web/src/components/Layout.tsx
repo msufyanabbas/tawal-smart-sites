@@ -4,8 +4,7 @@ import clsx from "clsx";
 import { useAuth } from "@/hooks/useAuth";
 import { Role } from "@/types";
 import { roleLabel } from "@/utils/helpers";
-import smartlifeLogo from "../../assets/smartlife-logo.png";
-import tawalLogo from "../../assets/tawal-logo.svg";
+
 interface NavItem {
   to: string;
   label: string;
@@ -26,11 +25,7 @@ const ALL_NAV: NavItem[] = [
 ];
 
 const BrandLockup: React.FC = () => (
-  <div className="flex items-center gap-3">
-    <img src={smartlifeLogo} alt="Smart Life" className="h-8 w-auto" />
-    <span className="select-none text-lg font-light text-white/60">×</span>
-    <img src={tawalLogo} alt="Tawal" className="h-8 w-auto logo-invert" />
-  </div>
+  <div className="flex items-center gap-3">TAWAL + Smart</div>
 );
 
 export const Layout: React.FC = () => {
