@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import clsx from 'clsx';
-import { useAuth } from '@/hooks/useAuth';
-import { Role } from '@/types';
-import { roleLabel } from '@/utils/helpers';
-
+import { useMemo } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import clsx from "clsx";
+import { useAuth } from "@/hooks/useAuth";
+import { Role } from "@/types";
+import { roleLabel } from "@/utils/helpers";
+import smartlifeLogo from "../../assets/smartlife-logo.png";
+import tawalLogo from "../../assets/tawal-logo.svg";
 interface NavItem {
   to: string;
   label: string;
@@ -12,26 +13,23 @@ interface NavItem {
 }
 
 const ALL_NAV: NavItem[] = [
-  { to: '/dashboard', label: 'Dashboard', roles: [Role.ADMIN, Role.MANAGER, Role.TECHNICIAN] },
-  { to: '/sites', label: 'Sites', roles: [Role.ADMIN, Role.MANAGER] },
-  { to: '/sites', label: 'My Sites', roles: [Role.TECHNICIAN] },
-  { to: '/users', label: 'Users', roles: [Role.ADMIN] },
-  { to: '/reports', label: 'Reports', roles: [Role.ADMIN, Role.MANAGER] },
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    roles: [Role.ADMIN, Role.MANAGER, Role.TECHNICIAN],
+  },
+  { to: "/sites", label: "Sites", roles: [Role.ADMIN, Role.MANAGER] },
+  { to: "/sites", label: "My Sites", roles: [Role.TECHNICIAN] },
+  { to: "/users", label: "Users", roles: [Role.ADMIN] },
+  { to: "/serials", label: "Serials", roles: [Role.ADMIN] },
+  { to: "/reports", label: "Reports", roles: [Role.ADMIN, Role.MANAGER] },
 ];
 
 const BrandLockup: React.FC = () => (
   <div className="flex items-center gap-3">
-    <img
-      src="/brand/smartlife-logo.png"
-      alt="Smart Life"
-      className="h-8 w-auto"
-    />
+    <img src={smartlifeLogo} alt="Smart Life" className="h-8 w-auto" />
     <span className="select-none text-lg font-light text-white/60">×</span>
-    <img
-      src="/brand/tawal-logo.svg"
-      alt="Tawal"
-      className="h-8 w-auto logo-invert"
-    />
+    <img src={tawalLogo} alt="Tawal" className="h-8 w-auto logo-invert" />
   </div>
 );
 
@@ -46,7 +44,7 @@ export const Layout: React.FC = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login', { replace: true });
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -60,13 +58,13 @@ export const Layout: React.FC = () => {
               <NavLink
                 key={item.label}
                 to={item.to}
-                end={item.to === '/sites'}
+                end={item.to === "/sites"}
                 className={({ isActive }) =>
                   clsx(
-                    'rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                    "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     isActive
-                      ? 'bg-brand-500 text-white shadow-brand'
-                      : 'text-white/80 hover:bg-white/10 hover:text-white',
+                      ? "bg-brand-500 text-white shadow-brand"
+                      : "text-white/80 hover:bg-white/10 hover:text-white",
                   )
                 }
               >
@@ -81,7 +79,7 @@ export const Layout: React.FC = () => {
                 {user?.name || user?.email}
               </p>
               <p className="text-xs text-white/60">
-                {user ? roleLabel(user.role) : ''}
+                {user ? roleLabel(user.role) : ""}
               </p>
             </div>
             <button
@@ -99,13 +97,13 @@ export const Layout: React.FC = () => {
             <NavLink
               key={item.label}
               to={item.to}
-              end={item.to === '/sites'}
+              end={item.to === "/sites"}
               className={({ isActive }) =>
                 clsx(
-                  'flex-shrink-0 rounded-lg px-3 py-2 text-center text-sm font-medium',
+                  "flex-shrink-0 rounded-lg px-3 py-2 text-center text-sm font-medium",
                   isActive
-                    ? 'bg-brand-500 text-white'
-                    : 'text-white/80 hover:bg-white/10',
+                    ? "bg-brand-500 text-white"
+                    : "text-white/80 hover:bg-white/10",
                 )
               }
             >

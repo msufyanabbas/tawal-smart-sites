@@ -18,6 +18,7 @@ import { EditSitePage } from "@/pages/EditSitePage";
 import { NewSitePage } from "@/pages/NewSitePage";
 import { UsersPage } from "@/pages/UsersPage";
 import { ReportsPage } from "@/pages/ReportsPage";
+import { SerialsPage } from "@/pages/SerialsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
 const App: React.FC = () => (
@@ -43,6 +44,7 @@ const App: React.FC = () => (
           <Route path="/sites/new" element={<NewSitePage />} />
           <Route path="/sites/:id/edit" element={<EditSitePage />} />
           <Route path="/users" element={<UsersPage />} />
+          <Route path="/serials" element={<SerialsPage />} />
         </Route>
 
         <Route element={<RequireRole roles={[Role.ADMIN, Role.MANAGER]} />}>

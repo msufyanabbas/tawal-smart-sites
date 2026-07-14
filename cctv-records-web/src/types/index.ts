@@ -201,6 +201,35 @@ export interface ReportFilters {
   to?: string;
 }
 
+// ── SIM & RMS Serial inventory ───────────────────────────────────────────────
+
+export interface SimSerial {
+  _id: string;
+  serialNumber: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RmsSerial {
+  _id: string;
+  serialNumber: string;
+  createdBy?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BulkSerialResult {
+  created: number;
+  skipped: number;
+  failed: Array<{ serial: string; reason: string }>;
+}
+
+export interface BulkDeleteResult {
+  deleted: number;
+}
+
+
 
 
 
