@@ -13,6 +13,7 @@ import { RolesGuard } from './roles/roles.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 import { ReportsModule } from './reports/reports.module';
+import { SerialModule } from './serial/serial.module';
 
 @Module({
   providers: [
@@ -25,7 +26,7 @@ import { ReportsModule } from './reports/reports.module';
       useClass: RolesGuard,
     },
   ],
-   imports: [
+  imports: [
     ConfigModule.forRoot({
       isGlobal: true, // makes .env variables available app-wide
     }),
@@ -38,6 +39,7 @@ import { ReportsModule } from './reports/reports.module';
     JwtModule,
     TokenModule,
     ReportsModule,
-  ]
+    SerialModule,
+  ],
 })
 export class AppModule {}
