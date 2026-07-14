@@ -18,6 +18,7 @@ import {
   Role,
   type SiteUnitsPayload,
   type Site,
+  RmsScope,
 } from "@/types";
 import { apiErrorMessage, roleLabel, rmsScopeLabel } from "@/utils/helpers";
 import { StatusTimeline } from "@/components/TimeLIne";
