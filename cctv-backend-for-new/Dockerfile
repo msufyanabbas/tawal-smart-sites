@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 # `npm ci` requires package-lock.json and gives reproducible installs.
-RUN npm ci
+RUN npm install
 
 # Now copy the rest of the source and produce dist/.
 COPY tsconfig*.json nest-cli.json ./
