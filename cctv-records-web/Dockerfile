@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Install deps from the lockfile for reproducibility.
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install
 
 # Copy the rest of the source needed for the build.
 COPY tsconfig.json vite.config.ts tailwind.config.ts postcss.config.js index.html ./
