@@ -11,25 +11,29 @@ import { apiErrorMessage, formatDate } from "@/utils/helpers";
 import {
   useBulkCreateRmsMutation,
   useBulkCreateSimMutation,
+  useBulkCreateSmartLockMutation,
   useBulkDeleteRmsMutation,
   useBulkDeleteSimMutation,
+  useBulkDeleteSmartLockMutation,
   useCreateRmsMutation,
   useCreateSimMutation,
+  useCreateSmartLockMutation,
   useDeleteRmsMutation,
   useDeleteSimMutation,
+  useDeleteSmartLockMutation,
   useRmsSerialsQuery,
   useSimSerialsQuery,
+  useSmartLockSerialsQuery,
 } from "@/hooks/useSerials";
 
-type TabId = "sim" | "rms";
+type TabId = "sim" | "rms" | "smartlock";
 
 const singleSchema = z.object({
   serialNumber: z
     .string()
     .trim()
     .min(1, "Serial number is required")
-    .max(100, "Too long")
-    .regex(/^[0-9]+$/, "Serial number must be numbers only"),
+    .max(100, "Too long"),
 });
 type SingleValues = z.infer<typeof singleSchema>;
 
@@ -43,7 +47,7 @@ function bulkToast(result: BulkSerialResult) {
   else toast.error(msg || "Nothing was created");
 }
 
-//     Modal wrapper ─────────────────────────────────────────────────────────────
+// __________________ Modal wrapper ─────────────────────────────────────────────────────────────
 
 const Modal: React.FC<{
   open: boolean;
@@ -85,8 +89,11 @@ const AddSingleModal: React.FC<{
 }> = ({ open, tab, onClose }) => {
   const createSim = useCreateSimMutation();
   const createRms = useCreateRmsMutation();
+  const createSmartLock = useCreateSmartLockMutation();
   const isSim = tab === "sim";
-  const mutation = isSim ? createSim : createRms;
+  const label = tab === "sim" ? "SIM" : tab === "rms" ? "RMS" : "Smart Lock";
+  const mutation =
+    tab === "sim" ? createSim : tab === "rms" ? createRms : createSmartLock;
   const fieldId = useId();
 
   const { register, handleSubmit, formState, reset } = useForm<SingleValues>({
@@ -96,7 +103,7 @@ const AddSingleModal: React.FC<{
   const onSubmit = async (values: SingleValues) => {
     try {
       await mutation.mutateAsync(values.serialNumber);
-      toast.success(`${isSim ? "SIM" : "RMS"} serial added`);
+      toast.success(`${label} serial added`);
       reset();
       onClose();
     } catch (err) {
@@ -105,15 +112,17 @@ const AddSingleModal: React.FC<{
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title={`Add ${isSim ? "SIM" : "RMS"} Serial`}
-    >
+    <Modal open={open} onClose={onClose} title={`Add ${label} Serial`}>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <TextField
           id={`${fieldId}-serial`}
-          label={isSim ? "SIM Number" : "RMS Serial"}
+          label={
+            tab === "sim"
+              ? "SIM Number"
+              : tab === "rms"
+                ? "RMS Serial"
+                : "Smart Lock Serial"
+          }
           placeholder="e.g 89610123456789012345"
           {...register("serialNumber")}
           error={formState.errors.serialNumber?.message}
@@ -140,8 +149,11 @@ const BulkImportModal: React.FC<{
 }> = ({ open, tab, onClose }) => {
   const bulkSim = useBulkCreateSimMutation();
   const bulkRms = useBulkCreateRmsMutation();
+  const bulkSmartLock = useBulkCreateSmartLockMutation();
   const isSim = tab === "sim";
-  const mutation = isSim ? bulkSim : bulkRms;
+  const label = tab === "sim" ? "SIM" : tab === "rms" ? "RMS" : "Smart Lock";
+  const mutation =
+    tab === "sim" ? bulkSim : tab === "rms" ? bulkRms : bulkSmartLock;
   const [text, setText] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const areaId = useId();
@@ -194,7 +206,7 @@ const BulkImportModal: React.FC<{
         setText("");
         onClose();
       }}
-      title={`Bulk Import ${isSim ? "SIM" : "RMS"} Serials`}
+      title={`Bulk Import ${label} Serials`}
     >
       <div className="space-y-4">
         <p className="text-sm text-slate-500">
@@ -369,16 +381,22 @@ const TabPanel: React.FC<{ tab: TabId }> = ({ tab }) => {
   // Data
   const simQuery = useSimSerialsQuery();
   const rmsQuery = useRmsSerialsQuery();
-  const query = isSim ? simQuery : rmsQuery;
+  const smartLockQuery = useSmartLockSerialsQuery();
+  const query =
+    tab === "sim" ? simQuery : tab === "rms" ? rmsQuery : smartLockQuery;
   const serials: AnySerial[] = (query.data as AnySerial[]) ?? [];
 
   // Mutations
   const deleteSim = useDeleteSimMutation();
   const deleteRms = useDeleteRmsMutation();
+  const deleteSmartLock = useDeleteSmartLockMutation();
   const bulkDelSim = useBulkDeleteSimMutation();
   const bulkDelRms = useBulkDeleteRmsMutation();
-  const singleDel = isSim ? deleteSim : deleteRms;
-  const bulkDel = isSim ? bulkDelSim : bulkDelRms;
+  const bulkDelSmartLock = useBulkDeleteSmartLockMutation();
+  const singleDel =
+    tab === "sim" ? deleteSim : tab === "rms" ? deleteRms : deleteSmartLock;
+  const bulkDel =
+    tab === "sim" ? bulkDelSim : tab === "rms" ? bulkDelRms : bulkDelSmartLock;
 
   // Selection state
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -507,6 +525,7 @@ export const SerialsPage: React.FC = () => {
   const tabs: { id: TabId; label: string; icon: string }[] = [
     { id: "sim", label: "SIM Serials", icon: "📡" },
     { id: "rms", label: "RMS Serials", icon: "🖥️" },
+    { id: "smartlock", label: "Smart Lock", icon: "🔒" },
   ];
 
   return (
@@ -515,7 +534,7 @@ export const SerialsPage: React.FC = () => {
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Serial Inventory</h1>
         <p className="text-sm text-slate-500">
-          Manage SIM card and RMS device serial numbers
+          Manage SIM card, RMS device, and Smart Lock serial numbers
         </p>
       </header>
 

@@ -1,31 +1,31 @@
 // src/api/apiClient.ts
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { callExternalLogout } from '../contexts/AuthContext'; // <-- adjust path accordingly
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { callExternalLogout } from "../contexts/AuthContext"; // <-- adjust path accordingly
 
 // Override via app.json `extra.apiBaseUrl` or an EXPO_PUBLIC_API_BASE_URL env var (Expo SDK 51+).
 // Falls back to the LAN dev address so the existing dev workflow keeps working.
 const API_BASE_URL =
   (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined) ??
-  'https://tawal-site.smart-life.sa/api';
+  "https://tawal-site.smart-life.sa/api";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
+    "Content-Type": "application/json",
+    Accept: "application/json",
   },
 });
 
 apiClient.interceptors.request.use(
   async (config) => {
-    const token = await AsyncStorage.getItem('access_token');
+    const token = await AsyncStorage.getItem("access_token");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 apiClient.interceptors.response.use(
@@ -34,15 +34,20 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
 
     // Don't try to refresh for login or refresh requests
-    const requestUrl: string = originalRequest?.url ?? '';
+    const requestUrl: string = originalRequest?.url ?? "";
     const isAuthEndpoint =
-      requestUrl.includes('/auth/login') || requestUrl.includes('/auth/refresh');
+      requestUrl.includes("/auth/login") ||
+      requestUrl.includes("/auth/refresh");
 
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
       originalRequest._retry = true;
 
       try {
-        const refreshToken = await AsyncStorage.getItem('refresh_token');
+        const refreshToken = await AsyncStorage.getItem("refresh_token");
 
         const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
           refresh_token: refreshToken,
@@ -50,14 +55,14 @@ apiClient.interceptors.response.use(
 
         const { access_token } = res.data;
 
-        await AsyncStorage.setItem('access_token', access_token);
+        await AsyncStorage.setItem("access_token", access_token);
 
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
 
         return apiClient(originalRequest);
       } catch (refreshError) {
-        await AsyncStorage.removeItem('access_token');
-        await AsyncStorage.removeItem('refresh_token');
+        await AsyncStorage.removeItem("access_token");
+        await AsyncStorage.removeItem("refresh_token");
 
         await callExternalLogout();
 
@@ -66,7 +71,7 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default apiClient;

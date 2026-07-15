@@ -10,6 +10,8 @@ import {
   SimSerialDocument,
   RmsSerial,
   RmsSerialDocument,
+  SmartLockSerial,
+  SmartLockSerialDocument,
 } from './serial.schema';
 import {
   BulkCreateSerialsDto,
@@ -33,6 +35,7 @@ export class SerialService {
   constructor(
     @InjectModel(SimSerial.name) private simModel: Model<SimSerialDocument>,
     @InjectModel(RmsSerial.name) private rmsModel: Model<RmsSerialDocument>,
+    @InjectModel(SmartLockSerial.name) private smartLockModel: Model<SmartLockSerialDocument>,
   ) {}
 
   // ── SIM ──────────────────────────────────────────────────────────────────
@@ -158,6 +161,70 @@ export class SerialService {
   async bulkDeleteRms(dto: BulkDeleteSerialsDto): Promise<BulkDeleteResult> {
     const objectIds = dto.ids.map((id) => new Types.ObjectId(id));
     const res = await this.rmsModel
+      .deleteMany({ _id: { $in: objectIds } })
+      .exec();
+    return { deleted: res.deletedCount };
+  }
+
+  // ── Smart Lock ──────────────────────────────────────────────────────────
+
+  async listSmartLock(): Promise<SmartLockSerialDocument[]> {
+    return this.smartLockModel.find().sort({ createdAt: -1 }).lean().exec() as any;
+  }
+
+  async createSmartLock(
+    dto: CreateSerialDto,
+    user: CurrentUserPayload,
+  ): Promise<SmartLockSerialDocument> {
+    const existing = await this.smartLockModel
+      .findOne({ serialNumber: dto.serialNumber.trim() })
+      .exec();
+    if (existing) {
+      throw new ConflictException(
+        `Smart Lock serial "${dto.serialNumber}" already exists`,
+      );
+    }
+    return this.smartLockModel.create({
+      serialNumber: dto.serialNumber.trim(),
+      createdBy: new Types.ObjectId(user.userId),
+    });
+  }
+
+  async bulkCreateSmartLock(
+    dto: BulkCreateSerialsDto,
+    user: CurrentUserPayload,
+  ): Promise<BulkSerialResult> {
+    const result: BulkSerialResult = { created: 0, skipped: 0, failed: [] };
+    const createdById = new Types.ObjectId(user.userId);
+
+    for (const raw of dto.serialNumbers) {
+      const serialNumber = raw.trim();
+      if (!serialNumber) continue;
+      try {
+        await this.smartLockModel.create({ serialNumber, createdBy: createdById });
+        result.created++;
+      } catch (err: any) {
+        if (err?.code === 11000) {
+          result.skipped++;
+        } else {
+          result.failed.push({
+            serial: serialNumber,
+            reason: err?.message ?? 'Unknown error',
+          });
+        }
+      }
+    }
+    return result;
+  }
+
+  async deleteSmartLock(id: string): Promise<void> {
+    const res = await this.smartLockModel.findByIdAndDelete(id).exec();
+    if (!res) throw new NotFoundException(`Smart Lock serial ${id} not found`);
+  }
+
+  async bulkDeleteSmartLock(dto: BulkDeleteSerialsDto): Promise<BulkDeleteResult> {
+    const objectIds = dto.ids.map((id) => new Types.ObjectId(id));
+    const res = await this.smartLockModel
       .deleteMany({ _id: { $in: objectIds } })
       .exec();
     return { deleted: res.deletedCount };

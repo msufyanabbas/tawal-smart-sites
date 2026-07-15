@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -7,42 +7,44 @@ import {
   TouchableOpacity,
   View,
   Image,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import AppText from '../components/AppText';
-import { Button, Field } from '../components/ui';
-import { loginUser } from '../api/userService';
-import { useAuth } from '../contexts/AuthContext';
-import { AuthStackParamList } from '../navigation';
-import { colors, fontSize, radius, shadow, spacing } from '../theme';
+import AppText from "../components/AppText";
+import { Button, Field } from "../components/ui";
+import { loginUser } from "../api/userService";
+import { useAuth } from "../contexts/AuthContext";
+import { AuthStackParamList } from "../navigation";
+import { colors, fontSize, radius, shadow, spacing } from "../theme";
+import apiClient from "../api/apiClient";
 
 type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
 const LoginScreen: React.FC = () => {
   const navigation = useNavigation<Nav>();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError('Please enter both email and password');
+      setError("Please enter both email and password");
       return;
     }
+
     setBusy(true);
-    setError('');
+    setError("");
     const res = await loginUser({ email, password });
     setBusy(false);
-    console.log('[Login Response]', res);
+    console.log("[Login Response]", res);
     if (res.success && res.data?.access_token) {
       await login(res.data.access_token, res.data.refresh_token, res.data.user);
     } else {
-      console.error('[Login Error]', res.message, res);
-      setError(res.message ?? 'Login failed');
+      console.error("[Login Error]", res.message, res);
+      setError(res.message ?? "Login failed");
     }
   };
 
@@ -52,13 +54,13 @@ const LoginScreen: React.FC = () => {
       <View style={styles.hero}>
         <View style={styles.logoRow}>
           <Image
-            source={require('../../assets/smart-life.png')}
+            source={require("../../assets/smart-life.png")}
             style={styles.logo}
             resizeMode="contain"
           />
           <AppText style={styles.cross}>×</AppText>
           <Image
-            source={require('../../assets/tawal.png')}
+            source={require("../../assets/tawal.png")}
             style={styles.logo}
             resizeMode="contain"
           />
@@ -67,7 +69,7 @@ const LoginScreen: React.FC = () => {
       </View>
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={{ flex: 1 }}
       >
         <ScrollView
@@ -101,8 +103,8 @@ const LoginScreen: React.FC = () => {
             />
 
             <TouchableOpacity
-              onPress={() => navigation.navigate('ForgotPassword')}
-              style={{ alignSelf: 'flex-end', marginBottom: spacing.md }}
+              onPress={() => navigation.navigate("ForgotPassword")}
+              style={{ alignSelf: "flex-end", marginBottom: spacing.md }}
             >
               <AppText style={styles.linkText}>Forgot password?</AppText>
             </TouchableOpacity>
@@ -124,32 +126,41 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 40,
     paddingHorizontal: spacing.lg,
-    alignItems: 'center',
+    alignItems: "center",
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
   },
-  logoRow: { flexDirection: 'row', alignItems: 'center' },
+  logoRow: { flexDirection: "row", alignItems: "center" },
   logo: { width: 90, height: 50 },
-  cross: { color: colors.textOnDarkMuted, fontSize: fontSize.h1, marginHorizontal: spacing.sm },
+  cross: {
+    color: colors.textOnDarkMuted,
+    fontSize: fontSize.h1,
+    marginHorizontal: spacing.sm,
+  },
   heroSub: {
     color: colors.textOnDarkMuted,
     fontSize: fontSize.xs,
     marginTop: spacing.sm,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 2,
   },
 
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: radius.xl,
     padding: spacing.lg,
     marginTop: spacing.lg,
     ...shadow.card,
   },
-  title: { fontSize: fontSize.h1, fontWeight: '700', color: colors.text },
-  subtitle: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 4, marginBottom: spacing.lg },
+  title: { fontSize: fontSize.h1, fontWeight: "700", color: colors.text },
+  subtitle: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginTop: 4,
+    marginBottom: spacing.lg,
+  },
 
-  linkText: { color: colors.brand, fontSize: fontSize.sm, fontWeight: '600' },
+  linkText: { color: colors.brand, fontSize: fontSize.sm, fontWeight: "600" },
 
   errorBox: {
     backgroundColor: colors.dangerLight,
@@ -157,5 +168,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginBottom: spacing.md,
   },
-  errorText: { color: colors.danger, fontSize: fontSize.sm, textAlign: 'center' },
+  errorText: {
+    color: colors.danger,
+    fontSize: fontSize.sm,
+    textAlign: "center",
+  },
 });

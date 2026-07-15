@@ -44,6 +44,8 @@ import {
   saveSiteDraft,
   submitSite,
 } from "../api/siteService";
+import { getSimSerials, getRmsSerials, getSmartLockSerials } from "../api/serialService";
+import { Dropdown } from "react-native-element-dropdown";
 import { listUsers } from "../api/userService";
 import { SitesStackParamList } from "../navigation";
 import {
@@ -329,7 +331,9 @@ const SubmittedDataView: React.FC<{
           {!!site.simSwapComments && (
             <View style={{ marginBottom: spacing.sm }}>
               <AppText style={styles.dataKey}>Comments</AppText>
-              <AppText style={[styles.dataVal, { textAlign: "left" }]}>{site.simSwapComments}</AppText>
+              <AppText style={[styles.dataVal, { textAlign: "left" }]}>
+                {site.simSwapComments}
+              </AppText>
             </View>
           )}
 
@@ -337,75 +341,106 @@ const SubmittedDataView: React.FC<{
             <View style={{ marginBottom: spacing.sm }}>
               <AppText style={styles.dataKey}>Site Type</AppText>
               <AppText style={[styles.dataVal, { textAlign: "left" }]}>
-                {site.simSwapSiteType === "green_field" ? "Green Field" : "Roof Top"}
+                {site.simSwapSiteType === "green_field"
+                  ? "Green Field"
+                  : "Roof Top"}
               </AppText>
             </View>
           )}
 
-          {typeof site.simSwapLatitude === "number" && typeof site.simSwapLongitude === "number" && (
-            <View style={{ marginBottom: spacing.sm }}>
-              <AppText style={styles.dataKey}>Location</AppText>
-              <AppText style={[styles.dataVal, { textAlign: "left" }]}>
-                Lat: {site.simSwapLatitude.toFixed(6)} | Lng: {site.simSwapLongitude.toFixed(6)}
-              </AppText>
-            </View>
-          )}
-
-          {hasSimSwapPairs && site.simSwapPairs!.map((pair, idx) => {
-            const hasNew = !!pair.newSerialNumber || !!pair.newSerialImage;
-            const hasOld = !!pair.oldSerialNumber || !!pair.oldSerialImage;
-            return (
-              <View key={idx} style={styles.dataUnit}>
-                <AppText style={styles.unitHeading}>SIM Pair #{idx + 1}</AppText>
-
-                {/* New SIM */}
-                <View style={{ marginTop: spacing.sm }}>
-                  <AppText style={{ fontWeight: "600", marginBottom: 4 }}>New SIM</AppText>
-                  {!hasNew ? (
-                    <AppText style={styles.muted}>No data.</AppText>
-                  ) : (
-                    <>
-                      {!!pair.newSerialNumber && (
-                        <View style={styles.dataRow}>
-                          <AppText style={styles.dataKey}>Serial number</AppText>
-                          <AppText style={styles.dataVal}>{pair.newSerialNumber}</AppText>
-                        </View>
-                      )}
-                      {!!pair.newSerialImage && (
-                        <TouchableOpacity onPress={() => onOpenImage(pair.newSerialImage!)} style={{ marginTop: spacing.xs }}>
-                          <Image source={{ uri: pair.newSerialImage }} style={styles.thumbLg} />
-                          <AppText style={styles.imgLabel}>Image</AppText>
-                        </TouchableOpacity>
-                      )}
-                    </>
-                  )}
-                </View>
-
-                {/* Old SIM */}
-                <View style={{ marginTop: spacing.sm }}>
-                  <AppText style={{ fontWeight: "600", marginBottom: 4 }}>Old SIM</AppText>
-                  {!hasOld ? (
-                    <AppText style={styles.muted}>No data.</AppText>
-                  ) : (
-                    <>
-                      {!!pair.oldSerialNumber && (
-                        <View style={styles.dataRow}>
-                          <AppText style={styles.dataKey}>Serial number</AppText>
-                          <AppText style={styles.dataVal}>{pair.oldSerialNumber}</AppText>
-                        </View>
-                      )}
-                      {!!pair.oldSerialImage && (
-                        <TouchableOpacity onPress={() => onOpenImage(pair.oldSerialImage!)} style={{ marginTop: spacing.xs }}>
-                          <Image source={{ uri: pair.oldSerialImage }} style={styles.thumbLg} />
-                          <AppText style={styles.imgLabel}>Image</AppText>
-                        </TouchableOpacity>
-                      )}
-                    </>
-                  )}
-                </View>
+          {typeof site.simSwapLatitude === "number" &&
+            typeof site.simSwapLongitude === "number" && (
+              <View style={{ marginBottom: spacing.sm }}>
+                <AppText style={styles.dataKey}>Location</AppText>
+                <AppText style={[styles.dataVal, { textAlign: "left" }]}>
+                  Lat: {site.simSwapLatitude.toFixed(6)} | Lng:{" "}
+                  {site.simSwapLongitude.toFixed(6)}
+                </AppText>
               </View>
-            );
-          })}
+            )}
+
+          {hasSimSwapPairs &&
+            site.simSwapPairs!.map((pair, idx) => {
+              const hasNew = !!pair.newSerialNumber || !!pair.newSerialImage;
+              const hasOld = !!pair.oldSerialNumber || !!pair.oldSerialImage;
+              return (
+                <View key={idx} style={styles.dataUnit}>
+                  <AppText style={styles.unitHeading}>
+                    SIM Pair #{idx + 1}
+                  </AppText>
+
+                  {/* New SIM */}
+                  <View style={{ marginTop: spacing.sm }}>
+                    <AppText style={{ fontWeight: "600", marginBottom: 4 }}>
+                      New SIM
+                    </AppText>
+                    {!hasNew ? (
+                      <AppText style={styles.muted}>No data.</AppText>
+                    ) : (
+                      <>
+                        {!!pair.newSerialNumber && (
+                          <View style={styles.dataRow}>
+                            <AppText style={styles.dataKey}>
+                              Serial number
+                            </AppText>
+                            <AppText style={styles.dataVal}>
+                              {pair.newSerialNumber}
+                            </AppText>
+                          </View>
+                        )}
+                        {!!pair.newSerialImage && (
+                          <TouchableOpacity
+                            onPress={() => onOpenImage(pair.newSerialImage!)}
+                            style={{ marginTop: spacing.xs }}
+                          >
+                            <Image
+                              source={{ uri: pair.newSerialImage }}
+                              style={styles.thumbLg}
+                            />
+                            <AppText style={styles.imgLabel}>Image</AppText>
+                          </TouchableOpacity>
+                        )}
+                      </>
+                    )}
+                  </View>
+
+                  {/* Old SIM */}
+                  <View style={{ marginTop: spacing.sm }}>
+                    <AppText style={{ fontWeight: "600", marginBottom: 4 }}>
+                      Old SIM
+                    </AppText>
+                    {!hasOld ? (
+                      <AppText style={styles.muted}>No data.</AppText>
+                    ) : (
+                      <>
+                        {!!pair.oldSerialNumber && (
+                          <View style={styles.dataRow}>
+                            <AppText style={styles.dataKey}>
+                              Serial number
+                            </AppText>
+                            <AppText style={styles.dataVal}>
+                              {pair.oldSerialNumber}
+                            </AppText>
+                          </View>
+                        )}
+                        {!!pair.oldSerialImage && (
+                          <TouchableOpacity
+                            onPress={() => onOpenImage(pair.oldSerialImage!)}
+                            style={{ marginTop: spacing.xs }}
+                          >
+                            <Image
+                              source={{ uri: pair.oldSerialImage }}
+                              style={styles.thumbLg}
+                            />
+                            <AppText style={styles.imgLabel}>Image</AppText>
+                          </TouchableOpacity>
+                        )}
+                      </>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
         </Card>
       )}
       {groups.map((g) => {
@@ -507,6 +542,9 @@ const FieldEntryForm: React.FC<{
   saving: boolean;
   onSaveDraft: () => void;
   onSubmit: () => void;
+  simOptions: { label: string; value: string }[];
+  rmsOptions: { label: string; value: string }[];
+  smartLockOptions: { label: string; value: string }[];
 }> = ({
   site,
   values,
@@ -519,6 +557,9 @@ const FieldEntryForm: React.FC<{
   saving,
   onSaveDraft,
   onSubmit,
+  simOptions,
+  rmsOptions,
+  smartLockOptions,
 }) => {
   const groups = useMemo(() => relevantUnitGroups(site), [site]);
   const pairs = useMemo(() => values.simSwapPairs ?? [], [values.simSwapPairs]);
@@ -538,13 +579,26 @@ const FieldEntryForm: React.FC<{
                 <AppText style={styles.unitHeading}>SIM #{i + 1}</AppText>
 
                 {/* New SIM */}
-                <Field
-                  label="New SIM serial number"
-                  value={pair.newSerialNumber ?? ""}
-                  onChangeText={(t) =>
-                    onUpdateSimSwapPair(i, { newSerialNumber: t })
-                  }
-                />
+                <View style={{ marginBottom: spacing.md }}>
+                   <AppText style={styles.dropdownLabel}>New SIM serial number</AppText>
+                   <Dropdown
+                     style={styles.dropdown}
+                     placeholderStyle={styles.dropdownPlaceholder}
+                     selectedTextStyle={styles.dropdownSelectedText}
+                     inputSearchStyle={styles.dropdownSearchInput}
+                     data={simOptions}
+                     search
+                     maxHeight={300}
+                     labelField="label"
+                     valueField="value"
+                     placeholder="Search SIM..."
+                     searchPlaceholder="Search SIM..."
+                     value={pair.newSerialNumber ?? ""}
+                     onChange={(item) =>
+                       onUpdateSimSwapPair(i, { newSerialNumber: item.value })
+                     }
+                   />
+                 </View>
                 <AppText style={styles.imgLabel}>New SIM image</AppText>
                 {pair.newSerialImage ? (
                   <TouchableOpacity
@@ -684,13 +738,51 @@ const FieldEntryForm: React.FC<{
                 </AppText>
                 {g.needs.serial && (
                   <>
-                    <Field
-                      label="Serial number"
-                      value={u.serialNumber ?? ""}
-                      onChangeText={(t) =>
-                        onChange(g.key, idx, { serialNumber: t })
+                    {(() => {
+                      const options =
+                        g.key === "rmsUnits"
+                          ? rmsOptions
+                          : g.key === "simCards"
+                            ? simOptions
+                            : g.key === "fenceLockUnits" || g.key === "oduUnits"
+                              ? smartLockOptions
+                              : null;
+
+                      if (options) {
+                        return (
+                          <View style={{ marginBottom: spacing.md }}>
+                            <AppText style={styles.dropdownLabel}>Serial number</AppText>
+                            <Dropdown
+                              style={styles.dropdown}
+                              placeholderStyle={styles.dropdownPlaceholder}
+                              selectedTextStyle={styles.dropdownSelectedText}
+                              inputSearchStyle={styles.dropdownSearchInput}
+                              data={options}
+                              search
+                              maxHeight={300}
+                              labelField="label"
+                              valueField="value"
+                              placeholder="Search serial..."
+                              searchPlaceholder="Search serial..."
+                              value={u.serialNumber ?? ""}
+                              onChange={(item) =>
+                                onChange(g.key, idx, { serialNumber: item.value })
+                              }
+                            />
+                          </View>
+                        );
                       }
-                    />
+
+                      return (
+                        <Field
+                          label="Serial number"
+                          value={u.serialNumber ?? ""}
+                          onChangeText={(t) =>
+                            onChange(g.key, idx, { serialNumber: t })
+                          }
+                        />
+                      );
+                    })()}
                     <AppText style={styles.imgLabel}>Serial image</AppText>
                     {u.serialImage ? (
                       <TouchableOpacity
@@ -898,6 +990,29 @@ const SiteDetailScreen: React.FC = () => {
   // successful approval so the panel disappears with the right state.
   const [reviewRemarks, setReviewRemarks] = useState("");
 
+  const [simOptions, setSimOptions] = useState<{ label: string; value: string }[]>([]);
+  const [rmsOptions, setRmsOptions] = useState<{ label: string; value: string }[]>([]);
+  const [smartLockOptions, setSmartLockOptions] = useState<{ label: string; value: string }[]>([]);
+
+  useEffect(() => {
+    if (!isTech) return;
+    getSimSerials().then((res) => {
+      if (res.success && res.data) {
+        setSimOptions(res.data.map((s) => ({ label: s.serialNumber, value: s.serialNumber })));
+      }
+    });
+    getRmsSerials().then((res) => {
+      if (res.success && res.data) {
+        setRmsOptions(res.data.map((s) => ({ label: s.serialNumber, value: s.serialNumber })));
+      }
+    });
+    getSmartLockSerials().then((res) => {
+      if (res.success && res.data) {
+        setSmartLockOptions(res.data.map((s) => ({ label: s.serialNumber, value: s.serialNumber })));
+      }
+    });
+  }, [isTech]);
+
   const load = useCallback(
     async (silent = false) => {
       if (!silent) setLoading(true);
@@ -920,7 +1035,8 @@ const SiteDetailScreen: React.FC = () => {
         (seeded as any).simSwapPairs = res.data.simSwapPairs ?? [];
         (seeded as any).simSwapSiteType = res.data.simSwapSiteType ?? undefined;
         (seeded as any).simSwapLatitude = res.data.simSwapLatitude ?? undefined;
-        (seeded as any).simSwapLongitude = res.data.simSwapLongitude ?? undefined;
+        (seeded as any).simSwapLongitude =
+          res.data.simSwapLongitude ?? undefined;
         setUnitValues(seeded);
       } else {
         setError(res.message ?? "Failed to load site");
@@ -1262,6 +1378,9 @@ const SiteDetailScreen: React.FC = () => {
             saving={actionBusy}
             onSaveDraft={handleSaveDraft}
             onSubmit={handleSubmitWork}
+            simOptions={simOptions}
+            rmsOptions={rmsOptions}
+            smartLockOptions={smartLockOptions}
           />
         )}
 
@@ -1491,6 +1610,34 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontWeight: "600",
     marginTop: spacing.sm,
+  },
+  dropdown: {
+    height: 48,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.inputBg,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    marginTop: 6,
+  },
+  dropdownPlaceholder: {
+    fontSize: fontSize.body,
+    color: colors.textFaint,
+  },
+  dropdownSelectedText: {
+    fontSize: fontSize.body,
+    color: colors.text,
+  },
+  dropdownSearchInput: {
+    height: 40,
+    fontSize: fontSize.body,
+    color: colors.text,
+  },
+  dropdownLabel: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginBottom: 6,
+    fontWeight: "600",
   },
   remarksInput: {
     minHeight: 88,

@@ -16,6 +16,12 @@ import {
   type Site,
 } from "@/types";
 import { apiErrorMessage } from "@/utils/helpers";
+import {
+  useRmsSerialsQuery,
+  useSimSerialsQuery,
+  useSmartLockSerialsQuery,
+} from "@/hooks/useSerials";
+import Select from "react-select";
 
 const emptyUnits = (count: number): ImagedSerialTag[] =>
   Array.from({ length: Math.max(count, 0) }, () => ({}));
@@ -172,6 +178,12 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
   const saveDraft = useSaveSiteDraftMutation();
   const submit = useSubmitSiteMutation();
   const readOnly = site.status?.completed?.done;
+  const simQuery = useSimSerialsQuery();
+  const availableSims = simQuery.data ?? [];
+  const Smartlock = useSmartLockSerialsQuery();
+  const availableSmartLock = Smartlock.data ?? [];
+  const Rms = useRmsSerialsQuery();
+  const availableRms = Rms.data ?? [];
 
   const groups = useMemo(() => {
     let all = relevantUnitGroups(site);
@@ -293,7 +305,7 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
       </div>
     );
   }
-
+  console.log(groups);
   return (
     <div className="space-y-5">
       <div className="card">
@@ -343,14 +355,47 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
 
                   <div className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
-                      <TextField
-                        label="New SIM serial number"
-                        value={pair.newSerialNumber ?? ""}
-                        disabled={readOnly}
-                        onChange={(e) =>
-                          updatePair(i, { newSerialNumber: e.target.value })
-                        }
-                      />
+                      <div className="flex w-full flex-col">
+                        <label className="label mb-1 block">
+                          New SIM serial number
+                        </label>
+                        <Select
+                          options={availableSims.map((s) => ({
+                            value: s.serialNumber,
+                            label: s.serialNumber,
+                          }))}
+                          value={
+                            pair.newSerialNumber
+                              ? {
+                                  value: pair.newSerialNumber,
+                                  label: pair.newSerialNumber,
+                                }
+                              : null
+                          }
+                          isDisabled={readOnly}
+                          onChange={(selected) =>
+                            updatePair(i, {
+                              newSerialNumber: selected?.value ?? "",
+                            })
+                          }
+                          isClearable
+                          isSearchable
+                          placeholder="Search SIM..."
+                          styles={{
+                            control: (base) => ({
+                              ...base,
+                              borderRadius: "0.5rem",
+                              borderColor: "#e2e8f0",
+                              boxShadow: "none",
+                              "&:hover": { borderColor: "#cbd5e1" },
+                            }),
+                            input: (base) => ({
+                              ...base,
+                              "input:focus": { boxShadow: "none" },
+                            }),
+                          }}
+                        />
+                      </div>
                       {!readOnly ? (
                         <ImageUploadField
                           label="New SIM image"
@@ -445,6 +490,7 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
       {groups.map((g) => {
         const arr = (values[g.key] as ImagedSerialTag[] | undefined) ?? [];
         const singular = g.label.endsWith("s") ? g.label.slice(0, -1) : g.label;
+        console.log(g);
         return (
           <div key={g.key} className="card">
             <div className="card-body space-y-3">
@@ -463,16 +509,79 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                     <div className="grid gap-4 md:grid-cols-2">
                       {g.needs.serial && (
                         <>
-                          <TextField
-                            label="Serial number"
-                            value={u.serialNumber ?? ""}
-                            disabled={readOnly}
-                            onChange={(e) =>
-                              updateUnit(g.key, idx, {
-                                serialNumber: e.target.value,
-                              })
-                            }
-                          />
+                          {(() => {
+                            // Pick the right serial list based on the group key
+                            const serialOptions =
+                              g.key === "rmsUnits"
+                                ? (availableRms ?? []).map((s) => ({
+                                    value: s.serialNumber,
+                                    label: s.serialNumber,
+                                  }))
+                                : g.key === "simCards"
+                                  ? availableSims.map((s) => ({
+                                      value: s.serialNumber,
+                                      label: s.serialNumber,
+                                    }))
+                                  : g.key === "fenceLockUnits" ||
+                                      g.key === "oduUnits"
+                                    ? (availableSmartLock ?? []).map((s) => ({
+                                        value: s.serialNumber,
+                                        label: s.serialNumber,
+                                      }))
+                                    : null;
+
+                            return serialOptions ? (
+                              <div className="flex w-full flex-col">
+                                <label className="label mb-1 block">
+                                  Serial number
+                                </label>
+                                <Select
+                                  options={serialOptions}
+                                  value={
+                                    u.serialNumber
+                                      ? {
+                                          value: u.serialNumber,
+                                          label: u.serialNumber,
+                                        }
+                                      : null
+                                  }
+                                  isDisabled={readOnly}
+                                  onChange={(selected) =>
+                                    updateUnit(g.key, idx, {
+                                      serialNumber: selected?.value ?? "",
+                                    })
+                                  }
+                                  isClearable
+                                  isSearchable
+                                  placeholder="Search serial..."
+                                  styles={{
+                                    control: (base) => ({
+                                      ...base,
+                                      borderRadius: "0.5rem",
+                                      borderColor: "#e2e8f0",
+                                      boxShadow: "none",
+                                      "&:hover": { borderColor: "#cbd5e1" },
+                                    }),
+                                    input: (base) => ({
+                                      ...base,
+                                      "input:focus": { boxShadow: "none" },
+                                    }),
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <TextField
+                                label="Serial number"
+                                value={u.serialNumber ?? ""}
+                                disabled={readOnly}
+                                onChange={(e) =>
+                                  updateUnit(g.key, idx, {
+                                    serialNumber: e.target.value,
+                                  })
+                                }
+                              />
+                            );
+                          })()}
                           {!readOnly ? (
                             <ImageUploadField
                               label="Serial image"

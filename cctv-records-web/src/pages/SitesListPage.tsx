@@ -60,7 +60,7 @@ export const SitesListPage: React.FC = () => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
       setDebouncedSearch(value.trim());
-    }, 300);
+    }, 800);
   };
   const [region, setRegion] = useState<string>(initialRegion);
   const [city, setCity] = useState<string>("");

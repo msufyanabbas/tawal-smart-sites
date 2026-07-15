@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -7,11 +7,16 @@ import {
   StyleSheet,
   Switch,
   View,
-} from 'react-native';
-import { RouteProp, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+} from "react-native";
+import {
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import AppText from '../components/AppText';
+import AppText from "../components/AppText";
 import {
   Button,
   Card,
@@ -19,23 +24,23 @@ import {
   LoadingState,
   SelectablePill,
   ErrorState,
-} from '../components/ui';
-import { getSiteById, updateSite } from '../api/siteService';
-import { SitesStackParamList } from '../navigation';
-import { RmsScope, SiteUpdatePayload } from '../types';
+} from "../components/ui";
+import { getSiteById, updateSite } from "../api/siteService";
+import { SitesStackParamList } from "../navigation";
+import { RmsScope, SiteUpdatePayload } from "../types";
 import {
   deriveCounts,
   formatErrorMessage,
   isNumericString,
   rmsScopeLabel,
-} from '../utils/helpers';
-import { colors, fontSize, radius, spacing } from '../theme';
+} from "../utils/helpers";
+import { colors, fontSize, radius, spacing } from "../theme";
 
-type Nav = NativeStackNavigationProp<SitesStackParamList, 'EditSite'>;
-type Rt = RouteProp<SitesStackParamList, 'EditSite'>;
+type Nav = NativeStackNavigationProp<SitesStackParamList, "EditSite">;
+type Rt = RouteProp<SitesStackParamList, "EditSite">;
 
 const numericToInt = (v: string): number => {
-  const n = parseInt(String(v).replace(/[^0-9]/g, ''), 10);
+  const n = parseInt(String(v).replace(/[^0-9]/g, ""), 10);
   return Number.isFinite(n) ? n : 0;
 };
 
@@ -45,7 +50,7 @@ interface FormState {
   region: string;
   siteCity: string;
   tcnNumber: string;
-  rmsScope: RmsScope | '';
+  rmsScope: RmsScope | "";
   numberOfRms: string;
   numberOfExpanders: string;
   numberOfSims: string;
@@ -79,7 +84,9 @@ const ReadStat: React.FC<{ label: string; value: number; tint?: string }> = ({
 }) => (
   <View style={styles.statBox}>
     <AppText style={styles.statLabel}>{label}</AppText>
-    <AppText style={[styles.statValue, !!tint && { color: tint }]}>{value}</AppText>
+    <AppText style={[styles.statValue, !!tint && { color: tint }]}>
+      {value}
+    </AppText>
   </View>
 );
 
@@ -92,7 +99,9 @@ const EditSiteScreen: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState | null>(null);
-  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof FormState, string>>
+  >({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -117,12 +126,16 @@ const EditSiteScreen: React.FC = () => {
         numberOfTenants: String(s.numberOfTenants ?? 0),
       });
     } else {
-      setError(res.message ?? 'Failed to load site');
+      setError(res.message ?? "Failed to load site");
     }
     setLoading(false);
   }, [siteId]);
 
-  useFocusEffect(useCallback(() => { load(); }, [load]));
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const tenants = form ? numericToInt(form.numberOfTenants) : 0;
   const derived = useMemo(
@@ -132,7 +145,7 @@ const EditSiteScreen: React.FC = () => {
 
   if (loading) return <LoadingState />;
   if (error || !form) {
-    return <ErrorState message={error ?? 'Site not found'} onRetry={load} />;
+    return <ErrorState message={error ?? "Site not found"} onRetry={load} />;
   }
 
   const setField = <K extends keyof FormState>(k: K, v: FormState[K]) => {
@@ -142,13 +155,13 @@ const EditSiteScreen: React.FC = () => {
 
   const validate = (): boolean => {
     const next: typeof errors = {};
-    if (!form.siteName.trim()) next.siteName = 'Required';
-    if (!form.tawalId.trim()) next.tawalId = 'Required';
-    else if (!isNumericString(form.tawalId)) next.tawalId = 'Digits only';
-    if (!form.region) next.region = 'Required';
-    if (!form.siteCity.trim()) next.siteCity = 'Required';
-    if (!form.tcnNumber.trim()) next.tcnNumber = 'Required';
-    if (!form.rmsScope) next.rmsScope = 'Required';
+    if (!form.siteName.trim()) next.siteName = "Required";
+    if (!form.tawalId.trim()) next.tawalId = "Required";
+    else if (!isNumericString(form.tawalId)) next.tawalId = "Digits only";
+    if (!form.region) next.region = "Required";
+    if (!form.siteCity.trim()) next.siteCity = "Required";
+    if (!form.tcnNumber.trim()) next.tcnNumber = "Required";
+    if (!form.rmsScope) next.rmsScope = "Required";
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -190,17 +203,17 @@ const EditSiteScreen: React.FC = () => {
     const res = await updateSite(siteId, payload);
     setSaving(false);
     if (res.success) {
-      Alert.alert('Saved', 'Site updated successfully');
+      Alert.alert("Saved", "Site updated successfully");
       navigation.goBack();
     } else {
-      Alert.alert('Failed', formatErrorMessage(res.message ?? res));
+      Alert.alert("Failed", formatErrorMessage(res.message ?? res));
     }
   };
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.bg }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         contentContainerStyle={{ padding: spacing.lg, paddingBottom: 120 }}
@@ -212,21 +225,21 @@ const EditSiteScreen: React.FC = () => {
           <Field
             label="Site name *"
             value={form.siteName}
-            onChangeText={(t) => setField('siteName', t)}
+            onChangeText={(t) => setField("siteName", t)}
             error={errors.siteName}
           />
           <Field
             label="Tawal ID *"
             value={form.tawalId}
             keyboardType="numeric"
-            onChangeText={(t) => setField('tawalId', t.replace(/[^0-9]/g, ''))}
+            onChangeText={(t) => setField("tawalId", t.replace(/[^0-9]/g, ""))}
             error={errors.tawalId}
           />
 
           <Field
             label="Region *"
             value={form.region}
-            onChangeText={(t) => setField('region', t)}
+            onChangeText={(t) => setField("region", t)}
             placeholder="e.g. North, Central, Riyadh Cluster"
             error={errors.region}
           />
@@ -234,14 +247,14 @@ const EditSiteScreen: React.FC = () => {
           <Field
             label="City *"
             value={form.siteCity}
-            onChangeText={(t) => setField('siteCity', t)}
+            onChangeText={(t) => setField("siteCity", t)}
             placeholder="e.g. Riyadh"
             error={errors.siteCity}
           />
           <Field
             label="TCN number *"
             value={form.tcnNumber}
-            onChangeText={(t) => setField('tcnNumber', t)}
+            onChangeText={(t) => setField("tcnNumber", t)}
             error={errors.tcnNumber}
           />
 
@@ -252,11 +265,13 @@ const EditSiteScreen: React.FC = () => {
                 key={s}
                 label={rmsScopeLabel(s)}
                 active={form.rmsScope === s}
-                onPress={() => setField('rmsScope', s)}
+                onPress={() => setField("rmsScope", s)}
               />
             ))}
           </View>
-          {!!errors.rmsScope && <AppText style={styles.error}>{errors.rmsScope}</AppText>}
+          {!!errors.rmsScope && (
+            <AppText style={styles.error}>{errors.rmsScope}</AppText>
+          )}
         </Card>
 
         <Card>
@@ -270,24 +285,30 @@ const EditSiteScreen: React.FC = () => {
                 label="Number of RMS units"
                 keyboardType="numeric"
                 value={form.numberOfRms}
-                onChangeText={(t) => setField('numberOfRms', t.replace(/[^0-9]/g, ''))}
+                onChangeText={(t) =>
+                  setField("numberOfRms", t.replace(/[^0-9]/g, ""))
+                }
               />
               <Field
                 label="Number of expanders"
                 keyboardType="numeric"
                 value={form.numberOfExpanders}
-                onChangeText={(t) => setField('numberOfExpanders', t.replace(/[^0-9]/g, ''))}
+                onChangeText={(t) =>
+                  setField("numberOfExpanders", t.replace(/[^0-9]/g, ""))
+                }
               />
               <Field
                 label="Number of SIMs"
                 keyboardType="numeric"
                 value={form.numberOfSims}
-                onChangeText={(t) => setField('numberOfSims', t.replace(/[^0-9]/g, ''))}
+                onChangeText={(t) =>
+                  setField("numberOfSims", t.replace(/[^0-9]/g, ""))
+                }
               />
               <SwitchRow
                 label="Includes smart lock"
                 value={form.hasSmartLock}
-                onChange={(v) => setField('hasSmartLock', v)}
+                onChange={(v) => setField("hasSmartLock", v)}
               />
               {form.hasSmartLock && (
                 <View style={styles.indented}>
@@ -295,20 +316,24 @@ const EditSiteScreen: React.FC = () => {
                     label="Number of fence locks"
                     keyboardType="numeric"
                     value={form.numberOfFenceLocks}
-                    onChangeText={(t) => setField('numberOfFenceLocks', t.replace(/[^0-9]/g, ''))}
+                    onChangeText={(t) =>
+                      setField("numberOfFenceLocks", t.replace(/[^0-9]/g, ""))
+                    }
                   />
                   <Field
                     label="Number of ODUs"
                     keyboardType="numeric"
                     value={form.numberOfOdus}
-                    onChangeText={(t) => setField('numberOfOdus', t.replace(/[^0-9]/g, ''))}
+                    onChangeText={(t) =>
+                      setField("numberOfOdus", t.replace(/[^0-9]/g, ""))
+                    }
                   />
                 </View>
               )}
               <SwitchRow
                 label="Includes smart meter"
                 value={form.hasSmartMeter}
-                onChange={(v) => setField('hasSmartMeter', v)}
+                onChange={(v) => setField("hasSmartMeter", v)}
               />
               {form.hasSmartMeter && (
                 <View style={styles.indented}>
@@ -316,11 +341,21 @@ const EditSiteScreen: React.FC = () => {
                     label="Number of tenants"
                     keyboardType="numeric"
                     value={form.numberOfTenants}
-                    onChangeText={(t) => setField('numberOfTenants', t.replace(/[^0-9]/g, ''))}
+                    onChangeText={(t) =>
+                      setField("numberOfTenants", t.replace(/[^0-9]/g, ""))
+                    }
                   />
                   <View style={styles.statRow}>
-                    <ReadStat label="Smart Meters" value={derived.smartMeters} tint={colors.success} />
-                    <ReadStat label="CT Splits" value={derived.ctSplits} tint={colors.cyan} />
+                    <ReadStat
+                      label="Smart Meters"
+                      value={derived.smartMeters}
+                      tint={colors.success}
+                    />
+                    <ReadStat
+                      label="CT Splits"
+                      value={derived.ctSplits}
+                      tint={colors.cyan}
+                    />
                   </View>
                 </View>
               )}
@@ -333,13 +368,17 @@ const EditSiteScreen: React.FC = () => {
                 label="Number of fence locks"
                 keyboardType="numeric"
                 value={form.numberOfFenceLocks}
-                onChangeText={(t) => setField('numberOfFenceLocks', t.replace(/[^0-9]/g, ''))}
+                onChangeText={(t) =>
+                  setField("numberOfFenceLocks", t.replace(/[^0-9]/g, ""))
+                }
               />
               <Field
                 label="Number of ODUs"
                 keyboardType="numeric"
                 value={form.numberOfOdus}
-                onChangeText={(t) => setField('numberOfOdus', t.replace(/[^0-9]/g, ''))}
+                onChangeText={(t) =>
+                  setField("numberOfOdus", t.replace(/[^0-9]/g, ""))
+                }
               />
             </>
           )}
@@ -350,14 +389,28 @@ const EditSiteScreen: React.FC = () => {
                 label="Number of tenants"
                 keyboardType="numeric"
                 value={form.numberOfTenants}
-                onChangeText={(t) => setField('numberOfTenants', t.replace(/[^0-9]/g, ''))}
+                onChangeText={(t) =>
+                  setField("numberOfTenants", t.replace(/[^0-9]/g, ""))
+                }
               />
               <View style={styles.statRow}>
-                <ReadStat label="Smart Meters" value={derived.smartMeters} tint={colors.success} />
-                <ReadStat label="CT Splits" value={derived.ctSplits} tint={colors.cyan} />
+                <ReadStat
+                  label="Smart Meters"
+                  value={derived.smartMeters}
+                  tint={colors.success}
+                />
+                <ReadStat
+                  label="CT Splits"
+                  value={derived.ctSplits}
+                  tint={colors.cyan}
+                />
               </View>
               <View style={[styles.statRow, { marginTop: spacing.sm }]}>
-                <ReadStat label="Silbo Gateways" value={1} tint={colors.violet} />
+                <ReadStat
+                  label="Silbo Gateways"
+                  value={1}
+                  tint={colors.violet}
+                />
                 <ReadStat label="SIM Cards" value={1} tint={colors.brand} />
               </View>
               <AppText style={styles.helper}>
@@ -371,14 +424,21 @@ const EditSiteScreen: React.FC = () => {
               label="Number of tenants"
               keyboardType="numeric"
               value={form.numberOfTenants}
-              onChangeText={(t) => setField('numberOfTenants', t.replace(/[^0-9]/g, ''))}
+              onChangeText={(t) =>
+                setField("numberOfTenants", t.replace(/[^0-9]/g, ""))
+              }
             />
           )}
         </Card>
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Cancel" variant="ghost" onPress={() => navigation.goBack()} fullWidth={false} />
+        <Button
+          title="Cancel"
+          variant="ghost"
+          onPress={() => navigation.goBack()}
+          fullWidth={false}
+        />
         <Button title="Save changes" onPress={handleSave} loading={saving} />
       </View>
     </KeyboardAvoidingView>
@@ -388,11 +448,25 @@ const EditSiteScreen: React.FC = () => {
 export default EditSiteScreen;
 
 const styles = StyleSheet.create({
-  section: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text, marginBottom: spacing.sm },
-  label: { fontSize: fontSize.sm, color: colors.textMuted, marginBottom: 6, fontWeight: '600' },
+  section: {
+    fontSize: fontSize.lg,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  label: {
+    fontSize: fontSize.sm,
+    color: colors.textMuted,
+    marginBottom: 6,
+    fontWeight: "600",
+  },
   error: { color: colors.danger, fontSize: fontSize.xs, marginTop: 4 },
-  helper: { color: colors.textMuted, fontSize: fontSize.xs, marginTop: spacing.sm },
-  pillWrap: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 4 },
+  helper: {
+    color: colors.textMuted,
+    fontSize: fontSize.xs,
+    marginTop: spacing.sm,
+  },
+  pillWrap: { flexDirection: "row", flexWrap: "wrap", marginBottom: 4 },
   indented: {
     marginTop: spacing.sm,
     paddingLeft: spacing.md,
@@ -400,32 +474,46 @@ const styles = StyleSheet.create({
     borderLeftColor: colors.brandSubtle,
   },
   switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: spacing.sm,
     marginTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
   },
-  switchLabel: { fontSize: fontSize.body, color: colors.text, fontWeight: '600' },
-  statRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  switchLabel: {
+    fontSize: fontSize.body,
+    color: colors.text,
+    fontWeight: "600",
+  },
+  statRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.sm },
   statBox: {
     flex: 1,
     backgroundColor: colors.bg,
     borderRadius: radius.md,
     padding: spacing.md,
-    alignItems: 'center',
+    alignItems: "center",
   },
-  statLabel: { fontSize: fontSize.xs, color: colors.textMuted, textTransform: 'uppercase', fontWeight: '700' },
-  statValue: { fontSize: fontSize.h1, fontWeight: '700', color: colors.text, marginTop: 4 },
+  statLabel: {
+    fontSize: fontSize.xs,
+    color: colors.textMuted,
+    textTransform: "uppercase",
+    fontWeight: "700",
+  },
+  statValue: {
+    fontSize: fontSize.h1,
+    fontWeight: "700",
+    color: colors.text,
+    marginTop: 4,
+  },
   footer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: spacing.sm,
     padding: spacing.md,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },

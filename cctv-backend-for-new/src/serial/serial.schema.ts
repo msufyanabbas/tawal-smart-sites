@@ -32,3 +32,19 @@ export class RmsSerial {
 
 export const RmsSerialSchema = SchemaFactory.createForClass(RmsSerial);
 RmsSerialSchema.index({ serialNumber: 1 });
+
+// ── Smart Lock Serial ──────────────────────────────────────────────────────────
+
+export type SmartLockSerialDocument = SmartLockSerial & Document;
+
+@Schema({ timestamps: true })
+export class SmartLockSerial {
+  @Prop({ required: true, unique: true, trim: true })
+  serialNumber: string;
+
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
+  createdBy?: Types.ObjectId;
+}
+
+export const SmartLockSerialSchema = SchemaFactory.createForClass(SmartLockSerial);
+SmartLockSerialSchema.index({ serialNumber: 1 });

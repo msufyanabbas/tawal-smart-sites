@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import AppNavigation from './src/navigation';
-import * as Font from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
-import { View } from 'react-native';
-import { AuthProvider } from './src/contexts/AuthContext';
+import React, { useCallback, useEffect, useState } from "react";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import AppNavigation from "./src/navigation";
+import * as Font from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import { View } from "react-native";
+import { AuthProvider } from "./src/contexts/AuthContext";
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -18,9 +18,9 @@ export default function App() {
     async function prepare() {
       try {
         await Font.loadAsync({
-          'Mulish-Regular': require('./assets/fonts/Mulish-Regular.ttf'),
-          'Mulish-Bold': require('./assets/fonts/Mulish-Bold.ttf'),
-          'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
+          "Mulish-Regular": require("./assets/fonts/Mulish-Regular.ttf"),
+          "Mulish-Bold": require("./assets/fonts/Mulish-Bold.ttf"),
+          "Poppins-Bold": require("./assets/fonts/Poppins-Bold.ttf"),
         });
       } catch (e) {
       } finally {
@@ -46,11 +46,10 @@ export default function App() {
     <SafeAreaProvider>
       <AuthProvider>
         <View onLayout={onLayoutRootView} style={{ flex: 1 }}>
-        <StatusBar style="light" />
-        <AppNavigation />
-      </View>
+          <StatusBar style="light" />
+          <AppNavigation />
+        </View>
       </AuthProvider>
     </SafeAreaProvider>
   );
-
 }

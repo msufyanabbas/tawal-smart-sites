@@ -1,4 +1,4 @@
-import apiClient from './apiClient';
+import apiClient from "./apiClient";
 import {
   ApiResponse,
   RmsScope,
@@ -7,16 +7,19 @@ import {
   SiteStatusFilter,
   SiteUnitsPayload,
   SiteUpdatePayload,
-} from '../types';
+} from "../types";
 
-const unwrap = async <T>(promise: Promise<{ data: T }>): Promise<ApiResponse<T>> => {
+const unwrap = async <T>(
+  promise: Promise<{ data: T }>,
+): Promise<ApiResponse<T>> => {
   try {
     const response = await promise;
     return { success: true, data: response.data };
   } catch (error: any) {
     return {
       success: false,
-      message: error?.response?.data?.message || error?.message || 'Request failed',
+      message:
+        error?.response?.data?.message || error?.message || "Request failed",
     };
   }
 };
@@ -29,12 +32,23 @@ export interface ListSitesFilters {
   from?: string;
   to?: string;
 }
+interface Sim {
+  serialNumber?: string;
+}
+
+interface Rms {
+  serialNumber?: string;
+}
+
+interface SmartMeter {
+  serialNumber?: string;
+}
 
 const cleanParams = (obj: ListSitesFilters | undefined) => {
   if (!obj) return undefined;
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-    if (v !== undefined && v !== null && v !== '') out[k] = String(v);
+    if (v !== undefined && v !== null && v !== "") out[k] = String(v);
   }
   return out;
 };
@@ -42,13 +56,13 @@ const cleanParams = (obj: ListSitesFilters | undefined) => {
 // ── Sites ───────────────────────────────────────────────────────────────────
 
 export const getSites = (filters?: ListSitesFilters) =>
-  unwrap<Site[]>(apiClient.get('/sites', { params: cleanParams(filters) }));
+  unwrap<Site[]>(apiClient.get("/sites", { params: cleanParams(filters) }));
 
 export const getSiteById = (id: string) =>
   unwrap<Site>(apiClient.get(`/sites/${id}`));
 
 export const createSite = (payload: SiteCreatePayload) =>
-  unwrap<Site>(apiClient.post('/sites', payload));
+  unwrap<Site>(apiClient.post("/sites", payload));
 
 export const updateSite = (id: string, payload: SiteUpdatePayload) =>
   unwrap<Site>(apiClient.patch(`/sites/${id}`, payload));
@@ -75,6 +89,14 @@ export const reviewSite = (id: string, remarks?: string) => {
   return unwrap<Site>(apiClient.patch(`/sites/${id}/review`, body));
 };
 
+// get the sims and rms and smart meter
+export const getSims = () => unwrap<Sim[]>(apiClient.get("serials/sims"));
+
+export const getRms = () => unwrap<Rms[]>(apiClient.get("serials/rms"));
+
+export const getSmartMeter = () =>
+  unwrap<SmartMeter[]>(apiClient.get("serials/smartlock"));
+
 // ── Reports ────────────────────────────────────────────────────────────────
 
 export interface ReportFilters {
@@ -86,18 +108,23 @@ export interface ReportFilters {
 }
 
 export const listReportSites = (filters: ReportFilters) =>
-  unwrap<Site[]>(apiClient.get('/reports/sites', { params: cleanParams(filters) }));
+  unwrap<Site[]>(
+    apiClient.get("/reports/sites", { params: cleanParams(filters) }),
+  );
 
 // Returns the absolute URL the device can open (Linking.openURL) to trigger
 // the Excel download. The /reports/generate POST is wrapped in the URL with
 // the access token as an Authorization header would be — but since we can't
 // add auth headers to a browser-opened URL, the caller should instead use
 // `downloadReportFile` below, which streams via axios + saves locally.
-export const reportDownloadUrl = (baseUrl: string, filters: ReportFilters): string => {
+export const reportDownloadUrl = (
+  baseUrl: string,
+  filters: ReportFilters,
+): string => {
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(cleanParams(filters) ?? {})) {
     params.append(k, String(v));
   }
   const qs = params.toString();
-  return `${baseUrl.replace(/\/$/, '')}/reports/generate${qs ? `?${qs}` : ''}`;
+  return `${baseUrl.replace(/\/$/, "")}/reports/generate${qs ? `?${qs}` : ""}`;
 };

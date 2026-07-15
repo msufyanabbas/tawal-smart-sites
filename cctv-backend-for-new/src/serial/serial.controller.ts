@@ -106,4 +106,44 @@ export class SerialController {
   async deleteRms(@Param('id') id: string) {
     await this.serialService.deleteRms(id);
   }
+
+  // ── Smart Lock serials ────────────────────────────────────────────────────
+
+  @Get('smartlock')
+  listSmartLock() {
+    return this.serialService.listSmartLock();
+  }
+
+  @Post('smartlock')
+  @Roles(Role.ADMIN)
+  createSmartLock(
+    @Body() dto: CreateSerialDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.serialService.createSmartLock(dto, user);
+  }
+
+  @Post('smartlock/bulk')
+  @Roles(Role.ADMIN)
+  bulkCreateSmartLock(
+    @Body() dto: BulkCreateSerialsDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.serialService.bulkCreateSmartLock(dto, user);
+  }
+
+  @Delete('smartlock/bulk')
+  @Roles(Role.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  bulkDeleteSmartLock(@Body() dto: BulkDeleteSerialsDto) {
+    return this.serialService.bulkDeleteSmartLock(dto);
+  }
+
+  @Delete('smartlock/:id')
+  @Roles(Role.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteSmartLock(@Param('id') id: string) {
+    await this.serialService.deleteSmartLock(id);
+  }
 }
+

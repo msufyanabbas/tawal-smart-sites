@@ -4,9 +4,9 @@ import React, {
   useContext,
   useEffect,
   ReactNode,
-} from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthUser, Role } from '../types';
+} from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AuthUser, Role } from "../types";
 
 // External logout hook — apiClient registers itself here so the 401 interceptor
 // can clear React state without importing the context (avoids a cycle).
@@ -46,7 +46,9 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElement => {
+export const AuthProvider = ({
+  children,
+}: AuthProviderProps): React.ReactElement => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -55,12 +57,16 @@ export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElemen
     const checkLoginStatus = async () => {
       try {
         const [token, raw] = await Promise.all([
-          AsyncStorage.getItem('access_token'),
-          AsyncStorage.getItem('userData'),
+          AsyncStorage.getItem("access_token"),
+          AsyncStorage.getItem("userData"),
         ]);
         setIsLoggedIn(!!token);
         if (raw) {
-          try { setUser(JSON.parse(raw) as AuthUser); } catch { /* corrupt cache */ }
+          try {
+            setUser(JSON.parse(raw) as AuthUser);
+          } catch {
+            /* corrupt cache */
+          }
         }
       } finally {
         setIsLoading(false);
@@ -74,17 +80,21 @@ export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElemen
     refreshToken?: string,
     userData?: AuthUser,
   ) => {
-    await AsyncStorage.setItem('access_token', accessToken);
-    if (refreshToken) await AsyncStorage.setItem('refresh_token', refreshToken);
+    await AsyncStorage.setItem("access_token", accessToken);
+    if (refreshToken) await AsyncStorage.setItem("refresh_token", refreshToken);
     if (userData) {
-      await AsyncStorage.setItem('userData', JSON.stringify(userData));
+      await AsyncStorage.setItem("userData", JSON.stringify(userData));
       setUser(userData);
     }
     setIsLoggedIn(true);
   };
 
   const logout = async () => {
-    await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'userData']);
+    await AsyncStorage.multiRemove([
+      "access_token",
+      "refresh_token",
+      "userData",
+    ]);
     setIsLoggedIn(false);
     setUser(null);
   };
@@ -111,6 +121,6 @@ export const AuthProvider = ({ children }: AuthProviderProps): React.ReactElemen
 
 export const useAuth = (): AuthContextData => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used within an AuthProvider');
+  if (!context) throw new Error("useAuth must be used within an AuthProvider");
   return context;
 };

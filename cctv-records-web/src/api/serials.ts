@@ -73,3 +73,37 @@ export const bulkDeleteRmsSerials = async (
   });
   return data;
 };
+
+// ── Smart Lock serials ────────────────────────────────────────────────────────
+
+export const listSmartLockSerials = async (): Promise<RmsSerial[]> => {
+  const { data } = await apiClient.get<RmsSerial[]>('/serials/smartlock');
+  return data;
+};
+
+export const createSmartLockSerial = async (serialNumber: string): Promise<RmsSerial> => {
+  const { data } = await apiClient.post<RmsSerial>('/serials/smartlock', { serialNumber });
+  return data;
+};
+
+export const bulkCreateSmartLockSerials = async (
+  serialNumbers: string[],
+): Promise<BulkSerialResult> => {
+  const { data } = await apiClient.post<BulkSerialResult>('/serials/smartlock/bulk', {
+    serialNumbers,
+  });
+  return data;
+};
+
+export const deleteSmartLockSerial = async (id: string): Promise<void> => {
+  await apiClient.delete(`/serials/smartlock/${id}`);
+};
+
+export const bulkDeleteSmartLockSerials = async (
+  ids: string[],
+): Promise<BulkDeleteResult> => {
+  const { data } = await apiClient.delete<BulkDeleteResult>('/serials/smartlock/bulk', {
+    data: { ids },
+  });
+  return data;
+};
