@@ -304,7 +304,13 @@ const SubmittedDataView: React.FC<{
     }))
     .filter((g) => g.units.length > 0);
 
-  if (groups.length === 0) {
+  const isSimSwap = site.rmsScope === RmsScope.SIM_SWAP;
+  const hasSimSwapPairs = isSimSwap && (site.simSwapPairs?.length ?? 0) > 0;
+  const hasSimSwapFields =
+    isSimSwap &&
+    (site.simSwapSiteType || site.simSwapComments || hasSimSwapPairs);
+
+  if (groups.length === 0 && !hasSimSwapFields) {
     return (
       <Card>
         <AppText style={styles.muted}>
@@ -316,6 +322,92 @@ const SubmittedDataView: React.FC<{
 
   return (
     <>
+      {hasSimSwapFields && (
+        <Card>
+          <AppText style={styles.cardTitle}>SIM Swap Details</AppText>
+
+          {!!site.simSwapComments && (
+            <View style={{ marginBottom: spacing.sm }}>
+              <AppText style={styles.dataKey}>Comments</AppText>
+              <AppText style={[styles.dataVal, { textAlign: "left" }]}>{site.simSwapComments}</AppText>
+            </View>
+          )}
+
+          {!!site.simSwapSiteType && (
+            <View style={{ marginBottom: spacing.sm }}>
+              <AppText style={styles.dataKey}>Site Type</AppText>
+              <AppText style={[styles.dataVal, { textAlign: "left" }]}>
+                {site.simSwapSiteType === "green_field" ? "Green Field" : "Roof Top"}
+              </AppText>
+            </View>
+          )}
+
+          {typeof site.simSwapLatitude === "number" && typeof site.simSwapLongitude === "number" && (
+            <View style={{ marginBottom: spacing.sm }}>
+              <AppText style={styles.dataKey}>Location</AppText>
+              <AppText style={[styles.dataVal, { textAlign: "left" }]}>
+                Lat: {site.simSwapLatitude.toFixed(6)} | Lng: {site.simSwapLongitude.toFixed(6)}
+              </AppText>
+            </View>
+          )}
+
+          {hasSimSwapPairs && site.simSwapPairs!.map((pair, idx) => {
+            const hasNew = !!pair.newSerialNumber || !!pair.newSerialImage;
+            const hasOld = !!pair.oldSerialNumber || !!pair.oldSerialImage;
+            return (
+              <View key={idx} style={styles.dataUnit}>
+                <AppText style={styles.unitHeading}>SIM Pair #{idx + 1}</AppText>
+
+                {/* New SIM */}
+                <View style={{ marginTop: spacing.sm }}>
+                  <AppText style={{ fontWeight: "600", marginBottom: 4 }}>New SIM</AppText>
+                  {!hasNew ? (
+                    <AppText style={styles.muted}>No data.</AppText>
+                  ) : (
+                    <>
+                      {!!pair.newSerialNumber && (
+                        <View style={styles.dataRow}>
+                          <AppText style={styles.dataKey}>Serial number</AppText>
+                          <AppText style={styles.dataVal}>{pair.newSerialNumber}</AppText>
+                        </View>
+                      )}
+                      {!!pair.newSerialImage && (
+                        <TouchableOpacity onPress={() => onOpenImage(pair.newSerialImage!)} style={{ marginTop: spacing.xs }}>
+                          <Image source={{ uri: pair.newSerialImage }} style={styles.thumbLg} />
+                          <AppText style={styles.imgLabel}>Image</AppText>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
+                </View>
+
+                {/* Old SIM */}
+                <View style={{ marginTop: spacing.sm }}>
+                  <AppText style={{ fontWeight: "600", marginBottom: 4 }}>Old SIM</AppText>
+                  {!hasOld ? (
+                    <AppText style={styles.muted}>No data.</AppText>
+                  ) : (
+                    <>
+                      {!!pair.oldSerialNumber && (
+                        <View style={styles.dataRow}>
+                          <AppText style={styles.dataKey}>Serial number</AppText>
+                          <AppText style={styles.dataVal}>{pair.oldSerialNumber}</AppText>
+                        </View>
+                      )}
+                      {!!pair.oldSerialImage && (
+                        <TouchableOpacity onPress={() => onOpenImage(pair.oldSerialImage!)} style={{ marginTop: spacing.xs }}>
+                          <Image source={{ uri: pair.oldSerialImage }} style={styles.thumbLg} />
+                          <AppText style={styles.imgLabel}>Image</AppText>
+                        </TouchableOpacity>
+                      )}
+                    </>
+                  )}
+                </View>
+              </View>
+            );
+          })}
+        </Card>
+      )}
       {groups.map((g) => {
         const singular = g.label.endsWith("s") ? g.label.slice(0, -1) : g.label;
         return (
@@ -824,6 +916,11 @@ const SiteDetailScreen: React.FC = () => {
             (_, i) => existing?.[i] ?? {},
           );
         }
+        (seeded as any).simSwapComments = res.data.simSwapComments ?? "";
+        (seeded as any).simSwapPairs = res.data.simSwapPairs ?? [];
+        (seeded as any).simSwapSiteType = res.data.simSwapSiteType ?? undefined;
+        (seeded as any).simSwapLatitude = res.data.simSwapLatitude ?? undefined;
+        (seeded as any).simSwapLongitude = res.data.simSwapLongitude ?? undefined;
         setUnitValues(seeded);
       } else {
         setError(res.message ?? "Failed to load site");
@@ -1006,8 +1103,7 @@ const SiteDetailScreen: React.FC = () => {
   const showEntry =
     isTech && site.status?.processing?.done && !site.status?.completed?.done;
   const showSubmitted =
-    (isAdmin || isManager) &&
-    (!!site.status?.completed?.done || !!site.status?.reviewed?.done);
+    !!site.status?.completed?.done || !!site.status?.reviewed?.done;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>

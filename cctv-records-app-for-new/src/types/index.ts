@@ -1,25 +1,25 @@
 // Mirrors the NestJS backend (src/site/site.schema.ts, src/user/role.enum.ts).
 
 export enum Role {
-  ADMIN = 'admin',
-  MANAGER = 'manager',
-  TECHNICIAN = 'technician',
+  ADMIN = "admin",
+  MANAGER = "manager",
+  TECHNICIAN = "technician",
 }
 
 export enum RmsScope {
-  RMS = 'RMS',
-  SMART_LOCK = 'SMART_LOCK',
-  SMART_METER = 'SMART_METER',
-  RMS_SERVICE = 'RMS_SERVICE',
-  SIM_SWAP = 'SIM_SWAP',
+  RMS = "RMS",
+  SMART_LOCK = "SMART_LOCK",
+  SMART_METER = "SMART_METER",
+  RMS_SERVICE = "RMS_SERVICE",
+  SIM_SWAP = "SIM_SWAP",
 }
 
 export enum SiteStatusFilter {
-  CREATED = 'created',
-  ASSIGNED = 'assigned',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
-  REVIEWED = 'reviewed',
+  CREATED = "created",
+  ASSIGNED = "assigned",
+  PROCESSING = "processing",
+  COMPLETED = "completed",
+  REVIEWED = "reviewed",
 }
 
 export interface ImagedSerialTag {
@@ -36,7 +36,7 @@ export interface SimSwapPair {
   oldSerialImage?: string;
 }
 
-export type SimSwapSiteType = 'green_field' | 'roof_top';
+export type SimSwapSiteType = "green_field" | "roof_top";
 
 export interface StatusFlag {
   done: boolean;
@@ -61,6 +61,7 @@ export interface SiteStatus {
 }
 
 export interface Site {
+  simSwapComments: string;
   _id: string;
 
   siteName: string;
@@ -131,7 +132,7 @@ export interface SiteUnitsPayload {
   smartMeterUnits?: ImagedSerialTag[];
   ctSplitUnits?: ImagedSerialTag[];
   silboGatewayUnits?: ImagedSerialTag[];
-  
+
   // SIM swap fields
   simSwapPairs?: SimSwapPair[];
   simSwapSiteType?: SimSwapSiteType;
