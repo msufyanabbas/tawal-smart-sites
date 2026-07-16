@@ -5,9 +5,12 @@ import { callExternalLogout } from "../contexts/AuthContext"; // <-- adjust path
 
 // Override via app.json `extra.apiBaseUrl` or an EXPO_PUBLIC_API_BASE_URL env var (Expo SDK 51+).
 // Falls back to the LAN dev address so the existing dev workflow keeps working.
+// const API_BASE_URL =
+//   (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined) ??
+//   "https://tawal-site.smart-life.sa/api";
 const API_BASE_URL =
   (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined) ??
-  "https://tawal-site.smart-life.sa/api";
+  "http://192.168.1.196:3000";
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

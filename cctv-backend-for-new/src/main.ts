@@ -11,7 +11,6 @@ async function bootstrap() {
   // Set limit to 10mb to accommodate base64-encoded image payloads from clients.
   app.use(bodyParser.json({ limit: '50mb' }));
   app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
-
   // Enable CORS so the React web client can hit the API from a browser origin.
   // CORS_ORIGINS is a comma-separated list; falls back to "*" in dev.
   const allowed = (process.env.CORS_ORIGINS ?? '*')
@@ -32,6 +31,6 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(3000);
+  await app.listen(3000, '0.0.0.0');
 }
 bootstrap();

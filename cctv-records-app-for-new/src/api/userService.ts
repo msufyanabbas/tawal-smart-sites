@@ -43,8 +43,9 @@ const unwrap = async <T>(
 
 // ── Auth ────────────────────────────────────────────────────────────────────
 
-export const loginUser = (payload: LoginPayload) =>
-  unwrap<LoginResponse>(apiClient.post("/auth/login", payload));
+export const loginUser = (payload: LoginPayload) => {
+  return unwrap<LoginResponse>(apiClient.post("/auth/login", payload));
+};
 
 export const requestPasswordReset = (email: string) =>
   unwrap(apiClient.post("/auth/forgot-password", { email }));

@@ -35,7 +35,8 @@ export class SerialService {
   constructor(
     @InjectModel(SimSerial.name) private simModel: Model<SimSerialDocument>,
     @InjectModel(RmsSerial.name) private rmsModel: Model<RmsSerialDocument>,
-    @InjectModel(SmartLockSerial.name) private smartLockModel: Model<SmartLockSerialDocument>,
+    @InjectModel(SmartLockSerial.name)
+    private smartLockModel: Model<SmartLockSerialDocument>,
   ) {}
 
   // ── SIM ──────────────────────────────────────────────────────────────────
@@ -169,7 +170,11 @@ export class SerialService {
   // ── Smart Lock ──────────────────────────────────────────────────────────
 
   async listSmartLock(): Promise<SmartLockSerialDocument[]> {
-    return this.smartLockModel.find().sort({ createdAt: -1 }).lean().exec() as any;
+    return this.smartLockModel
+      .find()
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec() as any;
   }
 
   async createSmartLock(
@@ -201,7 +206,10 @@ export class SerialService {
       const serialNumber = raw.trim();
       if (!serialNumber) continue;
       try {
-        await this.smartLockModel.create({ serialNumber, createdBy: createdById });
+        await this.smartLockModel.create({
+          serialNumber,
+          createdBy: createdById,
+        });
         result.created++;
       } catch (err: any) {
         if (err?.code === 11000) {
@@ -222,7 +230,9 @@ export class SerialService {
     if (!res) throw new NotFoundException(`Smart Lock serial ${id} not found`);
   }
 
-  async bulkDeleteSmartLock(dto: BulkDeleteSerialsDto): Promise<BulkDeleteResult> {
+  async bulkDeleteSmartLock(
+    dto: BulkDeleteSerialsDto,
+  ): Promise<BulkDeleteResult> {
     const objectIds = dto.ids.map((id) => new Types.ObjectId(id));
     const res = await this.smartLockModel
       .deleteMany({ _id: { $in: objectIds } })
