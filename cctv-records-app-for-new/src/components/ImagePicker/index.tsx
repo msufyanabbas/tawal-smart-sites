@@ -33,10 +33,11 @@ const CustomImagePicker: React.FC<CustomImagePickerProps> = ({ imageUri, onImage
   const processImageResult = (result: ImagePicker.ImagePickerResult) => {
     if (!result.canceled && result.assets && result.assets[0]) {
       const selectedImage = result.assets[0];
-      if (selectedImage.base64) {
-        onImageSelected(`data:image/jpeg;base64,${selectedImage.base64}`);
-      } else if (selectedImage.uri) {
+      // Prefer the file URI so on-device OCR (ML Kit) can read the image.
+      if (selectedImage.uri) {
         onImageSelected(selectedImage.uri);
+      } else if (selectedImage.base64) {
+        onImageSelected(`data:image/jpeg;base64,${selectedImage.base64}`);
       }
     }
   };

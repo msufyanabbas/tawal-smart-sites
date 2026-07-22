@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -44,7 +45,11 @@ import {
   saveSiteDraft,
   submitSite,
 } from "../api/siteService";
-import { getSimSerials, getRmsSerials, getSmartLockSerials } from "../api/serialService";
+import {
+  getSimSerials,
+  getRmsSerials,
+  getSmartLockSerials,
+} from "../api/serialService";
 import { Dropdown } from "react-native-element-dropdown";
 import { listUsers } from "../api/userService";
 import { SitesStackParamList } from "../navigation";
@@ -64,6 +69,7 @@ import {
   formatErrorMessage,
   rmsScopeLabel,
 } from "../utils/helpers";
+import { runOcr, scanSimSerialFromOcr } from "../utils/ocrUtils";
 import {
   colors,
   fontSize,
@@ -326,7 +332,7 @@ const SubmittedDataView: React.FC<{
     <>
       {hasSimSwapFields && (
         <Card>
-          <AppText style={styles.cardTitle}>SIM Swap Details</AppText>
+          <AppText style={styles.cardTitle}>SIM Swap Detailssss</AppText>
 
           {!!site.simSwapComments && (
             <View style={{ marginBottom: spacing.sm }}>
@@ -554,9 +560,7 @@ const FieldEntryForm: React.FC<{
   onGetLocation,
   locationBusy,
   onOpenImage,
-  saving,
-  onSaveDraft,
-  onSubmit,
+
   simOptions,
   rmsOptions,
   smartLockOptions,
@@ -564,6 +568,95 @@ const FieldEntryForm: React.FC<{
   const groups = useMemo(() => relevantUnitGroups(site), [site]);
   const pairs = useMemo(() => values.simSwapPairs ?? [], [values.simSwapPairs]);
   const isSimSwap = site.rmsScope === RmsScope.SIM_SWAP;
+
+  // ── OCR state ────────────────────────────────────────────────────────────
+  // Key format: `${groupKey}-${idx}` or `simswap-new-${idx}`
+  const [ocrBusy, setOcrBusy] = useState<string | null>(null);
+
+  /**
+   * Called when a serial image is picked for a SIM card unit.
+   * Saves the image immediately, then runs on-device OCR to try to
+   * auto-fill the serial number dropdown.
+   */
+  const handleSimSerialImagePicked = async (
+    groupKey: keyof SiteUnitsPayload,
+    idx: number,
+    uri: string,
+  ) => {
+    // Save the image straight away so UX is never blocked
+    onChange(groupKey, idx, { serialImage: uri });
+
+    const busyKey = `${String(groupKey)}-${idx}`;
+    setOcrBusy(busyKey);
+    try {
+      const ocrText = await runOcr(uri);
+      const known = simOptions.map((o) => o.value);
+      const { extracted, matched } = scanSimSerialFromOcr(ocrText, known);
+
+      if (matched) {
+        onChange(groupKey, idx, { serialNumber: matched });
+        Alert.alert("✓ SIM serial detected", `Auto-filled: ${matched}`);
+      } else if (extracted) {
+        Alert.alert(
+          "SIM not found",
+          `Scanned serial: ${extracted}\n\nThis number is not in the SIM list. Please select manually.`,
+        );
+      } else {
+        Alert.alert(
+          "OCR",
+          "Could not find an 18-digit serial number in this image. Please enter manually.",
+        );
+      }
+    } catch (e) {
+      console.warn("[OCR] failed:", e);
+      Alert.alert(
+        "OCR failed",
+        "Could not scan this image. Please select the serial manually.",
+      );
+    } finally {
+      setOcrBusy(null);
+    }
+  };
+
+  /**
+   * Called when the New SIM serial image is picked inside a SIM Swap pair.
+   */
+  const handleSimSwapNewSerialImagePicked = async (
+    pairIdx: number,
+    uri: string,
+  ) => {
+    onUpdateSimSwapPair(pairIdx, { newSerialImage: uri });
+    const busyKey = `simswap-new-${pairIdx}`;
+    setOcrBusy(busyKey);
+    try {
+      const ocrText = await runOcr(uri);
+      const known = simOptions.map((o) => o.value);
+      const { extracted, matched } = scanSimSerialFromOcr(ocrText, known);
+
+      if (matched) {
+        onUpdateSimSwapPair(pairIdx, { newSerialNumber: matched });
+        Alert.alert("✓ SIM serial detected", `Auto-filled: ${matched}`);
+      } else if (extracted) {
+        Alert.alert(
+          "SIM not found",
+          `Scanned serial: ${extracted}\n\nThis number is not in the SIM list. Please select manually.`,
+        );
+      } else {
+        Alert.alert(
+          "OCR",
+          "Could not find an 18-digit serial number in this image. Please enter manually.",
+        );
+      }
+    } catch (e) {
+      console.warn("[OCR] failed:", e);
+      Alert.alert(
+        "OCR failed",
+        "Could not scan this image. Please select the serial manually.",
+      );
+    } finally {
+      setOcrBusy(null);
+    }
+  };
 
   return (
     <>
@@ -580,25 +673,27 @@ const FieldEntryForm: React.FC<{
 
                 {/* New SIM */}
                 <View style={{ marginBottom: spacing.md }}>
-                   <AppText style={styles.dropdownLabel}>New SIM serial number</AppText>
-                   <Dropdown
-                     style={styles.dropdown}
-                     placeholderStyle={styles.dropdownPlaceholder}
-                     selectedTextStyle={styles.dropdownSelectedText}
-                     inputSearchStyle={styles.dropdownSearchInput}
-                     data={simOptions}
-                     search
-                     maxHeight={300}
-                     labelField="label"
-                     valueField="value"
-                     placeholder="Search SIM..."
-                     searchPlaceholder="Search SIM..."
-                     value={pair.newSerialNumber ?? ""}
-                     onChange={(item) =>
-                       onUpdateSimSwapPair(i, { newSerialNumber: item.value })
-                     }
-                   />
-                 </View>
+                  <AppText style={styles.dropdownLabel}>
+                    New SIM serial numbers
+                  </AppText>
+                  <Dropdown
+                    style={styles.dropdown}
+                    placeholderStyle={styles.dropdownPlaceholder}
+                    selectedTextStyle={styles.dropdownSelectedText}
+                    inputSearchStyle={styles.dropdownSearchInput}
+                    data={simOptions}
+                    search
+                    maxHeight={300}
+                    labelField="label"
+                    valueField="value"
+                    placeholder="Search SIM..."
+                    searchPlaceholder="Search SIM..."
+                    value={pair.newSerialNumber ?? ""}
+                    onChange={(item) =>
+                      onUpdateSimSwapPair(i, { newSerialNumber: item.value })
+                    }
+                  />
+                </View>
                 <AppText style={styles.imgLabel}>New SIM image</AppText>
                 {pair.newSerialImage ? (
                   <TouchableOpacity
@@ -616,16 +711,23 @@ const FieldEntryForm: React.FC<{
                       ])
                     }
                   >
-                    <Image
-                      source={{ uri: pair.newSerialImage }}
-                      style={styles.thumbLg}
-                    />
+                    <View style={styles.thumbContainer}>
+                      <Image
+                        source={{ uri: pair.newSerialImage }}
+                        style={styles.thumbLg}
+                      />
+                      {ocrBusy === `simswap-new-${i}` && (
+                        <View style={styles.ocrOverlay}>
+                          <ActivityIndicator size="small" color="#fff" />
+                        </View>
+                      )}
+                    </View>
                   </TouchableOpacity>
                 ) : (
                   <CustomImagePicker
                     imageUri={pair.newSerialImage}
                     onImageSelected={(uri) =>
-                      onUpdateSimSwapPair(i, { newSerialImage: uri })
+                      handleSimSwapNewSerialImagePicked(i, uri)
                     }
                     label="Tap to add"
                   />
@@ -751,7 +853,9 @@ const FieldEntryForm: React.FC<{
                       if (options) {
                         return (
                           <View style={{ marginBottom: spacing.md }}>
-                            <AppText style={styles.dropdownLabel}>Serial number</AppText>
+                            <AppText style={styles.dropdownLabel}>
+                              Serial number
+                            </AppText>
                             <Dropdown
                               style={styles.dropdown}
                               placeholderStyle={styles.dropdownPlaceholder}
@@ -766,7 +870,9 @@ const FieldEntryForm: React.FC<{
                               searchPlaceholder="Search serial..."
                               value={u.serialNumber ?? ""}
                               onChange={(item) =>
-                                onChange(g.key, idx, { serialNumber: item.value })
+                                onChange(g.key, idx, {
+                                  serialNumber: item.value,
+                                })
                               }
                             />
                           </View>
@@ -800,16 +906,25 @@ const FieldEntryForm: React.FC<{
                           ])
                         }
                       >
-                        <Image
-                          source={{ uri: u.serialImage }}
-                          style={styles.thumbLg}
-                        />
+                        <View style={styles.thumbContainer}>
+                          <Image
+                            source={{ uri: u.serialImage }}
+                            style={styles.thumbLg}
+                          />
+                          {ocrBusy === `${String(g.key)}-${idx}` && (
+                            <View style={styles.ocrOverlay}>
+                              <ActivityIndicator size="small" color="#fff" />
+                            </View>
+                          )}
+                        </View>
                       </TouchableOpacity>
                     ) : (
                       <CustomImagePicker
                         imageUri={u.serialImage}
                         onImageSelected={(uri) =>
-                          onChange(g.key, idx, { serialImage: uri })
+                          g.key === "simCards"
+                            ? handleSimSerialImagePicked(g.key, idx, uri)
+                            : onChange(g.key, idx, { serialImage: uri })
                         }
                         label="Tap to add"
                       />
@@ -990,25 +1105,46 @@ const SiteDetailScreen: React.FC = () => {
   // successful approval so the panel disappears with the right state.
   const [reviewRemarks, setReviewRemarks] = useState("");
 
-  const [simOptions, setSimOptions] = useState<{ label: string; value: string }[]>([]);
-  const [rmsOptions, setRmsOptions] = useState<{ label: string; value: string }[]>([]);
-  const [smartLockOptions, setSmartLockOptions] = useState<{ label: string; value: string }[]>([]);
+  const [simOptions, setSimOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [rmsOptions, setRmsOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [smartLockOptions, setSmartLockOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
 
   useEffect(() => {
     if (!isTech) return;
     getSimSerials().then((res) => {
       if (res.success && res.data) {
-        setSimOptions(res.data.map((s) => ({ label: s.serialNumber, value: s.serialNumber })));
+        setSimOptions(
+          res.data.map((s) => ({
+            label: s.serialNumber,
+            value: s.serialNumber,
+          })),
+        );
       }
     });
     getRmsSerials().then((res) => {
       if (res.success && res.data) {
-        setRmsOptions(res.data.map((s) => ({ label: s.serialNumber, value: s.serialNumber })));
+        setRmsOptions(
+          res.data.map((s) => ({
+            label: s.serialNumber,
+            value: s.serialNumber,
+          })),
+        );
       }
     });
     getSmartLockSerials().then((res) => {
       if (res.success && res.data) {
-        setSmartLockOptions(res.data.map((s) => ({ label: s.serialNumber, value: s.serialNumber })));
+        setSmartLockOptions(
+          res.data.map((s) => ({
+            label: s.serialNumber,
+            value: s.serialNumber,
+          })),
+        );
       }
     });
   }, [isTech]);
@@ -1269,6 +1405,7 @@ const SiteDetailScreen: React.FC = () => {
         </Card>
 
         {/* Counts */}
+
         <CountsCard site={site} />
 
         {/* Role-specific actions */}
@@ -1660,6 +1797,22 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: radius.md,
     backgroundColor: colors.border,
+    marginTop: 6,
+  },
+  thumbContainer: {
+    position: "relative",
+    alignSelf: "flex-start",
+  },
+  ocrOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.md,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 6,
   },
 

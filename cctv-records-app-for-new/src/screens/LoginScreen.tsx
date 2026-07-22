@@ -77,7 +77,7 @@ const LoginScreen: React.FC = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.card}>
-            <AppText style={styles.title}>Welcome back</AppText>
+            <AppText style={styles.title}>WELCOME BACK</AppText>
             <AppText style={styles.subtitle}>Sign in to continue</AppText>
 
             {!!error && (

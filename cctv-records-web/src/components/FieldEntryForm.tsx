@@ -305,7 +305,6 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
       </div>
     );
   }
-  console.log(groups);
   return (
     <div className="space-y-5">
       <div className="card">
