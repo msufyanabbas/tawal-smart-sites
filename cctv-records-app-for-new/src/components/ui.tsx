@@ -1,7 +1,7 @@
 // Shared, theme-aware UI primitives. Built on top of `theme.ts` so screens
 // don't sprinkle hex codes or one-off styles.
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -16,10 +16,10 @@ import {
   TouchableOpacity,
   View,
   ViewStyle,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import AppText from './AppText';
-import { colors, radius, shadow, spacing, fontSize } from '../theme';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import AppText from "./AppText";
+import { colors, radius, shadow, spacing, fontSize } from "../theme";
 
 // ── Layout ─────────────────────────────────────────────────────────────────
 
@@ -43,7 +43,7 @@ export const Section: React.FC<{
 
 // ── Buttons ────────────────────────────────────────────────────────────────
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
 interface ButtonProps {
   title: string;
@@ -59,7 +59,7 @@ interface ButtonProps {
 export const Button: React.FC<ButtonProps> = ({
   title,
   onPress,
-  variant = 'primary',
+  variant = "primary",
   loading,
   disabled,
   icon,
@@ -76,7 +76,7 @@ export const Button: React.FC<ButtonProps> = ({
       style={[
         styles.btn,
         v.container,
-        !fullWidth && { alignSelf: 'flex-start' },
+        !fullWidth && { alignSelf: "flex-start" },
         isDisabled && { opacity: 0.55 },
         style,
       ]}
@@ -86,7 +86,13 @@ export const Button: React.FC<ButtonProps> = ({
       ) : (
         <>
           {icon}
-          <Text style={[styles.btnText, v.text, icon ? { marginLeft: spacing.sm } : null]}>
+          <Text
+            style={[
+              styles.btnText,
+              v.text,
+              icon ? { marginLeft: spacing.sm } : null,
+            ]}
+          >
             {title}
           </Text>
         </>
@@ -101,12 +107,12 @@ const btnVariants: Record<
 > = {
   primary: {
     container: { backgroundColor: colors.brand, ...shadow.brand },
-    text: { color: '#fff' },
-    spinner: '#fff',
+    text: { color: "#fff" },
+    spinner: "#fff",
   },
   secondary: {
     container: {
-      backgroundColor: '#fff',
+      backgroundColor: "#fff",
       borderWidth: 1,
       borderColor: colors.brand,
     },
@@ -114,14 +120,14 @@ const btnVariants: Record<
     spinner: colors.brand,
   },
   ghost: {
-    container: { backgroundColor: 'transparent' },
+    container: { backgroundColor: "transparent" },
     text: { color: colors.navy },
     spinner: colors.navy,
   },
   danger: {
     container: { backgroundColor: colors.danger },
-    text: { color: '#fff' },
-    spinner: '#fff',
+    text: { color: "#fff" },
+    spinner: "#fff",
   },
 };
 
@@ -176,7 +182,7 @@ export const PickerField: React.FC<PickerFieldProps> = ({
   label,
   value,
   options,
-  placeholder = 'Select…',
+  placeholder = "Select…",
   disabled,
   error,
   helper,
@@ -216,11 +222,16 @@ export const PickerField: React.FC<PickerFieldProps> = ({
         <AppText style={styles.helper}>{helper}</AppText>
       ) : null}
 
-      <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+      <Modal
+        visible={open}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setOpen(false)}
+      >
         <View style={styles.pickerBackdrop}>
           <View style={styles.pickerSheet}>
             <View style={styles.pickerHead}>
-              <AppText style={styles.pickerTitle}>{label ?? 'Select'}</AppText>
+              <AppText style={styles.pickerTitle}>{label ?? "Select"}</AppText>
               <TouchableOpacity onPress={() => setOpen(false)} hitSlop={12}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
@@ -230,7 +241,9 @@ export const PickerField: React.FC<PickerFieldProps> = ({
               keyExtractor={(opt) => opt}
               ListEmptyComponent={
                 <View style={{ padding: spacing.lg }}>
-                  <AppText style={{ color: colors.textMuted, textAlign: 'center' }}>
+                  <AppText
+                    style={{ color: colors.textMuted, textAlign: "center" }}
+                  >
                     No options available.
                   </AppText>
                 </View>
@@ -243,17 +256,29 @@ export const PickerField: React.FC<PickerFieldProps> = ({
                       onChange(item);
                       setOpen(false);
                     }}
-                    style={[styles.pickerOption, isSelected && styles.pickerOptionActive]}
+                    style={[
+                      styles.pickerOption,
+                      isSelected && styles.pickerOptionActive,
+                    ]}
                   >
                     <Text
                       style={[
                         styles.pickerOptionText,
-                        isSelected && { color: colors.brand, fontWeight: '700' },
+                        isSelected && {
+                          color: colors.brand,
+                          fontWeight: "700",
+                        },
                       ]}
                     >
                       {item}
                     </Text>
-                    {isSelected && <Ionicons name="checkmark" size={20} color={colors.brand} />}
+                    {isSelected && (
+                      <Ionicons
+                        name="checkmark"
+                        size={20}
+                        color={colors.brand}
+                      />
+                    )}
                   </TouchableOpacity>
                 );
               }}
@@ -279,14 +304,14 @@ export const Chip: React.FC<{
       small && styles.chipSm,
       filled
         ? { backgroundColor: color }
-        : { backgroundColor: '#fff', borderWidth: 1, borderColor: color },
+        : { backgroundColor: "#fff", borderWidth: 1, borderColor: color },
     ]}
   >
     <Text
       style={[
         styles.chipText,
         small && styles.chipTextSm,
-        { color: filled ? '#fff' : color },
+        { color: filled ? "#fff" : color },
       ]}
     >
       {label}
@@ -302,10 +327,7 @@ export const SelectablePill: React.FC<{
 }> = ({ label, active, onPress }) => (
   <Pressable
     onPress={onPress}
-    style={[
-      styles.pill,
-      active ? styles.pillActive : styles.pillIdle,
-    ]}
+    style={[styles.pill, active ? styles.pillActive : styles.pillIdle]}
   >
     <Text style={[styles.pillText, active && styles.pillTextActive]}>
       {label}
@@ -320,14 +342,18 @@ export const EmptyState: React.FC<{
   title: string;
   subtitle?: string;
   action?: { label: string; onPress: () => void };
-}> = ({ icon = '○', title, subtitle, action }) => (
+}> = ({ icon = "○", title, subtitle, action }) => (
   <View style={styles.empty}>
     <Text style={styles.emptyIcon}>{icon}</Text>
     <AppText style={styles.emptyTitle}>{title}</AppText>
     {!!subtitle && <AppText style={styles.emptySub}>{subtitle}</AppText>}
     {action && (
       <View style={{ marginTop: spacing.md }}>
-        <Button title={action.label} onPress={action.onPress} fullWidth={false} />
+        <Button
+          title={action.label}
+          onPress={action.onPress}
+          fullWidth={false}
+        />
       </View>
     )}
   </View>
@@ -368,9 +394,9 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: fontSize.sm,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.brand,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 1,
     marginBottom: spacing.sm,
   },
@@ -379,20 +405,20 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingVertical: 12,
     paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
   },
   btnText: {
     fontSize: fontSize.body,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   label: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
     marginBottom: 6,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   input: {
     borderWidth: 1,
@@ -419,35 +445,35 @@ const styles = StyleSheet.create({
   },
 
   pickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   pickerBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(15,26,46,0.55)',
-    justifyContent: 'flex-end',
+    backgroundColor: "rgba(15,26,46,0.55)",
+    justifyContent: "flex-end",
   },
   pickerSheet: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.xl,
-    maxHeight: '75%',
+    maxHeight: "75%",
   },
   pickerHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: spacing.sm,
   },
-  pickerTitle: { fontSize: fontSize.lg, fontWeight: '700', color: colors.text },
+  pickerTitle: { fontSize: fontSize.lg, fontWeight: "700", color: colors.text },
   pickerOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
@@ -461,10 +487,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: radius.pill,
-    alignSelf: 'flex-start',
+    alignSelf: "flex-start",
   },
   chipSm: { paddingHorizontal: 8, paddingVertical: 2 },
-  chipText: { fontSize: fontSize.xs, fontWeight: '700' },
+  chipText: { fontSize: fontSize.xs, fontWeight: "700" },
   chipTextSm: { fontSize: 9 },
 
   pill: {
@@ -474,14 +500,22 @@ const styles = StyleSheet.create({
     marginRight: 6,
     marginBottom: 6,
   },
-  pillIdle: { backgroundColor: '#fff', borderWidth: 1, borderColor: colors.border },
-  pillActive: { backgroundColor: colors.brand, borderWidth: 1, borderColor: colors.brand },
-  pillText: { fontSize: fontSize.sm, color: colors.text, fontWeight: '600' },
-  pillTextActive: { color: '#fff' },
+  pillIdle: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  pillActive: {
+    backgroundColor: colors.brand,
+    borderWidth: 1,
+    borderColor: colors.brand,
+  },
+  pillText: { fontSize: fontSize.sm, color: colors.text, fontWeight: "600" },
+  pillTextActive: { color: "#fff" },
 
   empty: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: spacing.xxl,
     paddingHorizontal: spacing.lg,
   },
@@ -493,19 +527,19 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: fontSize.lg,
     color: colors.text,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   emptySub: {
     fontSize: fontSize.sm,
     color: colors.textMuted,
     marginTop: 4,
-    textAlign: 'center',
+    textAlign: "center",
   },
 
   loading: {
     paddingVertical: spacing.xxl,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadingLabel: {
     fontSize: fontSize.sm,

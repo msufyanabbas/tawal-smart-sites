@@ -8,6 +8,7 @@ import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
 import { TextField } from "@/components/TextField";
 import { ImageUploadField } from "@/components/ImageUploadField";
+import { MaterialDetails } from "@/components/MaterialDetails";
 import {
   type ImagedSerialTag,
   RmsScope,
@@ -208,6 +209,44 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
     (out as any).simSwapSiteType = (site as any).simSwapSiteType ?? "";
     (out as any).simSwapLatitude = (site as any).simSwapLatitude ?? null;
     (out as any).simSwapLongitude = (site as any).simSwapLongitude ?? null;
+    const existingTenants = (site as any).simSwapTenants ?? [];
+    const tenantBlanks = Array.from(
+      { length: site.numberOfTenants ?? 0 },
+      () => ({
+        tenantName: "",
+        tenantCtCapacities: ["", "", ""],
+      }),
+    );
+    (out as any).simSwapTenants = tenantBlanks.map((blank, i) => {
+      const existing = existingTenants[i] ?? {};
+      return {
+        tenantName: existing.tenantName ?? blank.tenantName,
+        tenantCtCapacities:
+          existing.tenantCtCapacities ?? blank.tenantCtCapacities,
+      };
+    });
+    // Seed materials sub-object
+    out.materials = {
+      numberOfRms: site.materials?.numberOfRms ?? 0,
+      numberOfExpanders: site.materials?.numberOfExpanders ?? 0,
+      numberOfSims: site.materials?.numberOfSims ?? 0,
+      numberOfFenceLocks: site.materials?.numberOfFenceLocks ?? 0,
+      numberOfShelterLocks: site.materials?.numberOfShelterLocks ?? 0,
+      numberOfOdus: site.materials?.numberOfOdus ?? 0,
+      numberOfSmartMeters: site.materials?.numberOfSmartMeters ?? 0,
+      numberOfCtSplits: site.materials?.numberOfCtSplits ?? 0,
+      numberOfSilboGateways: site.materials?.numberOfSilboGateways ?? 0,
+    };
+    // Seed counts
+    out.numberOfRms = site.numberOfRms ?? 0;
+    out.numberOfExpanders = site.numberOfExpanders ?? 0;
+    out.numberOfSims = site.numberOfSims ?? 0;
+    out.numberOfFenceLocks = site.numberOfFenceLocks ?? 0;
+    out.numberOfShelterLocks = site.numberOfShelterLocks ?? 0;
+    out.numberOfOdus = site.numberOfOdus ?? 0;
+    out.numberOfSmartMeters = site.numberOfSmartMeters ?? 0;
+    out.numberOfCtSplits = site.numberOfCtSplits ?? 0;
+    out.numberOfSilboGateways = site.numberOfSilboGateways ?? 0;
     return out;
   }, [site, groups]);
 
@@ -483,13 +522,91 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                   </p>
                 )}
             </div>
+
+            {/* Tenant details - dynamic based on number of tenants */}
+            {site.numberOfTenants > 0 && (
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <h4 className="font-semibold text-slate-800 text-sm">
+                  Tenant Details
+                </h4>
+                {Array.from({ length: site.numberOfTenants }, (_, i) => {
+                  const tenantsList = (values as any).simSwapTenants ?? [];
+                  const tenant = tenantsList[i] ?? {};
+
+                  const updateTenant = (
+                    idx: number,
+                    patch: Partial<typeof tenant>,
+                  ) => {
+                    setValues((prev) => {
+                      const newTenants = [
+                        ...((prev as any).simSwapTenants ?? []),
+                      ];
+                      newTenants[idx] = { ...newTenants[idx], ...patch };
+                      return { ...(prev ?? {}), simSwapTenants: newTenants };
+                    });
+                  };
+
+                  return (
+                    <div
+                      key={i}
+                      className="rounded-lg border border-slate-200 p-4 space-y-4 bg-slate-50/50"
+                    >
+                      <p className="text-sm font-semibold text-slate-700">
+                        Tenant #{i + 1}
+                      </p>
+                      <div className="space-y-4">
+                        <TextField
+                          label="Tenant name"
+                          value={tenant.tenantName ?? ""}
+                          disabled={readOnly}
+                          onChange={(e) =>
+                            updateTenant(i, { tenantName: e.target.value })
+                          }
+                          placeholder="Enter tenant name"
+                        />
+                        <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+                          {[1, 2, 3].map((phaseNum) => {
+                            const capacities = tenant.tenantCtCapacities ?? [
+                              "",
+                              "",
+                              "",
+                            ];
+                            const capValue = capacities[phaseNum - 1] ?? "";
+                            return (
+                              <SelectField
+                                key={phaseNum}
+                                label={`Tenant CT capacity phase #${phaseNum}`}
+                                placeholder="Select capacity"
+                                value={capValue}
+                                disabled={readOnly}
+                                onChange={(e) => {
+                                  const nextCaps = [...capacities];
+                                  nextCaps[phaseNum - 1] = e.target.value;
+                                  updateTenant(i, {
+                                    tenantCtCapacities: nextCaps,
+                                  });
+                                }}
+                                options={[
+                                  { label: "200x5", value: "200x5" },
+                                  { label: "150x5", value: "150x5" },
+                                ]}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
+
       {groups.map((g) => {
         const arr = (values[g.key] as ImagedSerialTag[] | undefined) ?? [];
         const singular = g.label.endsWith("s") ? g.label.slice(0, -1) : g.label;
-        console.log(g);
         return (
           <div key={g.key} className="card">
             <div className="card-body space-y-3">
@@ -646,6 +763,17 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
           </div>
         );
       })}
+      {/* Material Details for SIM_SWAP - shown in both edit and read-only modes */}
+      {site.rmsScope === RmsScope.SIM_SWAP && (
+        <>
+          <MaterialDetails
+            label="Material Details"
+            value={values}
+            setValues={setValues}
+            readOnly={readOnly}
+          />
+        </>
+      )}
 
       {!readOnly && (
         <div className="flex justify-end gap-3">

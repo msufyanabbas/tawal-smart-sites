@@ -1,25 +1,25 @@
 // Mirrors the NestJS backend (src/site/site.schema.ts, src/user/role.enum.ts).
 
 export enum Role {
-  ADMIN = 'admin',
-  MANAGER = 'manager',
-  TECHNICIAN = 'technician',
+  ADMIN = "admin",
+  MANAGER = "manager",
+  TECHNICIAN = "technician",
 }
 
 export enum RmsScope {
-  RMS = 'RMS',
-  SMART_LOCK = 'SMART_LOCK',
-  SMART_METER = 'SMART_METER',
-  RMS_SERVICE = 'RMS_SERVICE',
-  SIM_SWAP = 'SIM_SWAP',
+  RMS = "RMS",
+  SMART_LOCK = "SMART_LOCK",
+  SMART_METER = "SMART_METER",
+  RMS_SERVICE = "RMS_SERVICE",
+  SIM_SWAP = "SIM_SWAP",
 }
 
 export enum SiteStatusFilter {
-  CREATED = 'created',
-  ASSIGNED = 'assigned',
-  PROCESSING = 'processing',
-  COMPLETED = 'completed',
-  REVIEWED = 'reviewed',
+  CREATED = "created",
+  ASSIGNED = "assigned",
+  PROCESSING = "processing",
+  COMPLETED = "completed",
+  REVIEWED = "reviewed",
 }
 
 export interface ImagedSerialTag {
@@ -36,7 +36,13 @@ export interface SimSwapPair {
   oldSerialImage?: string;
 }
 
-export type SimSwapSiteType = 'green_field' | 'roof_top';
+export interface SimSwapTenant {
+  tenantName?: string;
+  tenantCtCapacities?: string[];
+  ctPhasePhotos?: string[];
+}
+
+export type SimSwapSiteType = "green_field" | "roof_top";
 
 export interface StatusFlag {
   done: boolean;
@@ -78,6 +84,7 @@ export interface Site {
 
   hasSmartLock: boolean;
   numberOfFenceLocks: number;
+  numberOfShelterLocks: number;
   numberOfOdus: number;
 
   hasSmartMeter: boolean;
@@ -90,6 +97,9 @@ export interface Site {
   simSwapSiteType?: SimSwapSiteType;
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
+  simSwapTenants?: SimSwapTenant[];
+  simSwapCtMainPhoto?: string;
+  simSwapMeterPhoto?: string;
 
   status: SiteStatus;
 
@@ -101,6 +111,9 @@ export interface Site {
   smartMeterUnits: ImagedSerialTag[];
   ctSplitUnits: ImagedSerialTag[];
   silboGatewayUnits: ImagedSerialTag[];
+
+  // Technician-entered material counts (separate from admin-set top-level counts)
+  materials?: SiteMaterialsPayload;
 
   createdBy?: string;
   createdAt?: string;
@@ -131,9 +144,22 @@ export interface SiteCreatePayload {
   simSwapSiteType?: SimSwapSiteType;
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
+  numberOfSmartMeters?: number;
 }
 
 export type SiteUpdatePayload = Partial<SiteCreatePayload>;
+
+export interface SiteMaterialsPayload {
+  numberOfRms?: number;
+  numberOfExpanders?: number;
+  numberOfSims?: number;
+  numberOfFenceLocks?: number;
+  numberOfShelterLocks?: number;
+  numberOfOdus?: number;
+  numberOfSmartMeters?: number;
+  numberOfCtSplits?: number;
+  numberOfSilboGateways?: number;
+}
 
 // Shape sent to PATCH /sites/:id/draft and /sites/:id/submit.
 export interface SiteUnitsPayload {
@@ -150,6 +176,19 @@ export interface SiteUnitsPayload {
   simSwapSiteType?: SimSwapSiteType;
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
+  simSwapTenants?: SimSwapTenant[];
+  // Materials (nested object for material counts)
+  materials?: SiteMaterialsPayload;
+  // Counts (kept for backward compatibility)
+  numberOfRms?: number;
+  numberOfExpanders?: number;
+  numberOfSims?: number;
+  numberOfFenceLocks?: number;
+  numberOfShelterLocks?: number;
+  numberOfOdus?: number;
+  numberOfSmartMeters?: number;
+  numberOfCtSplits?: number;
+  numberOfSilboGateways?: number;
 }
 
 export interface AuthUser {
@@ -228,13 +267,3 @@ export interface BulkSerialResult {
 export interface BulkDeleteResult {
   deleted: number;
 }
-
-
-
-
-
-
-
-
-
-

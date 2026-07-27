@@ -36,6 +36,13 @@ export interface SimSwapPair {
   oldSerialImage?: string;
 }
 
+export interface SimSwapTenant {
+  tenantName?: string;
+  tenantCtCapacities?: string[];
+  meterPhoto?: string;
+  ctPhasePhotos?: string[]; // one per phase (index 0 = phase 1, 1 = phase 2, 2 = phase 3)
+}
+
 export type SimSwapSiteType = "green_field" | "roof_top";
 
 export interface StatusFlag {
@@ -76,6 +83,7 @@ export interface Site {
   numberOfSims: number;
   hasSmartLock: boolean;
   numberOfFenceLocks: number;
+  numberOfShelterLocks: number;
   numberOfOdus: number;
   hasSmartMeter: boolean;
   numberOfTenants: number;
@@ -88,6 +96,13 @@ export interface Site {
   simSwapSiteType?: SimSwapSiteType;
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
+  simSwapTenants?: SimSwapTenant[];
+  simSwapCtMainPhoto?: string;
+  // Single meter photo (shown once before tenant details)
+  simSwapMeterPhoto?: string;
+
+  // Technician-entered material counts (separate from admin-set top-level counts)
+  materials?: SiteMaterialsPayload;
 
   status: SiteStatus;
 
@@ -117,11 +132,24 @@ export interface SiteCreatePayload {
   numberOfSims?: number;
   hasSmartLock?: boolean;
   numberOfFenceLocks?: number;
+  numberOfShelterLocks?: number;
   numberOfOdus?: number;
   hasSmartMeter?: boolean;
   numberOfTenants?: number;
 }
 export type SiteUpdatePayload = Partial<SiteCreatePayload>;
+
+export interface SiteMaterialsPayload {
+  numberOfRms?: number;
+  numberOfExpanders?: number;
+  numberOfSims?: number;
+  numberOfFenceLocks?: number;
+  numberOfShelterLocks?: number;
+  numberOfOdus?: number;
+  numberOfSmartMeters?: number;
+  numberOfCtSplits?: number;
+  numberOfSilboGateways?: number;
+}
 
 export interface SiteUnitsPayload {
   rmsUnits?: ImagedSerialTag[];
@@ -132,12 +160,28 @@ export interface SiteUnitsPayload {
   smartMeterUnits?: ImagedSerialTag[];
   ctSplitUnits?: ImagedSerialTag[];
   silboGatewayUnits?: ImagedSerialTag[];
-
+  simSwapComments?: string;
   // SIM swap fields
   simSwapPairs?: SimSwapPair[];
   simSwapSiteType?: SimSwapSiteType;
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
+  simSwapTenants?: SimSwapTenant[];
+  simSwapCtMainPhoto?: string;
+  // Single meter photo (shown once before tenant details)
+  simSwapMeterPhoto?: string;
+  // Materials (nested object for material counts)
+  materials?: SiteMaterialsPayload;
+  // Counts (kept for backward compatibility)
+  numberOfRms?: number;
+  numberOfExpanders?: number;
+  numberOfSims?: number;
+  numberOfFenceLocks?: number;
+  numberOfShelterLocks?: number;
+  numberOfOdus?: number;
+  numberOfSmartMeters?: number;
+  numberOfCtSplits?: number;
+  numberOfSilboGateways?: number;
 }
 
 export interface AuthUser {

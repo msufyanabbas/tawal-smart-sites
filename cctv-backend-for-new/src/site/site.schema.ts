@@ -26,13 +26,29 @@ export const ALL_RMS_SCOPES: RmsScope[] = [
 // ────────────────────────────────────────────────────────────────────────────
 
 @Schema({ _id: false })
+export class MaterialCounts {
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfRms?: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfExpanders?: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfSims?: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfFenceLocks?: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfShelterLocks?: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfOdus?: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfSmartMeters?: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfCtSplits?: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfSilboGateways?: number;
+}
+export const MaterialCountsSchema =
+  SchemaFactory.createForClass(MaterialCounts);
+
+@Schema({ _id: false })
 export class ImagedSerialTag {
   @Prop() serialNumber?: string;
   @Prop() serialImage?: string;
   @Prop() tagNumber?: string;
   @Prop() tagImage?: string;
 }
-export const ImagedSerialTagSchema = SchemaFactory.createForClass(ImagedSerialTag);
+export const ImagedSerialTagSchema =
+  SchemaFactory.createForClass(ImagedSerialTag);
 
 // ────────────────────────────────────────────────────────────────────────────
 // Status sub-documents: 5 milestones with timestamps and (where relevant) actors
@@ -49,39 +65,49 @@ export const StatusCreatedSchema = SchemaFactory.createForClass(StatusCreated);
 export class StatusAssigned {
   @Prop({ default: false }) done: boolean;
   @Prop({ type: Date }) at?: Date;
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' }) assignedTo?: Types.ObjectId;
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' }) assignedBy?: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
+  assignedTo?: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
+  assignedBy?: Types.ObjectId;
 }
-export const StatusAssignedSchema = SchemaFactory.createForClass(StatusAssigned);
+export const StatusAssignedSchema =
+  SchemaFactory.createForClass(StatusAssigned);
 
 @Schema({ _id: false })
 export class StatusProcessing {
   @Prop({ default: false }) done: boolean;
   @Prop({ type: Date }) at?: Date;
 }
-export const StatusProcessingSchema = SchemaFactory.createForClass(StatusProcessing);
+export const StatusProcessingSchema =
+  SchemaFactory.createForClass(StatusProcessing);
 
 @Schema({ _id: false })
 export class StatusCompleted {
   @Prop({ default: false }) done: boolean;
   @Prop({ type: Date }) at?: Date;
 }
-export const StatusCompletedSchema = SchemaFactory.createForClass(StatusCompleted);
+export const StatusCompletedSchema =
+  SchemaFactory.createForClass(StatusCompleted);
 
 @Schema({ _id: false })
 export class StatusReviewed {
   @Prop({ default: false }) done: boolean;
   @Prop({ type: Date }) at?: Date;
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' }) reviewedBy?: Types.ObjectId;
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })
+  reviewedBy?: Types.ObjectId;
   // Optional free-text notes captured when the manager/admin approved the
   // site. Persisted alongside the milestone so historic context survives.
   @Prop({ type: String, default: '' }) remarks?: string;
 }
-export const StatusReviewedSchema = SchemaFactory.createForClass(StatusReviewed);
+export const StatusReviewedSchema =
+  SchemaFactory.createForClass(StatusReviewed);
 
 @Schema({ _id: false })
 export class SiteStatus {
-  @Prop({ type: StatusCreatedSchema, default: () => ({ done: true, at: new Date() }) })
+  @Prop({
+    type: StatusCreatedSchema,
+    default: () => ({ done: true, at: new Date() }),
+  })
   created: StatusCreated;
 
   @Prop({ type: StatusAssignedSchema, default: () => ({ done: false }) })
@@ -133,12 +159,13 @@ export class Site {
 
   @Prop({ type: Boolean, default: false }) hasSmartLock: boolean;
   @Prop({ type: Number, default: 0, min: 0 }) numberOfFenceLocks: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfShelterLocks: number;
   @Prop({ type: Number, default: 0, min: 0 }) numberOfOdus: number;
 
   @Prop({ type: Boolean, default: false }) hasSmartMeter: boolean;
   @Prop({ type: Number, default: 0, min: 0 }) numberOfTenants: number;
   @Prop({ type: Number, default: 0, min: 0 }) numberOfSmartMeters: number; // computed
-  @Prop({ type: Number, default: 0, min: 0 }) numberOfCtSplits: number;    // computed
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfCtSplits: number; // computed
   @Prop({ type: Number, default: 0, min: 0 }) numberOfSilboGateways: number; // computed
 
   // ── Status milestones ──────────────────────────────────────────────────
@@ -146,14 +173,22 @@ export class Site {
   status: SiteStatus;
 
   // ── Technician unit arrays (filled after assignment) ───────────────────
-  @Prop({ type: [ImagedSerialTagSchema], default: [] }) rmsUnits: ImagedSerialTag[];
-  @Prop({ type: [ImagedSerialTagSchema], default: [] }) expanderUnits: ImagedSerialTag[];
-  @Prop({ type: [ImagedSerialTagSchema], default: [] }) simCards: ImagedSerialTag[];
-  @Prop({ type: [ImagedSerialTagSchema], default: [] }) fenceLockUnits: ImagedSerialTag[];
-  @Prop({ type: [ImagedSerialTagSchema], default: [] }) oduUnits: ImagedSerialTag[];
-  @Prop({ type: [ImagedSerialTagSchema], default: [] }) smartMeterUnits: ImagedSerialTag[];
-  @Prop({ type: [ImagedSerialTagSchema], default: [] }) ctSplitUnits: ImagedSerialTag[];
-  @Prop({ type: [ImagedSerialTagSchema], default: [] }) silboGatewayUnits: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  rmsUnits: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  expanderUnits: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  simCards: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  fenceLockUnits: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  oduUnits: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  smartMeterUnits: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  ctSplitUnits: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  silboGatewayUnits: ImagedSerialTag[];
 
   // ── SIM_SWAP specific fields ───────────────────────────────────────────
   @Prop({ type: String, default: '' }) simSwapComments?: string;
@@ -177,6 +212,29 @@ export class Site {
   @Prop({ type: String, default: '' }) simSwapSiteType?: string;
   @Prop({ type: Number, default: null }) simSwapLatitude?: number | null;
   @Prop({ type: Number, default: null }) simSwapLongitude?: number | null;
+  @Prop({ type: String, default: '' }) simSwapCtMainPhoto?: string;
+  @Prop({ type: String, default: '' }) simSwapMeterPhoto?: string;
+  @Prop({
+    type: [
+      {
+        tenantName: { type: String, default: '' },
+        tenantCtCapacities: { type: [String], default: [] },
+        meterPhoto: { type: String, default: '' },
+        ctPhasePhotos: { type: [String], default: [] },
+      },
+    ],
+    default: [],
+  })
+  simSwapTenants?: Array<{
+    tenantName?: string;
+    tenantCtCapacities?: string[];
+    meterPhoto?: string;
+    ctPhasePhotos?: string[];
+  }>;
+
+  // ── Technician material counts (separate from admin-set counts) ────────
+  @Prop({ type: MaterialCountsSchema, default: () => ({}) })
+  materials?: MaterialCounts;
 
   // ── Audit ──────────────────────────────────────────────────────────────
   @Prop({ type: SchemaTypes.ObjectId, ref: 'User' })

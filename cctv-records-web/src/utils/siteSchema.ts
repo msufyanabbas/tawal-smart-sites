@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { RmsScope } from '@/types';
+import { z } from "zod";
+import { RmsScope } from "@/types";
 
 const nonNegInt = z.coerce.number().int().min(0);
 
@@ -7,16 +7,18 @@ const nonNegInt = z.coerce.number().int().min(0);
 // stay optional in the schema and are validated/cleaned in the submit handler
 // (which calls the backend, which authoritatively re-derives counts).
 export const siteCreateSchema = z.object({
-  siteName: z.string().trim().min(1, 'Site name is required'),
+  siteName: z.string().trim().min(1, "Site name is required"),
   tawalId: z
     .string()
     .trim()
-    .min(1, 'Tawal ID is required')
-    .regex(/^\d+$/, 'Tawal ID must be numeric'),
-  region: z.string().trim().min(1, 'Region is required'),
-  siteCity: z.string().trim().min(1, 'City is required'),
-  tcnNumber: z.string().trim().min(1, 'TCN is required'),
-  rmsScope: z.nativeEnum(RmsScope, { errorMap: () => ({ message: 'Scope is required' }) }),
+    .min(1, "Tawal ID is required")
+    .regex(/^\d+$/, "Tawal ID must be numeric"),
+  region: z.string().trim().min(1, "Region is required"),
+  siteCity: z.string().trim().min(1, "City is required"),
+  tcnNumber: z.string().trim().min(1, "TCN is required"),
+  rmsScope: z.nativeEnum(RmsScope, {
+    errorMap: () => ({ message: "Scope is required" }),
+  }),
 
   numberOfRms: nonNegInt.optional(),
   numberOfExpanders: nonNegInt.optional(),
@@ -34,6 +36,7 @@ export const siteCreateSchema = z.object({
   simSwapSiteType: z.string().optional(),
   simSwapLatitude: z.coerce.number().optional(),
   simSwapLongitude: z.coerce.number().optional(),
+  numberOfSmartMeters: nonNegInt.optional(),
 });
 
 export type SiteCreateValues = z.infer<typeof siteCreateSchema>;
@@ -50,9 +53,14 @@ export const smartMetersFor = (tenants: number): number => {
 export const deriveCounts = (
   scope: RmsScope | undefined,
   tenants?: number,
-): { smartMeters: number; ctSplits: number; silboGateways: number; sims: number } => {
+): {
+  smartMeters: number;
+  ctSplits: number;
+  silboGateways: number;
+  sims: number;
+} => {
   const t = tenants ?? 0;
-  const smartMeters = smartMetersFor(t);
+  const smartMeters = t;
   const ctSplits = t * 3;
   // Silbo gateway is a fixed appliance (one per site) and ships with one SIM.
   const silboGateways = scope === RmsScope.SMART_METER ? 1 : 0;

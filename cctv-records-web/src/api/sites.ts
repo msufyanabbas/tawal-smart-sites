@@ -100,6 +100,7 @@ export const submitSite = async (
   id: string,
   payload: SiteUnitsPayload,
 ): Promise<Site> => {
+  console.log(payload);
   const { data } = await apiClient.patch<Site>(`/sites/${id}/submit`, payload);
   return data;
 };

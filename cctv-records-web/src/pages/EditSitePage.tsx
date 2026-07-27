@@ -1,21 +1,21 @@
-import { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Controller, useForm, useWatch } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import toast from 'react-hot-toast';
+import { useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import toast from "react-hot-toast";
 
-import { TextField } from '@/components/TextField';
-import { SelectField } from '@/components/SelectField';
-import { Button } from '@/components/Button';
-import { FullPageSpinner } from '@/components/Spinner';
-import { useSiteQuery, useUpdateSiteMutation } from '@/hooks/useSites';
+import { TextField } from "@/components/TextField";
+import { SelectField } from "@/components/SelectField";
+import { Button } from "@/components/Button";
+import { FullPageSpinner } from "@/components/Spinner";
+import { useSiteQuery, useUpdateSiteMutation } from "@/hooks/useSites";
 import {
   deriveCounts,
   siteCreateSchema,
   type SiteCreateValues,
-} from '@/utils/siteSchema';
-import { RmsScope, type SiteUpdatePayload } from '@/types';
-import { apiErrorMessage, rmsScopeLabel } from '@/utils/helpers';
+} from "@/utils/siteSchema";
+import { RmsScope, type SiteUpdatePayload } from "@/types";
+import { apiErrorMessage, rmsScopeLabel } from "@/utils/helpers";
 
 const ToggleField: React.FC<{
   label: string;
@@ -33,7 +33,10 @@ const ToggleField: React.FC<{
   </label>
 );
 
-const ReadOnlyStat: React.FC<{ label: string; value: number }> = ({ label, value }) => (
+const ReadOnlyStat: React.FC<{ label: string; value: number }> = ({
+  label,
+  value,
+}) => (
   <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
     <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
     <p className="mt-0.5 text-lg font-semibold text-slate-800">{value}</p>
@@ -76,10 +79,10 @@ export const EditSitePage: React.FC = () => {
     });
   }, [site, reset]);
 
-  const scope = useWatch({ control, name: 'rmsScope' });
-  const hasSmartLock = useWatch({ control, name: 'hasSmartLock' });
-  const hasSmartMeter = useWatch({ control, name: 'hasSmartMeter' });
-  const tenants = useWatch({ control, name: 'numberOfTenants' });
+  const scope = useWatch({ control, name: "rmsScope" });
+  const hasSmartLock = useWatch({ control, name: "hasSmartLock" });
+  const hasSmartMeter = useWatch({ control, name: "hasSmartMeter" });
+  const tenants = useWatch({ control, name: "numberOfTenants" });
   const derived = deriveCounts(scope, tenants);
 
   if (isLoading) return <FullPageSpinner />;
@@ -87,13 +90,14 @@ export const EditSitePage: React.FC = () => {
     return (
       <div className="card border-red-200 bg-red-50">
         <div className="card-body text-sm text-red-700">
-          {apiErrorMessage(error, 'Site not found')}
+          {apiErrorMessage(error, "Site not found")}
         </div>
       </div>
     );
   }
 
   const onSubmit = async (values: SiteCreateValues) => {
+    console.log(values);
     const payload: SiteUpdatePayload = {
       siteName: values.siteName,
       tawalId: values.tawalId,
@@ -101,6 +105,7 @@ export const EditSitePage: React.FC = () => {
       siteCity: values.siteCity,
       tcnNumber: values.tcnNumber,
       rmsScope: values.rmsScope,
+      numberOfSmartMeters: values.numberOfTenants ?? 0,
     };
     if (values.rmsScope === RmsScope.RMS) {
       payload.numberOfRms = values.numberOfRms ?? 0;
@@ -127,15 +132,16 @@ export const EditSitePage: React.FC = () => {
       payload.hasSmartMeter = !!values.hasSmartMeter;
       if (values.hasSmartMeter) {
         payload.numberOfTenants = values.numberOfTenants ?? 0;
+        payload.numberOfSmartMeters = values.numberOfTenants ?? 0;
       }
     }
-
     try {
       await update.mutateAsync({ id: site._id, payload });
-      toast.success('Site updated');
+
+      toast.success("Site updated");
       navigate(`/sites/${site._id}`, { replace: true });
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to update site'));
+      toast.error(apiErrorMessage(err, "Failed to update site"));
     }
   };
 
@@ -144,8 +150,8 @@ export const EditSitePage: React.FC = () => {
       <header>
         <h1 className="text-2xl font-bold text-slate-900">Edit site</h1>
         <p className="text-sm text-slate-500">
-          Editing <span className="font-medium">{site.siteName}</span>. Counts that are
-          derived from other values update automatically when you save.
+          Editing <span className="font-medium">{site.siteName}</span>. Counts
+          that are derived from other values update automatically when you save.
         </p>
       </header>
 
@@ -156,7 +162,7 @@ export const EditSitePage: React.FC = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <TextField
                 label="Site name *"
-                {...register('siteName')}
+                {...register("siteName")}
                 error={formState.errors.siteName?.message}
               />
               <TextField
@@ -164,30 +170,30 @@ export const EditSitePage: React.FC = () => {
                 inputMode="numeric"
                 pattern="\d*"
                 placeholder="Digits only"
-                {...register('tawalId')}
+                {...register("tawalId")}
                 error={formState.errors.tawalId?.message}
               />
               <TextField
                 label="Region *"
                 placeholder="e.g. North, Central, Riyadh Cluster"
-                {...register('region')}
+                {...register("region")}
                 error={formState.errors.region?.message}
               />
               <TextField
                 label="City *"
                 placeholder="e.g. Riyadh"
-                {...register('siteCity')}
+                {...register("siteCity")}
                 error={formState.errors.siteCity?.message}
               />
               <TextField
                 label="TCN number *"
-                {...register('tcnNumber')}
+                {...register("tcnNumber")}
                 error={formState.errors.tcnNumber?.message}
               />
               <SelectField
                 label="RMS scope *"
                 placeholder="Select scope"
-                {...register('rmsScope')}
+                {...register("rmsScope")}
                 error={formState.errors.rmsScope?.message}
                 options={Object.values(RmsScope).map((s) => ({
                   value: s,
@@ -210,19 +216,21 @@ export const EditSitePage: React.FC = () => {
                       type="number"
                       min={0}
                       label="Number of RMS units"
-                      {...register('numberOfRms', { valueAsNumber: true })}
+                      {...register("numberOfRms", { valueAsNumber: true })}
                     />
                     <TextField
                       type="number"
                       min={0}
                       label="Number of expanders"
-                      {...register('numberOfExpanders', { valueAsNumber: true })}
+                      {...register("numberOfExpanders", {
+                        valueAsNumber: true,
+                      })}
                     />
                     <TextField
                       type="number"
                       min={0}
                       label="Number of SIMs"
-                      {...register('numberOfSims', { valueAsNumber: true })}
+                      {...register("numberOfSims", { valueAsNumber: true })}
                     />
                   </div>
 
@@ -244,13 +252,15 @@ export const EditSitePage: React.FC = () => {
                           type="number"
                           min={0}
                           label="Number of fence locks"
-                          {...register('numberOfFenceLocks', { valueAsNumber: true })}
+                          {...register("numberOfFenceLocks", {
+                            valueAsNumber: true,
+                          })}
                         />
                         <TextField
                           type="number"
                           min={0}
                           label="Number of ODUs"
-                          {...register('numberOfOdus', { valueAsNumber: true })}
+                          {...register("numberOfOdus", { valueAsNumber: true })}
                         />
                       </div>
                     )}
@@ -275,12 +285,20 @@ export const EditSitePage: React.FC = () => {
                             type="number"
                             min={0}
                             label="Number of tenants"
-                            {...register('numberOfTenants', { valueAsNumber: true })}
+                            {...register("numberOfTenants", {
+                              valueAsNumber: true,
+                            })}
                           />
                         </div>
                         <div className="mt-3 grid gap-3 md:grid-cols-2">
-                          <ReadOnlyStat label="Smart meters (computed)" value={derived.smartMeters} />
-                          <ReadOnlyStat label="CT splits (computed)" value={derived.ctSplits} />
+                          <ReadOnlyStat
+                            label="Smart meters (computed)"
+                            value={derived.smartMeters}
+                          />
+                          <ReadOnlyStat
+                            label="CT splits (computed)"
+                            value={derived.ctSplits}
+                          />
                         </div>
                       </>
                     )}
@@ -294,13 +312,13 @@ export const EditSitePage: React.FC = () => {
                     type="number"
                     min={0}
                     label="Number of fence locks"
-                    {...register('numberOfFenceLocks', { valueAsNumber: true })}
+                    {...register("numberOfFenceLocks", { valueAsNumber: true })}
                   />
                   <TextField
                     type="number"
                     min={0}
                     label="Number of ODUs"
-                    {...register('numberOfOdus', { valueAsNumber: true })}
+                    {...register("numberOfOdus", { valueAsNumber: true })}
                   />
                 </div>
               )}
@@ -312,14 +330,26 @@ export const EditSitePage: React.FC = () => {
                       type="number"
                       min={0}
                       label="Number of tenants"
-                      {...register('numberOfTenants', { valueAsNumber: true })}
+                      {...register("numberOfTenants", { valueAsNumber: true })}
                     />
                   </div>
                   <div className="grid gap-3 md:grid-cols-4">
-                    <ReadOnlyStat label="Smart meters (computed)" value={derived.smartMeters} />
-                    <ReadOnlyStat label="CT splits (computed)" value={derived.ctSplits} />
-                    <ReadOnlyStat label="Silbo gateways (fixed)" value={derived.silboGateways} />
-                    <ReadOnlyStat label="SIM cards (fixed)" value={derived.sims} />
+                    <ReadOnlyStat
+                      label="Smart meters (computed)"
+                      value={derived.smartMeters}
+                    />
+                    <ReadOnlyStat
+                      label="CT splits (computed)"
+                      value={derived.ctSplits}
+                    />
+                    <ReadOnlyStat
+                      label="Silbo gateways (fixed)"
+                      value={derived.silboGateways}
+                    />
+                    <ReadOnlyStat
+                      label="SIM cards (fixed)"
+                      value={derived.sims}
+                    />
                   </div>
                 </>
               )}
@@ -330,7 +360,7 @@ export const EditSitePage: React.FC = () => {
                     type="number"
                     min={0}
                     label="Number of tenants"
-                    {...register('numberOfTenants', { valueAsNumber: true })}
+                    {...register("numberOfTenants", { valueAsNumber: true })}
                   />
                 </div>
               )}
@@ -341,7 +371,7 @@ export const EditSitePage: React.FC = () => {
                     type="number"
                     min={0}
                     label="Number of SIM cards"
-                    {...register('numberOfSims', { valueAsNumber: true })}
+                    {...register("numberOfSims", { valueAsNumber: true })}
                   />
 
                   <div className="rounded-lg border border-slate-200 p-4">
@@ -363,12 +393,20 @@ export const EditSitePage: React.FC = () => {
                             type="number"
                             min={0}
                             label="Number of tenants"
-                            {...register('numberOfTenants', { valueAsNumber: true })}
+                            {...register("numberOfTenants", {
+                              valueAsNumber: true,
+                            })}
                           />
                         </div>
                         <div className="mt-3 grid gap-3 md:grid-cols-2">
-                          <ReadOnlyStat label="Smart meters (computed)" value={derived.smartMeters} />
-                          <ReadOnlyStat label="CT splits (computed)" value={derived.ctSplits} />
+                          <ReadOnlyStat
+                            label="Smart meters (computed)"
+                            value={derived.smartMeters}
+                          />
+                          <ReadOnlyStat
+                            label="CT splits (computed)"
+                            value={derived.ctSplits}
+                          />
                         </div>
                       </>
                     )}

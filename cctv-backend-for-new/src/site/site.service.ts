@@ -50,6 +50,7 @@ export class SiteService {
     out.numberOfSims = 0;
     out.hasSmartLock = false;
     out.numberOfFenceLocks = 0;
+    out.numberOfShelterLocks = 0;
     out.numberOfOdus = 0;
     out.hasSmartMeter = false;
     out.numberOfTenants = 0;
@@ -64,25 +65,27 @@ export class SiteService {
       out.hasSmartLock = !!input.hasSmartLock;
       if (out.hasSmartLock) {
         out.numberOfFenceLocks = input.numberOfFenceLocks ?? 0;
+        out.numberOfShelterLocks = input.numberOfShelterLocks ?? 0;
         out.numberOfOdus = input.numberOfOdus ?? 0;
       }
       out.hasSmartMeter = !!input.hasSmartMeter;
       if (out.hasSmartMeter) {
         const tenants = input.numberOfTenants ?? 0;
         out.numberOfTenants = tenants;
-        out.numberOfSmartMeters = SiteService.smartMetersFor(tenants);
+        out.numberOfSmartMeters = tenants;
         out.numberOfCtSplits = tenants * 3;
         // RMS scope intentionally excludes silbo gateways.
       }
     } else if (scope === RmsScope.SMART_LOCK) {
       out.hasSmartLock = true;
       out.numberOfFenceLocks = input.numberOfFenceLocks ?? 0;
+      out.numberOfShelterLocks = input.numberOfShelterLocks ?? 0;
       out.numberOfOdus = input.numberOfOdus ?? 0;
     } else if (scope === RmsScope.SMART_METER) {
       out.hasSmartMeter = true;
       const tenants = input.numberOfTenants ?? 0;
       out.numberOfTenants = tenants;
-      out.numberOfSmartMeters = SiteService.smartMetersFor(tenants);
+      out.numberOfSmartMeters = tenants;
       out.numberOfCtSplits = tenants * 3;
       // Silbo gateway count is a fixed appliance — always one per site.
       out.numberOfSilboGateways = 1;
@@ -98,7 +101,7 @@ export class SiteService {
       if (out.hasSmartMeter) {
         const tenants = input.numberOfTenants ?? 0;
         out.numberOfTenants = tenants;
-        out.numberOfSmartMeters = SiteService.smartMetersFor(tenants);
+        out.numberOfSmartMeters = tenants;
         out.numberOfCtSplits = tenants * 3;
         // RMS scope intentionally excludes silbo gateways.
       }
@@ -425,9 +428,26 @@ export class SiteService {
       'simSwapSiteType',
       'simSwapLatitude',
       'simSwapLongitude',
+      'simSwapTenants',
+      'simSwapCtMainPhoto',
+      'simSwapMeterPhoto',
+      'numberOfRms',
+      'numberOfExpanders',
+      'numberOfSims',
+      'numberOfFenceLocks',
+      'numberOfShelterLocks',
+      'numberOfOdus',
+      'numberOfSmartMeters',
+      'numberOfCtSplits',
+      'numberOfSilboGateways',
     ];
     for (const k of keys) {
       if (dto[k] !== undefined) (doc as any)[k] = dto[k];
+    }
+    // Handle nested materials object - store ONLY as a nested sub-document
+    // (separate from admin-set top-level counts)
+    if (dto.materials !== undefined) {
+      (doc as any).materials = dto.materials;
     }
   }
 

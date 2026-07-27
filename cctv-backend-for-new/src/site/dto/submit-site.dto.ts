@@ -21,45 +21,179 @@ export class SimSwapPairDto {
   @IsOptional() @IsString() oldSerialImage?: string;
 }
 
+export class SimSwapTenantDto {
+  @IsOptional() @IsString() tenantName?: string;
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  tenantCtCapacities?: string[];
+  @IsOptional() @IsString() meterPhoto?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) ctPhasePhotos?: string[];
+}
+
+export class MaterialCountsDto {
+  @IsOptional()
+  @IsNumber()
+  numberOfRms?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfExpanders?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfSims?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfFenceLocks?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfShelterLocks?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfOdus?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfSmartMeters?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfCtSplits?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfSilboGateways?: number;
+}
+
 export class SubmitSiteDto {
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ImagedSerialTagDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
   rmsUnits?: ImagedSerialTagDto[];
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ImagedSerialTagDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
   expanderUnits?: ImagedSerialTagDto[];
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ImagedSerialTagDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
   simCards?: ImagedSerialTagDto[];
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ImagedSerialTagDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
   fenceLockUnits?: ImagedSerialTagDto[];
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ImagedSerialTagDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
   oduUnits?: ImagedSerialTagDto[];
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ImagedSerialTagDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
   smartMeterUnits?: ImagedSerialTagDto[];
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ImagedSerialTagDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
   ctSplitUnits?: ImagedSerialTagDto[];
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => ImagedSerialTagDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
   silboGatewayUnits?: ImagedSerialTagDto[];
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   simSwapComments?: string;
 
-  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => SimSwapPairDto)
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SimSwapPairDto)
   simSwapPairs?: SimSwapPairDto[];
 
-  @IsOptional() @IsString()
+  @IsOptional()
+  @IsString()
   simSwapSiteType?: string;
 
-  @IsOptional() @IsNumber()
+  @IsOptional()
+  @IsNumber()
   simSwapLatitude?: number | null;
 
-  @IsOptional() @IsNumber()
+  @IsOptional()
+  @IsNumber()
   simSwapLongitude?: number | null;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SimSwapTenantDto)
+  simSwapTenants?: SimSwapTenantDto[];
+
+  @IsOptional()
+  @IsString()
+  simSwapCtMainPhoto?: string;
+
+  @IsOptional()
+  @IsString()
+  simSwapMeterPhoto?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MaterialCountsDto)
+  materials?: MaterialCountsDto;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfRms?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfExpanders?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfSims?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfFenceLocks?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfShelterLocks?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfOdus?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfSmartMeters?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfCtSplits?: number;
+
+  @IsOptional()
+  @IsNumber()
+  numberOfSilboGateways?: number;
 }
 
 // A draft save is identical in shape to a final submit; we just don't flip the

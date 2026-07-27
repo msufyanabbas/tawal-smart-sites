@@ -44,6 +44,7 @@ export class CreateSiteDto {
 
   @IsOptional() @IsBoolean() hasSmartLock?: boolean;
   @IsOptional() @IsInt() @Min(0) numberOfFenceLocks?: number;
+  @IsOptional() @IsInt() @Min(0) numberOfShelterLocks?: number;
   @IsOptional() @IsInt() @Min(0) numberOfOdus?: number;
 
   @IsOptional() @IsBoolean() hasSmartMeter?: boolean;

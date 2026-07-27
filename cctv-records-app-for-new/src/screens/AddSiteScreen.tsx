@@ -44,6 +44,7 @@ interface FormState {
   numberOfSims: string;
   hasSmartLock: boolean;
   numberOfFenceLocks: string;
+  numberOfShelterLocks: string;
   numberOfOdus: string;
   hasSmartMeter: boolean;
   numberOfTenants: string;
@@ -61,6 +62,7 @@ const emptyForm: FormState = {
   numberOfSims: '0',
   hasSmartLock: false,
   numberOfFenceLocks: '0',
+  numberOfShelterLocks: '0',
   numberOfOdus: '0',
   hasSmartMeter: false,
   numberOfTenants: '0',
@@ -159,6 +161,7 @@ const AddSiteScreen: React.FC = () => {
       payload.hasSmartLock = form.hasSmartLock;
       if (form.hasSmartLock) {
         payload.numberOfFenceLocks = numericToInt(form.numberOfFenceLocks);
+        payload.numberOfShelterLocks = numericToInt(form.numberOfShelterLocks);
         payload.numberOfOdus = numericToInt(form.numberOfOdus);
       }
       payload.hasSmartMeter = form.hasSmartMeter;
@@ -167,6 +170,7 @@ const AddSiteScreen: React.FC = () => {
       }
     } else if (form.rmsScope === RmsScope.SMART_LOCK) {
       payload.numberOfFenceLocks = numericToInt(form.numberOfFenceLocks);
+      payload.numberOfShelterLocks = numericToInt(form.numberOfShelterLocks);
       payload.numberOfOdus = numericToInt(form.numberOfOdus);
     } else if (form.rmsScope === RmsScope.SMART_METER) {
       payload.numberOfTenants = numericToInt(form.numberOfTenants);
@@ -298,6 +302,12 @@ const AddSiteScreen: React.FC = () => {
                       onChangeText={(t) => setField('numberOfFenceLocks', t.replace(/[^0-9]/g, ''))}
                     />
                     <Field
+                      label="Number of shelter locks"
+                      keyboardType="numeric"
+                      value={form.numberOfShelterLocks}
+                      onChangeText={(t) => setField('numberOfShelterLocks', t.replace(/[^0-9]/g, ''))}
+                    />
+                    <Field
                       label="Number of ODUs"
                       keyboardType="numeric"
                       value={form.numberOfOdus}
@@ -335,6 +345,12 @@ const AddSiteScreen: React.FC = () => {
                   keyboardType="numeric"
                   value={form.numberOfFenceLocks}
                   onChangeText={(t) => setField('numberOfFenceLocks', t.replace(/[^0-9]/g, ''))}
+                />
+                <Field
+                  label="Number of shelter locks"
+                  keyboardType="numeric"
+                  value={form.numberOfShelterLocks}
+                  onChangeText={(t) => setField('numberOfShelterLocks', t.replace(/[^0-9]/g, ''))}
                 />
                 <Field
                   label="Number of ODUs"

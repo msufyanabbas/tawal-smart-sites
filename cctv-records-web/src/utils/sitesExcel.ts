@@ -6,24 +6,32 @@ import { rmsScopeLabel } from "./helpers";
 // SiteCreatePayload shape so each row is parseable by both the user and the
 // backend after light coercion.
 export const IMPORT_COLUMNS = [
+  // ── Identity (required for all scopes) ────────────────────────────────
   "siteName",
   "tawalId",
   "region",
   "siteCity",
   "tcnNumber",
   "rmsScope",
+  // ── RMS scope fields ───────────────────────────────────────────────────
   "numberOfRms",
   "numberOfExpanders",
   "numberOfSims",
+  // ── Smart Lock (RMS / SIM_SWAP with smart lock) ────────────────────────
   "hasSmartLock",
   "numberOfFenceLocks",
   "numberOfOdus",
+  // ── Smart Meter (RMS / SIM_SWAP / SMART_METER / RMS_SERVICE) ──────────
   "hasSmartMeter",
   "numberOfTenants",
+  // ── SIM Swap admin pre-fill (SIM_SWAP scope only) ─────────────────────
+  "simSwapSiteType",
+  "simSwapLatitude",
+  "simSwapLongitude",
 ] as const;
 
-// Human-readable headers shown to the spreadsheet user on row 1. The parser
-// keys off row 2 (the field names) so changing labels here is safe.
+// Human-readable headers shown to the spreadsheet user on row 2. The parser
+// keys off row 3 (the field names) so changing labels here is safe.
 const IMPORT_DISPLAY_HEADERS: Record<(typeof IMPORT_COLUMNS)[number], string> =
   {
     siteName: "Site Name",
@@ -32,14 +40,17 @@ const IMPORT_DISPLAY_HEADERS: Record<(typeof IMPORT_COLUMNS)[number], string> =
     siteCity: "City",
     tcnNumber: "TCN Number",
     rmsScope: "RMS Scope",
-    numberOfRms: "Number of RMS",
-    numberOfExpanders: "Number of Expanders",
-    numberOfSims: "Number of SIMs",
+    numberOfRms: "# RMS Units",
+    numberOfExpanders: "# Expanders",
+    numberOfSims: "# SIMs",
     hasSmartLock: "Has Smart Lock",
-    numberOfFenceLocks: "Number of Fence Locks",
-    numberOfOdus: "Number of ODUs",
+    numberOfFenceLocks: "# Fence Locks",
+    numberOfOdus: "# ODUs",
     hasSmartMeter: "Has Smart Meter",
-    numberOfTenants: "Number of Tenants",
+    numberOfTenants: "# Tenants",
+    simSwapSiteType: "SIM Swap — Site Type",
+    simSwapLatitude: "SIM Swap — Latitude",
+    simSwapLongitude: "SIM Swap — Longitude",
   };
 
 const triggerDownload = (wb: XLSX.WorkBook, filename: string) => {
@@ -79,28 +90,93 @@ export const downloadImportTemplate = () => {
   XLSX.utils.book_append_sheet(wb, sheet, "Sites");
 
   const refRows: (string | number)[][] = [
-    ["Field", "Allowed values"],
+    ["Field", "Notes / Allowed values"],
+
+    // ── Identity ──────────────────────────────────────────────────────────
+    ["--- IDENTITY (required for all scopes) ---", ""],
+    ["siteName", "Required. Free text."],
+    ["tawalId", "Required. Digits only (e.g. 123456)."],
+    ["region", "Required. Free text (e.g. North, South, East, West, Central)."],
     [
-      "region",
-      "free text — enter any value (e.g. North, South, East, West, Central, etc.)",
+      "siteCity",
+      "Required. Free text — enter the city name as you want it stored.",
     ],
-    ["siteCity", "free text — enter the city name as you want it stored"],
-    ["rmsScope", Object.values(RmsScope).join(", ")],
-    ["hasSmartLock / hasSmartMeter", "true / false (or 1 / 0)"],
-    ["tawalId", "digits only"],
+    ["tcnNumber", "Required. Free text."],
+    ["rmsScope", `Required. One of: ${Object.values(RmsScope).join(", ")}`],
+
+    // ── RMS scope ─────────────────────────────────────────────────────────
+    ["--- RMS scope fields (rmsScope = RMS) ---", ""],
+    ["numberOfRms", "Number of RMS units. Leave blank for other scopes."],
+    ["numberOfExpanders", "Number of expanders. Leave blank for other scopes."],
     [
-      "numberOfSmartMeters / numberOfCtSplits / numberOfSilboGateways",
-      "computed automatically by the backend — do not include",
+      "numberOfSims",
+      "Number of SIM cards. For RMS and SIM_SWAP scopes; leave blank otherwise.",
+    ],
+
+    // ── Smart Lock ────────────────────────────────────────────────────────
+    ["--- Smart Lock fields (RMS or SIM_SWAP with smart lock) ---", ""],
+    [
+      "hasSmartLock",
+      "true / false  (or 1 / 0). Applies to RMS and SIM_SWAP scopes.",
     ],
     [
-      "numberOfSmartMeters formula",
-      "Math.ceil(numberOfTenants / 3)  — one meter per up-to-3 tenants",
+      "numberOfFenceLocks",
+      "Required when hasSmartLock = true. Leave blank otherwise.",
     ],
-    ["numberOfCtSplits formula", "numberOfTenants * 3"],
-    ["numberOfSilboGateways", "always 1 for SMART_METER scope"],
-    ["numberOfSims (SMART_METER)", "always 1 for SMART_METER scope"],
+    [
+      "numberOfOdus",
+      "Required when hasSmartLock = true. Leave blank otherwise.",
+    ],
+
+    // ── Smart Meter ───────────────────────────────────────────────────────
+    [
+      "--- Smart Meter fields (RMS / SIM_SWAP / SMART_METER / RMS_SERVICE) ---",
+      "",
+    ],
+    [
+      "hasSmartMeter",
+      "true / false  (or 1 / 0). Applies to RMS and SIM_SWAP scopes. Always true for SMART_METER scope.",
+    ],
+    [
+      "numberOfTenants",
+      "Required when hasSmartMeter = true. Drives auto-computed counts below.",
+    ],
+    [
+      "numberOfSmartMeters (computed)",
+      "Math.ceil(numberOfTenants / 3) — one meter per up-to-3 tenants. Do NOT enter; backend computes this.",
+    ],
+    [
+      "numberOfCtSplits (computed)",
+      "numberOfTenants × 3. Do NOT enter; backend computes this.",
+    ],
+    [
+      "numberOfSilboGateways (computed)",
+      "Always 1 for SMART_METER scope. Do NOT enter; backend computes this.",
+    ],
+    [
+      "numberOfSims (SMART_METER)",
+      "Always 1 for SMART_METER scope (SIM for Silbo gateway). Do NOT enter; backend computes this.",
+    ],
+
+    // ── SIM Swap admin pre-fill ───────────────────────────────────────────
+    ["--- SIM Swap admin pre-fill (rmsScope = SIM_SWAP only) ---", ""],
+    [
+      "simSwapSiteType",
+      `Optional admin pre-fill. One of: green_field, roof_top. Leave blank for other scopes.`,
+    ],
+    [
+      "simSwapLatitude",
+      "Optional admin pre-fill. Decimal degrees (e.g. 24.7136). Leave blank for other scopes.",
+    ],
+    [
+      "simSwapLongitude",
+      "Optional admin pre-fill. Decimal degrees (e.g. 46.6753). Leave blank for other scopes.",
+    ],
   ];
+
   const ref = XLSX.utils.aoa_to_sheet(refRows);
+  // Widen the two columns in the Reference sheet for readability.
+  ref["!cols"] = [{ wch: 55 }, { wch: 90 }];
   XLSX.utils.book_append_sheet(wb, ref, "Reference");
 
   triggerDownload(wb, "tawal-sites-import-template.xlsx");
@@ -218,6 +294,21 @@ const validateRow = (
     );
   }
 
+  // SIM Swap optional admin pre-fill fields
+  const simSwapSiteTypeRaw = str("simSwapSiteType");
+  const simSwapSiteType = simSwapSiteTypeRaw
+    ? matchEnum(simSwapSiteTypeRaw, ["green_field", "roof_top"] as const)
+    : undefined;
+  if (simSwapSiteTypeRaw && !simSwapSiteType) {
+    errors.push(`simSwapSiteType must be one of: green_field, roof_top`);
+  }
+
+  const coerceFloat = (v: unknown): number | null | undefined => {
+    if (v === undefined || v === null || v === "") return undefined;
+    const n = typeof v === "number" ? v : Number(String(v).trim());
+    return Number.isFinite(n) ? n : undefined;
+  };
+
   const payload: SiteCreatePayload = {
     siteName,
     tawalId,
@@ -233,45 +324,128 @@ const validateRow = (
     numberOfOdus: coerceInt(row.numberOfOdus),
     hasSmartMeter: coerceBool(row.hasSmartMeter),
     numberOfTenants: coerceInt(row.numberOfTenants),
+    // SIM Swap admin pre-fill (only populated when the column is present)
+    ...(simSwapSiteType ? { simSwapSiteType } : {}),
+    ...(coerceFloat(row.simSwapLatitude) !== undefined
+      ? { simSwapLatitude: coerceFloat(row.simSwapLatitude) }
+      : {}),
+    ...(coerceFloat(row.simSwapLongitude) !== undefined
+      ? { simSwapLongitude: coerceFloat(row.simSwapLongitude) }
+      : {}),
   };
 
   return { rowNumber, payload, errors };
 };
 
-// ── Export ─────────────────────────────────────────────────────────────────
+const joinUnitField = (
+  units: ImagedSerialTag[] | undefined,
+  field: "serialNumber" | "tagNumber",
+) => {
+  return (units || [])
+    .map((unit) => unit[field]?.toString().trim())
+    .filter(Boolean)
+    .join("\n");
+};
+
+const joinSimSwapPairs = (
+  pairs: any[] | undefined,
+  field: "newSerialNumber" | "oldSerialNumber",
+) => {
+  return (pairs || [])
+    .map((p) => p[field]?.toString().trim())
+    .filter(Boolean)
+    .join("\n");
+};
+
+const joinTenants = (tenants: any[] | undefined) => {
+  return (tenants || [])
+    .map((t) => t.tenantName?.toString().trim())
+    .filter(Boolean)
+    .join("\n");
+};
+
+const joinTenantCapacities = (tenants: any[] | undefined) => {
+  return (tenants || [])
+    .map((t) => {
+      const caps = t.tenantCtCapacities || [];
+      const p1 = caps[0] || "-";
+      const p2 = caps[1] || "-";
+      const p3 = caps[2] || "-";
+      return `${t.tenantName || "Tenant"}: P1(${p1}), P2(${p2}), P3(${p3})`;
+    })
+    .join("\n");
+};
 
 // Map a Site into a flat row suitable for an Excel sheet. Status milestones
 // are surfaced as Y/N columns so filtering inside Excel is trivial.
-const siteToExportRow = (s: Site, technicianName?: string) => ({
-  siteName: s.siteName,
-  tawalId: s.tawalId,
-  region: s.region,
-  siteCity: s.siteCity,
-  tcnNumber: s.tcnNumber,
-  rmsScope: rmsScopeLabel(s.rmsScope),
-  numberOfRms: s.numberOfRms,
-  numberOfExpanders: s.numberOfExpanders,
-  numberOfSims: s.numberOfSims,
-  hasSmartLock: s.hasSmartLock ? "Yes" : "No",
-  numberOfFenceLocks: s.numberOfFenceLocks,
-  numberOfOdus: s.numberOfOdus,
-  hasSmartMeter: s.hasSmartMeter ? "Yes" : "No",
-  numberOfTenants: s.numberOfTenants,
-  numberOfSmartMeters: s.numberOfSmartMeters,
-  numberOfCtSplits: s.numberOfCtSplits,
-  numberOfSilboGateways: s.numberOfSilboGateways,
-  latitude: s.simSwapLatitude ?? "",
-  longitude: s.simSwapLongitude ?? "",
-  status_created: s.status?.created?.done ? "Y" : "N",
-  status_assigned: s.status?.assigned?.done ? "Y" : "N",
-  status_processing: s.status?.processing?.done ? "Y" : "N",
-  status_completed: s.status?.completed?.done ? "Y" : "N",
-  status_reviewed: s.status?.reviewed?.done ? "Y" : "N",
-  assignedTo: technicianName ?? "",
-  createdAt: s.createdAt
-    ? new Date(s.createdAt).toISOString().slice(0, 19).replace("T", " ")
-    : "",
-});
+const siteToExportRow = (s: Site, technicianName?: string) => {
+  const isSimSwap = s.rmsScope === RmsScope.SIM_SWAP;
+  return {
+    "Site Name": s.siteName,
+    "Tawal ID": s.tawalId,
+    "Region": s.region,
+    "City": s.siteCity,
+    "TCN Number": s.tcnNumber,
+    "RMS Scope": rmsScopeLabel(s.rmsScope),
+    // RMS Units
+    "# RMS Units": s.numberOfRms,
+    "RMS Serials": joinUnitField(s.rmsUnits, "serialNumber"),
+    "RMS Tags": joinUnitField(s.rmsUnits, "tagNumber"),
+    // Expanders
+    "# Expanders": s.numberOfExpanders,
+    "Expander Serials": joinUnitField(s.expanderUnits, "serialNumber"),
+    "Expander Tags": joinUnitField(s.expanderUnits, "tagNumber"),
+    // SIMs
+    "# SIMs": s.numberOfSims,
+    "SIM Serials": isSimSwap
+      ? joinSimSwapPairs(s.simSwapPairs, "newSerialNumber")
+      : joinUnitField(s.simCards, "serialNumber"),
+    "SIM Tags": joinUnitField(s.simCards, "tagNumber"),
+    // Smart Lock
+    "Has Smart Lock": s.hasSmartLock ? "Yes" : "No",
+    "# Fence Locks": s.numberOfFenceLocks,
+    "Fence Lock Serials": joinUnitField(s.fenceLockUnits, "serialNumber"),
+    "Fence Lock Tags": joinUnitField(s.fenceLockUnits, "tagNumber"),
+    "# ODUs": s.numberOfOdus,
+    "ODU Serials": joinUnitField(s.oduUnits, "serialNumber"),
+    "ODU Tags": joinUnitField(s.oduUnits, "tagNumber"),
+    // Smart Meter
+    "Has Smart Meter": s.hasSmartMeter ? "Yes" : "No",
+    "# Tenants": s.numberOfTenants,
+    "# Smart Meters": s.numberOfSmartMeters,
+    "Smart Meter Serials": joinUnitField(s.smartMeterUnits, "serialNumber"),
+    "Smart Meter Tags": joinUnitField(s.smartMeterUnits, "tagNumber"),
+    "# CT Splits": s.numberOfCtSplits,
+    "CT Split Serials": joinUnitField(s.ctSplitUnits, "serialNumber"),
+    "CT Split Tags": joinUnitField(s.ctSplitUnits, "tagNumber"),
+    "# Silbo Gateways": s.numberOfSilboGateways,
+    "Silbo Gateway Serials": joinUnitField(s.silboGatewayUnits, "serialNumber"),
+    "Silbo Gateway Tags": joinUnitField(s.silboGatewayUnits, "tagNumber"),
+    // SIM Swap Specific Columns
+    "SIM Swap New Serials": joinSimSwapPairs(s.simSwapPairs, "newSerialNumber"),
+    "SIM Swap Old Serials": joinSimSwapPairs(s.simSwapPairs, "oldSerialNumber"),
+    "SIM Swap Site Type": s.simSwapSiteType
+      ? s.simSwapSiteType === "green_field"
+        ? "Green Field"
+        : "Roof Top"
+      : "",
+    "SIM Swap Latitude": s.simSwapLatitude ?? "",
+    "SIM Swap Longitude": s.simSwapLongitude ?? "",
+    "SIM Swap Comments": s.simSwapComments ?? "",
+    "Tenant Names": joinTenants(s.simSwapTenants),
+    "Tenant CT Capacities": joinTenantCapacities(s.simSwapTenants),
+    // Status milestones
+    "Status Created": s.status?.created?.done ? "Y" : "N",
+    "Status Assigned": s.status?.assigned?.done ? "Y" : "N",
+    "Status Processing": s.status?.processing?.done ? "Y" : "N",
+    "Status Completed": s.status?.completed?.done ? "Y" : "N",
+    "Status Reviewed": s.status?.reviewed?.done ? "Y" : "N",
+    "Assigned To": technicianName ?? "",
+    "Created At": s.createdAt
+      ? new Date(s.createdAt).toISOString().slice(0, 19).replace("T", " ")
+      : "",
+  };
+};
 
 export const downloadSitesExcel = (
   sites: Site[],

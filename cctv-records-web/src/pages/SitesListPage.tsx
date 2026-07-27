@@ -64,6 +64,7 @@ export const SitesListPage: React.FC = () => {
   };
   const [region, setRegion] = useState<string>(initialRegion);
   const [city, setCity] = useState<string>("");
+  const [simSwapSerial, setSimSwapSerial] = useState<string>("");
   const [rmsScope, setRmsScope] = useState<RmsScope | "">("");
   const [status, setStatus] = useState<SiteStatusFilter | "">("");
 
@@ -95,9 +96,20 @@ export const SitesListPage: React.FC = () => {
   // City filter happens client-side: the backend list endpoint doesn't accept
   // a city param, and the post-fetch filter is cheap on the page sizes we see.
   const sites = useMemo(() => {
-    const all = data ?? [];
-    return city ? all.filter((s) => s.siteCity === city) : all;
-  }, [data, city]);
+    let all = data ?? [];
+    if (city) all = all.filter((s) => s.siteCity === city);
+    if (simSwapSerial) {
+      const needle = simSwapSerial.trim().toLowerCase();
+      all = all.filter((s) =>
+        (s.simSwapPairs ?? []).some(
+          (p) =>
+            p.newSerialNumber?.toLowerCase().includes(needle) ||
+            p.oldSerialNumber?.toLowerCase().includes(needle),
+        ),
+      );
+    }
+    return all;
+  }, [data, city, simSwapSerial]);
 
   // Filter options derive from the *unfiltered* set so a user who picks
   // region X can still pivot to region Y without losing options. React-query
@@ -225,7 +237,7 @@ export const SitesListPage: React.FC = () => {
       </header>
 
       <div className="card">
-        <div className="card-body grid gap-3 md:grid-cols-5">
+        <div className="card-body grid gap-3 md:grid-cols-6">
           <TextField
             label="Search"
             placeholder="Site name, Tawal ID, city, TCN…"
@@ -275,6 +287,12 @@ export const SitesListPage: React.FC = () => {
               { label: "Completed", value: SiteStatusFilter.COMPLETED },
               { label: "Reviewed", value: SiteStatusFilter.REVIEWED },
             ]}
+          />
+          <TextField
+            label="SIM Serial #"
+            placeholder="Search by SIM serial…"
+            value={simSwapSerial}
+            onChange={(e) => setSimSwapSerial(e.target.value)}
           />
         </div>
       </div>

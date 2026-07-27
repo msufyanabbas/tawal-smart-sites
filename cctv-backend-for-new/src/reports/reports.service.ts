@@ -8,9 +8,7 @@ import { ReportQueryDto } from './dto/report-query.dto';
 
 @Injectable()
 export class ReportsService {
-  constructor(
-    @InjectModel(Site.name) private siteModel: Model<SiteDocument>,
-  ) {}
+  constructor(@InjectModel(Site.name) private siteModel: Model<SiteDocument>) {}
 
   private buildFilter(q: ReportQueryDto): FilterQuery<SiteDocument> {
     const filter: FilterQuery<SiteDocument> = {};
@@ -56,10 +54,42 @@ export class ReportsService {
     });
   }
 
-  private joinUnitField(units: Array<{ serialNumber?: string; tagNumber?: string }>, field: 'serialNumber' | 'tagNumber') {
+  private joinUnitField(
+    units: Array<{ serialNumber?: string; tagNumber?: string }>,
+    field: 'serialNumber' | 'tagNumber',
+  ) {
     return units
       .map((unit) => unit[field]?.toString().trim())
       .filter(Boolean)
+      .join('\n');
+  }
+
+  private joinSimSwapPairs(
+    pairs: any[],
+    field: 'newSerialNumber' | 'oldSerialNumber',
+  ) {
+    return (pairs || [])
+      .map((p) => p[field]?.toString().trim())
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  private joinTenants(tenants: any[]) {
+    return (tenants || [])
+      .map((t) => t.tenantName?.toString().trim())
+      .filter(Boolean)
+      .join('\n');
+  }
+
+  private joinTenantCapacities(tenants: any[]) {
+    return (tenants || [])
+      .map((t) => {
+        const caps = t.tenantCtCapacities || [];
+        const p1 = caps[0] || '-';
+        const p2 = caps[1] || '-';
+        const p3 = caps[2] || '-';
+        return `${t.tenantName || 'Tenant'}: P1(${p1}), P2(${p2}), P3(${p3})`;
+      })
       .join('\n');
   }
 
@@ -89,6 +119,7 @@ export class ReportsService {
       { header: 'SIM Tags', key: 'simCardTags', width: 30 },
       { header: 'Smart Lock', key: 'hasSmartLock', width: 11 },
       { header: '# Fence Locks', key: 'numberOfFenceLocks', width: 13 },
+      { header: '# Shelter Locks', key: 'numberOfShelterLocks', width: 15 },
       { header: 'Fence Lock Serials', key: 'fenceLockSerials', width: 30 },
       { header: 'Fence Lock Tags', key: 'fenceLockTags', width: 30 },
       { header: '# ODUs', key: 'numberOfOdus', width: 9 },
@@ -105,6 +136,16 @@ export class ReportsService {
       { header: '# Silbo GW', key: 'numberOfSilboGateways', width: 11 },
       { header: 'Silbo GW Serials', key: 'silboGatewaySerials', width: 30 },
       { header: 'Silbo GW Tags', key: 'silboGatewayTags', width: 30 },
+      // ── SIM Swap Scope Specific Columns ──
+      { header: 'SIM Swap New Serials', key: 'simSwapNewSerials', width: 30 },
+      { header: 'SIM Swap Old Serials', key: 'simSwapOldSerials', width: 30 },
+      { header: 'SIM Swap Site Type', key: 'simSwapSiteType', width: 18 },
+      { header: 'SIM Swap Lat', key: 'simSwapLatitude', width: 12 },
+      { header: 'SIM Swap Lng', key: 'simSwapLongitude', width: 12 },
+      { header: 'SIM Swap Comments', key: 'simSwapComments', width: 30 },
+      { header: 'Tenant Names', key: 'tenantNames', width: 24 },
+      { header: 'Tenant CT Capacities', key: 'tenantCtCapacities', width: 35 },
+      // ── Status ──
       { header: 'Created', key: '_created', width: 10 },
       { header: 'Assigned', key: '_assigned', width: 10 },
       { header: 'Processing', key: '_processing', width: 11 },
@@ -120,26 +161,69 @@ export class ReportsService {
     });
 
     for (const s of sites) {
+      const isSimSwap = s.rmsScope === 'SIM_SWAP';
       sheet.addRow({
         ...s,
         hasSmartLock: s.hasSmartLock ? 'Yes' : 'No',
         hasSmartMeter: s.hasSmartMeter ? 'Yes' : 'No',
         rmsSerials: this.joinUnitField(s.rmsUnits || [], 'serialNumber'),
         rmsTags: this.joinUnitField(s.rmsUnits || [], 'tagNumber'),
-        expanderSerials: this.joinUnitField(s.expanderUnits || [], 'serialNumber'),
+        expanderSerials: this.joinUnitField(
+          s.expanderUnits || [],
+          'serialNumber',
+        ),
         expanderTags: this.joinUnitField(s.expanderUnits || [], 'tagNumber'),
-        simCardSerials: this.joinUnitField(s.simCards || [], 'serialNumber'),
+        simCardSerials: isSimSwap
+          ? this.joinSimSwapPairs(s.simSwapPairs || [], 'newSerialNumber')
+          : this.joinUnitField(s.simCards || [], 'serialNumber'),
         simCardTags: this.joinUnitField(s.simCards || [], 'tagNumber'),
-        fenceLockSerials: this.joinUnitField(s.fenceLockUnits || [], 'serialNumber'),
+        fenceLockSerials: this.joinUnitField(
+          s.fenceLockUnits || [],
+          'serialNumber',
+        ),
         fenceLockTags: this.joinUnitField(s.fenceLockUnits || [], 'tagNumber'),
         oduSerials: this.joinUnitField(s.oduUnits || [], 'serialNumber'),
         oduTags: this.joinUnitField(s.oduUnits || [], 'tagNumber'),
-        smartMeterSerials: this.joinUnitField(s.smartMeterUnits || [], 'serialNumber'),
-        smartMeterTags: this.joinUnitField(s.smartMeterUnits || [], 'tagNumber'),
-        ctSplitSerials: this.joinUnitField(s.ctSplitUnits || [], 'serialNumber'),
+        smartMeterSerials: this.joinUnitField(
+          s.smartMeterUnits || [],
+          'serialNumber',
+        ),
+        smartMeterTags: this.joinUnitField(
+          s.smartMeterUnits || [],
+          'tagNumber',
+        ),
+        ctSplitSerials: this.joinUnitField(
+          s.ctSplitUnits || [],
+          'serialNumber',
+        ),
         ctSplitTags: this.joinUnitField(s.ctSplitUnits || [], 'tagNumber'),
-        silboGatewaySerials: this.joinUnitField(s.silboGatewayUnits || [], 'serialNumber'),
-        silboGatewayTags: this.joinUnitField(s.silboGatewayUnits || [], 'tagNumber'),
+        silboGatewaySerials: this.joinUnitField(
+          s.silboGatewayUnits || [],
+          'serialNumber',
+        ),
+        silboGatewayTags: this.joinUnitField(
+          s.silboGatewayUnits || [],
+          'tagNumber',
+        ),
+        // SIM Swap fields
+        simSwapNewSerials: this.joinSimSwapPairs(
+          s.simSwapPairs || [],
+          'newSerialNumber',
+        ),
+        simSwapOldSerials: this.joinSimSwapPairs(
+          s.simSwapPairs || [],
+          'oldSerialNumber',
+        ),
+        simSwapSiteType: s.simSwapSiteType
+          ? s.simSwapSiteType === 'green_field'
+            ? 'Green Field'
+            : 'Roof Top'
+          : '',
+        simSwapLatitude: s.simSwapLatitude ?? '',
+        simSwapLongitude: s.simSwapLongitude ?? '',
+        simSwapComments: s.simSwapComments ?? '',
+        tenantNames: this.joinTenants(s.simSwapTenants || []),
+        tenantCtCapacities: this.joinTenantCapacities(s.simSwapTenants || []),
         _created: s.status?.created?.done ? '✓' : '',
         _assigned: s.status?.assigned?.done ? '✓' : '',
         _processing: s.status?.processing?.done ? '✓' : '',
