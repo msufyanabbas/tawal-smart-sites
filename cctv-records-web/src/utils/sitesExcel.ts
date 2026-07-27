@@ -1,5 +1,10 @@
 import * as XLSX from "xlsx";
-import { RmsScope, type Site, type SiteCreatePayload } from "@/types";
+import {
+  ImagedSerialTag,
+  RmsScope,
+  type Site,
+  type SiteCreatePayload,
+} from "@/types";
 import { rmsScopeLabel } from "./helpers";
 
 // Single source of truth for the bulk-import column order. Mirrors the
@@ -383,8 +388,8 @@ const siteToExportRow = (s: Site, technicianName?: string) => {
   return {
     "Site Name": s.siteName,
     "Tawal ID": s.tawalId,
-    "Region": s.region,
-    "City": s.siteCity,
+    Region: s.region,
+    City: s.siteCity,
     "TCN Number": s.tcnNumber,
     "RMS Scope": rmsScopeLabel(s.rmsScope),
     // RMS Units
