@@ -35,7 +35,7 @@ export const IMPORT_COLUMNS = [
   "simSwapLongitude",
 ] as const;
 
-// Human-readable headers shown to the spreadsheet user on row 2. The parser
+// Human-readable headers  shown to the spreadsheet user on row 2. The parser
 // keys off row 3 (the field names) so changing labels here is safe.
 const IMPORT_DISPLAY_HEADERS: Record<(typeof IMPORT_COLUMNS)[number], string> =
   {
