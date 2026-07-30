@@ -56,7 +56,7 @@ const CustomImagePicker: React.FC<CustomImagePickerProps> = ({ imageUri, onImage
       const result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.7,
+        quality: 0.3,
         base64: true,
       });
 
@@ -82,7 +82,7 @@ const CustomImagePicker: React.FC<CustomImagePickerProps> = ({ imageUri, onImage
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [4, 3],
-        quality: 0.7,
+        quality: 0.3,
         base64: true,
       });
 

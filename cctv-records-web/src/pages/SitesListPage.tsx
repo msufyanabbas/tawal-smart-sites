@@ -7,6 +7,7 @@ import { FullPageSpinner } from "@/components/Spinner";
 import { TextField } from "@/components/TextField";
 import { SelectField } from "@/components/SelectField";
 import { Button } from "@/components/Button";
+import { Pagination } from "@/components/Pagination";
 import { BulkImportModal } from "@/components/BulkImportModal";
 import { Role, RmsScope, SiteStatusFilter } from "@/types";
 import {
@@ -33,6 +34,8 @@ const StatusTick: React.FC<{ done: boolean; label: string }> = ({
   </span>
 );
 
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
+
 export const SitesListPage: React.FC = () => {
   const { user } = useAuth();
   const isAdmin = user?.role === Role.ADMIN;
@@ -54,19 +57,22 @@ export const SitesListPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [region, setRegion] = useState<string>(initialRegion);
+  const [city, setCity] = useState<string>("");
+  const [simSwapSerial, setSimSwapSerial] = useState<string>("");
+  const [rmsScope, setRmsScope] = useState<RmsScope | "">("");
+  const [status, setStatus] = useState<SiteStatusFilter | "">("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => {
       setDebouncedSearch(value.trim());
+      setPage(1);
     }, 800);
   };
-  const [region, setRegion] = useState<string>(initialRegion);
-  const [city, setCity] = useState<string>("");
-  const [simSwapSerial, setSimSwapSerial] = useState<string>("");
-  const [rmsScope, setRmsScope] = useState<RmsScope | "">("");
-  const [status, setStatus] = useState<SiteStatusFilter | "">("");
 
   // Keep the URL in sync with the region filter so refreshing the page or
   // sharing the link preserves the drill-down state.
@@ -85,36 +91,47 @@ export const SitesListPage: React.FC = () => {
   const filters = useMemo(
     () => ({
       ...(region ? { region } : {}),
+      ...(city ? { siteCity: city } : {}),
       ...(rmsScope ? { rmsScope } : {}),
       ...(status ? { status } : {}),
       ...(debouncedSearch ? { search: debouncedSearch } : {}),
+      ...(simSwapSerial ? { simSwapSerial } : {}),
+      page,
+      limit: pageSize,
     }),
-    [region, rmsScope, status, debouncedSearch],
+    [
+      region,
+      city,
+      rmsScope,
+      status,
+      debouncedSearch,
+      simSwapSerial,
+      page,
+      pageSize,
+    ],
   );
 
   const { data, isLoading, error } = useSitesQuery(filters);
-  // City filter happens client-side: the backend list endpoint doesn't accept
-  // a city param, and the post-fetch filter is cheap on the page sizes we see.
-  const sites = useMemo(() => {
-    let all = data ?? [];
-    if (city) all = all.filter((s) => s.siteCity === city);
-    if (simSwapSerial) {
-      const needle = simSwapSerial.trim().toLowerCase();
-      all = all.filter((s) =>
-        (s.simSwapPairs ?? []).some(
-          (p) =>
-            p.newSerialNumber?.toLowerCase().includes(needle) ||
-            p.oldSerialNumber?.toLowerCase().includes(needle),
-        ),
-      );
-    }
-    return all;
-  }, [data, city, simSwapSerial]);
+
+  const sites = useMemo(() => data?.data ?? [], [data]);
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 0;
+  const currentPage = data?.page ?? 1;
 
   // Filter options derive from the *unfiltered* set so a user who picks
   // region X can still pivot to region Y without losing options. React-query
   // dedupes this with the Dashboard's identical query.
-  const { data: allSitesForOptions = [] } = useSitesQuery({});
+  // Use a high limit to fetch all sites for dropdown options.
+  const {
+    data: allSitesData = {
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 1000,
+      totalPages: 0,
+    },
+  } = useSitesQuery({ limit: 1000 });
+  const allSitesForOptions = allSitesData.data;
   const regionOptions = useMemo(() => {
     const set = new Set<string>();
     for (const s of allSitesForOptions) if (s.region) set.add(s.region);
@@ -177,6 +194,12 @@ export const SitesListPage: React.FC = () => {
 
   const selectionCount = selected.size;
 
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    setSelected(new Set());
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -185,7 +208,7 @@ export const SitesListPage: React.FC = () => {
             {isTech ? "My Sites" : "Sites"}
           </h1>
           <p className="text-sm text-slate-500">
-            {sites.length} {sites.length === 1 ? "site" : "sites"} shown
+            {total} {total === 1 ? "site" : "sites"} total
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -255,6 +278,7 @@ export const SitesListPage: React.FC = () => {
               // Drop the city when changing region so the user re-picks one
               // from the new region's list.
               if (next !== region) setCity("");
+              setPage(1);
             }}
             options={regionOptions}
           />
@@ -262,14 +286,20 @@ export const SitesListPage: React.FC = () => {
             label="City"
             placeholder="All cities"
             value={city}
-            onChange={(e) => setCity(e.target.value)}
+            onChange={(e) => {
+              setCity(e.target.value);
+              setPage(1);
+            }}
             options={cityOptions}
           />
           <SelectField
             label="Scope"
             placeholder="All scopes"
             value={rmsScope}
-            onChange={(e) => setRmsScope(e.target.value as RmsScope | "")}
+            onChange={(e) => {
+              setRmsScope(e.target.value as RmsScope | "");
+              setPage(1);
+            }}
             options={Object.values(RmsScope).map((s) => ({
               value: s,
               label: rmsScopeLabel(s),
@@ -279,7 +309,10 @@ export const SitesListPage: React.FC = () => {
             label="Status"
             placeholder="Any status"
             value={status}
-            onChange={(e) => setStatus(e.target.value as SiteStatusFilter | "")}
+            onChange={(e) => {
+              setStatus(e.target.value as SiteStatusFilter | "");
+              setPage(1);
+            }}
             options={[
               { label: "Created", value: SiteStatusFilter.CREATED },
               { label: "Assigned", value: SiteStatusFilter.ASSIGNED },
@@ -292,7 +325,10 @@ export const SitesListPage: React.FC = () => {
             label="SIM Serial #"
             placeholder="Search by SIM serial…"
             value={simSwapSerial}
-            onChange={(e) => setSimSwapSerial(e.target.value)}
+            onChange={(e) => {
+              setSimSwapSerial(e.target.value);
+              setPage(1);
+            }}
           />
         </div>
       </div>
@@ -394,6 +430,36 @@ export const SitesListPage: React.FC = () => {
             )}
           </tbody>
         </table>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-1 py-3">
+          <div className="flex items-center gap-2">
+            <label htmlFor="page-size" className="text-sm text-slate-500">
+              Rows per page:
+            </label>
+            <select
+              id="page-size"
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+                setSelected(new Set());
+              }}
+              className="rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            >
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            total={total}
+            onPageChange={handlePageChange}
+          />
+        </div>
       </div>
 
       <BulkImportModal open={importOpen} onClose={() => setImportOpen(false)} />

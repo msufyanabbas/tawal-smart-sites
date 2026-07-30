@@ -1,4 +1,5 @@
 import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 import { RmsScope } from '../site.schema';
 
 export enum SiteStatusFilter {
@@ -16,5 +17,10 @@ export class ListSitesQueryDto {
   @IsOptional() @IsEnum(SiteStatusFilter) status?: SiteStatusFilter;
   @IsOptional() @IsString() search?: string;
   @IsOptional() @IsString() from?: string; // ISO date
-  @IsOptional() @IsString() to?: string;   // ISO date
+  @IsOptional() @IsString() to?: string; // ISO date
+  @IsOptional() @IsString() siteCity?: string;
+  @IsOptional() @IsString() simSwapSerial?: string;
+
+  @IsOptional() @Type(() => Number) page?: number;
+  @IsOptional() @Type(() => Number) limit?: number;
 }

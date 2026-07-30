@@ -53,7 +53,8 @@ export const ReportsPage: React.FC = () => {
   // Region filter options derived from the full sites list so the user can
   // pivot between regions even after applying one. React-query dedupes with
   // SitesListPage and the Dashboard.
-  const { data: allSitesForOptions = [] } = useSitesQuery({});
+  const { data: allSitesData } = useSitesQuery({});
+  const allSitesForOptions = allSitesData?.data ?? [];
   const regionOptions = useMemo(() => {
     const set = new Set<string>();
     for (const s of allSitesForOptions) if (s.region) set.add(s.region);

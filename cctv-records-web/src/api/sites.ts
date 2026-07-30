@@ -16,6 +16,18 @@ export interface ListSitesFilters {
   search?: string;
   from?: string;
   to?: string;
+  siteCity?: string;
+  simSwapSerial?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 const clean = (obj: object): Record<string, string> => {
@@ -28,8 +40,8 @@ const clean = (obj: object): Record<string, string> => {
 
 export const listSites = async (
   filters: ListSitesFilters = {},
-): Promise<Site[]> => {
-  const { data } = await apiClient.get<Site[]>("/sites", {
+): Promise<PaginatedResponse<Site>> => {
+  const { data } = await apiClient.get<PaginatedResponse<Site>>("/sites", {
     params: clean(filters),
   });
   return data;

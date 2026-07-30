@@ -8,7 +8,9 @@ dotenv.config();
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Set limit to 10mb to accommodate base64-encoded image payloads from clients.
+  // Allow up to 100 MB to accommodate large multi-image site submissions
+  // (base64-encoded photos sent as JSON). Nginx is set to 200 MB so it never
+  // rejects before this limit is reached.
   app.use(bodyParser.json({ limit: '100mb' }));
   app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
   // Enable CORS so the React web client can hit the API from a browser origin.

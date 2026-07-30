@@ -318,7 +318,7 @@ const TechnicianDashboard: React.FC<{ sites: Site[] }> = ({ sites }) => {
 export const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { data, isLoading, error } = useSitesQuery({});
-  const sites = useMemo(() => data ?? [], [data]);
+  const sites = useMemo(() => data?.data ?? [], [data]);
 
   if (isLoading) return <FullPageSpinner />;
 

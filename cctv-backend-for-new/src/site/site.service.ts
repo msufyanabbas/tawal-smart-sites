@@ -176,7 +176,19 @@ export class SiteService {
     }
 
     if (query.region) filter.region = query.region;
+    if (query.siteCity) filter.siteCity = query.siteCity;
     if (query.rmsScope) filter.rmsScope = query.rmsScope;
+    if (query.simSwapSerial) {
+      const needle = query.simSwapSerial.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter['simSwapPairs'] = {
+        $elemMatch: {
+          $or: [
+            { newSerialNumber: { $regex: needle, $options: 'i' } },
+            { oldSerialNumber: { $regex: needle, $options: 'i' } },
+          ],
+        },
+      };
+    }
 
     if (query.status) {
       // Filter by the latest milestone reached.
@@ -221,7 +233,18 @@ export class SiteService {
       ];
     }
 
-    const docs = await this.siteModel.find(filter).sort({ createdAt: -1 });
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.min(100, Math.max(1, query.limit ?? 20));
+    const skip = (page - 1) * limit;
+
+    const [docs, total] = await Promise.all([
+      this.siteModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      this.siteModel.countDocuments(filter),
+    ]);
     // Strip image data from bulk responses
     const sanitizeArray = (arr: any[]) =>
       arr.map((u) => {
@@ -255,7 +278,13 @@ export class SiteService {
       }
       return s;
     });
-    return sanitized;
+    return {
+      data: sanitized,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findOne(id: string, actor: CurrentUserPayload) {

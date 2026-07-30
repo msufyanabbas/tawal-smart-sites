@@ -211,6 +211,29 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 6,
   },
+  uploadOverlay: {
+    position: "absolute",
+    top: 6,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.md,
+    backgroundColor: "rgba(10,80,200,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uploadingPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: radius.md,
+    backgroundColor: "rgba(10,80,200,0.12)",
+    marginTop: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: colors.brand,
+    borderStyle: "dashed",
+  },
 
   // Sticky bar
   stickyBar: {
@@ -295,5 +318,78 @@ export const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  // Step Wizard
+  stepHeader: {
+    backgroundColor: "#fff",
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    ...shadow.card,
+  },
+  stepBarContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  stepTab: {
+    alignItems: "center",
+    flex: 1,
+  },
+  stepTabActive: {},
+  stepCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.bg,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 4,
+  },
+  stepCircleActive: {
+    backgroundColor: colors.brand,
+    borderColor: colors.brand,
+  },
+  stepCircleDone: {
+    backgroundColor: colors.brandLight,
+    borderColor: colors.brand,
+  },
+  stepCircleText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textMuted,
+  },
+  stepCircleTextActive: {
+    color: "#fff",
+  },
+  stepCircleTextDone: {
+    color: colors.brand,
+  },
+  stepLabelText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  stepLabelTextActive: {
+    color: colors.brand,
+    fontWeight: "700",
+  },
+  stepConnector: {
+    height: 2,
+    flex: 0.4,
+    backgroundColor: colors.border,
+    marginBottom: 16,
+  },
+  stepConnectorActive: {
+    backgroundColor: colors.brand,
+  },
+  stepNavRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginTop: spacing.md,
   },
 });
