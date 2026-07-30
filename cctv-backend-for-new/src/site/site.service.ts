@@ -233,18 +233,31 @@ export class SiteService {
       ];
     }
 
-    const page = Math.max(1, query.page ?? 1);
-    const limit = Math.min(100, Math.max(1, query.limit ?? 20));
-    const skip = (page - 1) * limit;
+    // When pagination params are explicitly provided, return paginated response.
+    // Otherwise return the full array for backward compatibility (mobile app).
+    const hasPagination = query.page !== undefined || query.limit !== undefined;
 
-    const [docs, total] = await Promise.all([
-      this.siteModel
-        .find(filter)
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit),
-      this.siteModel.countDocuments(filter),
-    ]);
+    let docs: SiteDocument[];
+    let total: number;
+    let page = 1;
+    let limit = 20;
+
+    if (hasPagination) {
+      page = Math.max(1, query.page ?? 1);
+      limit = Math.min(100, Math.max(1, query.limit ?? 20));
+      const skip = (page - 1) * limit;
+      [docs, total] = await Promise.all([
+        this.siteModel
+          .find(filter)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit),
+        this.siteModel.countDocuments(filter),
+      ]);
+    } else {
+      docs = await this.siteModel.find(filter).sort({ createdAt: -1 });
+      total = docs.length;
+    }
     // Strip image data from bulk responses
     const sanitizeArray = (arr: any[]) =>
       arr.map((u) => {
@@ -278,6 +291,11 @@ export class SiteService {
       }
       return s;
     });
+
+    if (!hasPagination) {
+      return sanitized;
+    }
+
     return {
       data: sanitized,
       total,
