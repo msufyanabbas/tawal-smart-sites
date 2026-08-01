@@ -41,9 +41,24 @@ const clean = (obj: object): Record<string, string> => {
 export const listSites = async (
   filters: ListSitesFilters = {},
 ): Promise<PaginatedResponse<Site>> => {
-  const { data } = await apiClient.get<PaginatedResponse<Site>>("/sites", {
-    params: clean(filters),
-  });
+  const { data } = await apiClient.get<PaginatedResponse<Site> | Site[]>(
+    "/sites",
+    {
+      params: clean(filters),
+    },
+  );
+  // The backend returns a plain array when no pagination params are passed
+  // (for mobile-app backward compatibility). Normalize it to the paginated
+  // shape the web UI expects so callers can always rely on `data.data`.
+  if (Array.isArray(data)) {
+    return {
+      data,
+      total: data.length,
+      page: 1,
+      limit: data.length,
+      totalPages: 1,
+    };
+  }
   return data;
 };
 
