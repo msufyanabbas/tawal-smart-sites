@@ -45,6 +45,11 @@ export interface RegionCount {
   count: number;
 }
 
+export interface CityOption {
+  city: string;
+  region: string;
+}
+
 export interface RecentSiteActivity {
   _id: string;
   siteName: string;
@@ -79,6 +84,7 @@ export interface SiteStats {
   };
   byScope: Record<string, number>;
   byRegion: RegionCount[];
+  cities: CityOption[];
   recent: RecentSiteActivity[];
   pendingReview: PendingReviewItem[];
   // Present only for technician-role responses.

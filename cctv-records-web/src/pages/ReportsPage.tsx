@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/Button";
@@ -6,7 +7,7 @@ import { SelectField } from "@/components/SelectField";
 import { TextField } from "@/components/TextField";
 import { FullPageSpinner } from "@/components/Spinner";
 import { downloadReportExcel, listReportSites } from "@/api/reports";
-import { useSitesQuery } from "@/hooks/useSites";
+import { useDashboardData } from "@/hooks/useSites";
 import { RmsScope, SiteStatusFilter, type ReportFilters } from "@/types";
 import {
   STATUS_STEPS,
@@ -15,8 +16,12 @@ import {
   rmsScopeLabel,
 } from "@/utils/helpers";
 
-const StatusTick: React.FC<{ done: boolean }> = ({ done }) => (
+const StatusTick: React.FC<{ done: boolean; label: string }> = ({
+  done,
+  label,
+}) => (
   <span
+    aria-label={`${label}: ${done ? "done" : "pending"}`}
     className={
       done
         ? "inline-grid h-5 w-5 place-items-center rounded-full bg-green-500 text-white text-[10px] font-bold"
@@ -50,16 +55,18 @@ export const ReportsPage: React.FC = () => {
     queryFn: () => listReportSites(cleanFilters),
   });
 
-  // Region filter options derived from the full sites list so the user can
-  // pivot between regions even after applying one. React-query dedupes with
-  // SitesListPage and the Dashboard.
-  const { data: allSitesData } = useSitesQuery({});
-  const allSitesForOptions = allSitesData?.data ?? [];
-  const regionOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const s of allSitesForOptions) if (s.region) set.add(s.region);
-    return [...set].sort().map((r) => ({ value: r, label: r }));
-  }, [allSitesForOptions]);
+  // Region filter options come from the dashboard API so we don't need to
+  // fetch the full sites list just to populate the dropdown. React-query
+  // dedupes this with SitesListPage and the Dashboard.
+  const { data: dashboardData } = useDashboardData();
+  const regionOptions = useMemo(
+    () =>
+      (dashboardData?.byRegion ?? []).map((r) => ({
+        value: r.region,
+        label: r.region,
+      })),
+    [dashboardData],
+  );
 
   const onDownload = async () => {
     setDownloading(true);
@@ -194,8 +201,14 @@ export const ReportsPage: React.FC = () => {
             <tbody className="divide-y divide-slate-100">
               {(sites ?? []).map((s) => (
                 <tr key={s._id} className="hover:bg-slate-50">
-                  <td className="px-3 py-2 font-medium text-slate-800">
-                    {s.siteName}
+                  <td className="px-3 py-2">
+                    <Link
+                      to={`/sites/${s._id}`}
+                      className="font-medium text-brand-700 hover:underline"
+                    >
+                      {s.siteName}
+                    </Link>
+                    <p className="text-xs text-slate-500">{s.siteCity}</p>
                   </td>
                   <td className="px-3 py-2 text-slate-700">{s.tawalId}</td>
                   <td className="px-3 py-2 text-slate-700">{s.region}</td>
@@ -204,7 +217,10 @@ export const ReportsPage: React.FC = () => {
                   </td>
                   {STATUS_STEPS.map((step) => (
                     <td key={step.key} className="px-2 py-2 text-center">
-                      <StatusTick done={!!s.status?.[step.key]?.done} />
+                      <StatusTick
+                        done={!!s.status?.[step.key]?.done}
+                        label={step.label}
+                      />
                     </td>
                   ))}
                   <td className="px-3 py-2 text-xs text-slate-500">

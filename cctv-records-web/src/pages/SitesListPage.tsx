@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useSitesQuery } from "@/hooks/useSites";
+import { useDashboardData, useSitesQuery } from "@/hooks/useSites";
 import { useUsersQuery } from "@/hooks/useUsers";
 import { FullPageSpinner } from "@/components/Spinner";
 import { TextField } from "@/components/TextField";
@@ -118,36 +118,27 @@ export const SitesListPage: React.FC = () => {
   const totalPages = data?.totalPages ?? 0;
   const currentPage = data?.page ?? 1;
 
-  // Filter options derive from the *unfiltered* set so a user who picks
-  // region X can still pivot to region Y without losing options. React-query
+  // Region and city filter options come from the dashboard API so we don't
+  // need to fetch the full sites list just to populate dropdowns. React-query
   // dedupes this with the Dashboard's identical query.
-  // Use a high limit to fetch all sites for dropdown options.
-  const {
-    data: allSitesData = {
-      data: [],
-      total: 0,
-      page: 1,
-      limit: 1000,
-      totalPages: 0,
-    },
-  } = useSitesQuery({ limit: 1000 });
-  const allSitesForOptions = allSitesData.data;
-  const regionOptions = useMemo(() => {
-    const set = new Set<string>();
-    for (const s of allSitesForOptions) if (s.region) set.add(s.region);
-    return [...set].sort().map((r) => ({ value: r, label: r }));
-  }, [allSitesForOptions]);
-  // Cities for the city filter: limited to those in the active region when
-  // one is selected, otherwise all cities the dataset has ever seen.
+  const { data: dashboardData } = useDashboardData();
+  const regionOptions = useMemo(
+    () =>
+      (dashboardData?.byRegion ?? []).map((r) => ({
+        value: r.region,
+        label: r.region,
+      })),
+    [dashboardData],
+  );
+  // Cities for the city filter: all cities from the dashboard API so the
+  // dropdown always shows every city in the dataset.
   const cityOptions = useMemo(() => {
     const set = new Set<string>();
-    for (const s of allSitesForOptions) {
-      if (!s.siteCity) continue;
-      if (region && s.region !== region) continue;
-      set.add(s.siteCity);
+    for (const c of dashboardData?.cities ?? []) {
+      set.add(c.city);
     }
     return [...set].sort().map((c) => ({ value: c, label: c }));
-  }, [allSitesForOptions, region]);
+  }, [dashboardData]);
 
   // Technicians are only loaded for admin/manager so we can resolve the
   // "assignedTo" id into a name during export.

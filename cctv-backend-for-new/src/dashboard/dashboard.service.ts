@@ -39,6 +39,7 @@ export class DashboardService {
       siteName: 1,
       tawalId: 1,
       region: 1,
+      siteCity: 1,
       rmsScope: 1,
       status: 1,
       createdAt: 1,
@@ -82,6 +83,22 @@ export class DashboardService {
       .map(([region, count]) => ({ region, count }))
       .sort((a, b) => a.region.localeCompare(b.region));
 
+    // ── Cities (grouped by region so the Sites list can filter city
+    //    options by the active region) ───────────────────────────────────
+    const seenCities = new Set<string>();
+    const cities: Array<{ city: string; region: string }> = [];
+    for (const s of sites) {
+      if (!s.siteCity) continue;
+      const key = `${s.region}|${s.siteCity}`;
+      if (seenCities.has(key)) continue;
+      seenCities.add(key);
+      cities.push({ city: s.siteCity, region: s.region });
+    }
+    cities.sort(
+      (a, b) =>
+        a.city.localeCompare(b.city) || a.region.localeCompare(b.region),
+    );
+
     // ── Completed this month (manager card) ──────────────────────────────
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -119,6 +136,7 @@ export class DashboardService {
       },
       byScope,
       byRegion,
+      cities,
       recent,
       pendingReview,
     };
