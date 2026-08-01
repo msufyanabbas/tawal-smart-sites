@@ -14,6 +14,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './jwt/jwt-auth.guard';
 import { ReportsModule } from './reports/reports.module';
 import { SerialModule } from './serial/serial.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   providers: [
@@ -40,6 +41,7 @@ import { SerialModule } from './serial/serial.module';
     TokenModule,
     ReportsModule,
     SerialModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

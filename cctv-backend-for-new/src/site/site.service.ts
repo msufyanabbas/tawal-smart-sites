@@ -233,6 +233,18 @@ export class SiteService {
       ];
     }
 
+    // Only return the summary fields needed for list views.
+    const projection = {
+      siteName: 1,
+      tawalId: 1,
+      region: 1,
+      siteCity: 1,
+      tcnNumber: 1,
+      rmsScope: 1,
+      status: 1,
+      createdAt: 1,
+    };
+
     // When pagination params are explicitly provided, return paginated response.
     // Otherwise return the full array for backward compatibility (mobile app).
     const hasPagination = query.page !== undefined || query.limit !== undefined;
@@ -248,49 +260,20 @@ export class SiteService {
       const skip = (page - 1) * limit;
       [docs, total] = await Promise.all([
         this.siteModel
-          .find(filter)
+          .find(filter, projection)
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(limit),
         this.siteModel.countDocuments(filter),
       ]);
     } else {
-      docs = await this.siteModel.find(filter).sort({ createdAt: -1 });
+      docs = await this.siteModel
+        .find(filter, projection)
+        .sort({ createdAt: -1 });
       total = docs.length;
     }
-    // Strip image data from bulk responses
-    const sanitizeArray = (arr: any[]) =>
-      arr.map((u) => {
-        const copy = { ...u };
-        delete copy.serialImage;
-        delete copy.tagImage;
-        return copy;
-      });
-    const imageKeys = [
-      'rmsUnits',
-      'expanderUnits',
-      'simCards',
-      'fenceLockUnits',
-      'oduUnits',
-      'smartMeterUnits',
-      'ctSplitUnits',
-      'silboGatewayUnits',
-    ];
-    const sanitized = docs.map((d) => {
-      const s = this.serialize(d);
-      imageKeys.forEach((k) => {
-        if (Array.isArray(s[k])) s[k] = sanitizeArray(s[k]);
-      });
-      if (Array.isArray(s.simSwapPairs)) {
-        s.simSwapPairs = s.simSwapPairs.map((p: any) => {
-          const copy = { ...p };
-          delete copy.newSerialImage;
-          delete copy.oldSerialImage;
-          return copy;
-        });
-      }
-      return s;
-    });
+
+    const sanitized = docs.map((d) => this.serialize(d));
 
     if (!hasPagination) {
       return sanitized;

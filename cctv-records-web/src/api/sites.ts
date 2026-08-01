@@ -30,6 +30,63 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+// ── Dashboard stats ─────────────────────────────────────────────────────────
+
+export interface SiteStageCounts {
+  created: number;
+  assigned: number;
+  processing: number;
+  completed: number;
+  reviewed: number;
+}
+
+export interface RegionCount {
+  region: string;
+  count: number;
+}
+
+export interface RecentSiteActivity {
+  _id: string;
+  siteName: string;
+  tawalId: string;
+  stage: string;
+  createdAt?: string;
+}
+
+export interface PendingReviewItem {
+  _id: string;
+  siteName: string;
+  completedAt?: string;
+}
+
+export interface TechnicianDrilldownItem {
+  _id: string;
+  siteName: string;
+  assignedAt?: string;
+}
+
+export interface TechnicianProgressItem {
+  _id: string;
+  siteName: string;
+  acceptedAt?: string;
+}
+
+export interface SiteStats {
+  totals: {
+    total: number;
+    byStage: SiteStageCounts;
+    completedThisMonth: number;
+  };
+  byScope: Record<string, number>;
+  byRegion: RegionCount[];
+  recent: RecentSiteActivity[];
+  pendingReview: PendingReviewItem[];
+  // Present only for technician-role responses.
+  pendingAcceptance?: TechnicianDrilldownItem[];
+  inProgress?: TechnicianProgressItem[];
+  completed?: number;
+}
+
 const clean = (obj: object): Record<string, string> => {
   const out: Record<string, string> = {};
   for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
@@ -59,6 +116,11 @@ export const listSites = async (
       totalPages: 1,
     };
   }
+  return data;
+};
+
+export const getDashboardData = async (): Promise<SiteStats> => {
+  const { data } = await apiClient.get<SiteStats>("/dashboard");
   return data;
 };
 

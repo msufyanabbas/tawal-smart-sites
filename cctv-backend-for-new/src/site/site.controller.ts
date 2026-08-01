@@ -41,19 +41,13 @@ export class SiteController {
   }
 
   @Get(':id')
-  findOne(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserPayload,
-  ) {
+  findOne(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.siteService.findOne(id, user);
   }
 
   @Post()
   @Roles(Role.ADMIN)
-  create(
-    @Body() dto: CreateSiteDto,
-    @CurrentUser() user: CurrentUserPayload,
-  ) {
+  create(@Body() dto: CreateSiteDto, @CurrentUser() user: CurrentUserPayload) {
     return this.siteService.create(dto, user);
   }
 
@@ -81,10 +75,7 @@ export class SiteController {
 
   @Delete(':id')
   @Roles(Role.ADMIN)
-  remove(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserPayload,
-  ) {
+  remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.siteService.remove(id, user);
   }
 
@@ -102,10 +93,7 @@ export class SiteController {
 
   @Patch(':id/accept')
   @Roles(Role.TECHNICIAN)
-  accept(
-    @Param('id') id: string,
-    @CurrentUser() user: CurrentUserPayload,
-  ) {
+  accept(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {
     return this.siteService.accept(id, user);
   }
 

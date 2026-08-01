@@ -10,12 +10,21 @@ export const sitesKeys = {
   all: ["sites"] as const,
   list: (filters: api.ListSitesFilters) => ["sites", "list", filters] as const,
   detail: (id: string) => ["sites", id] as const,
+  stats: ["sites", "stats"] as const,
 };
 
 export const useSitesQuery = (filters: api.ListSitesFilters = {}) =>
   useQuery({
     queryKey: sitesKeys.list(filters),
     queryFn: () => api.listSites(filters),
+    staleTime: 1000 * 60 * 5,
+    retry: 1,
+  });
+
+export const useDashboardData = () =>
+  useQuery({
+    queryKey: sitesKeys.stats,
+    queryFn: () => api.getDashboardData(),
     staleTime: 1000 * 60 * 5,
     retry: 1,
   });
