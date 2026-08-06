@@ -46,12 +46,78 @@ export class ReportsService {
 
   async listSites(q: ReportQueryDto) {
     const filter = this.buildFilter(q);
-    const docs = await this.siteModel.find(filter).sort({ createdAt: -1 });
-    return docs.map((d) => {
+
+    // When pagination params are explicitly provided, return a paginated
+    // response. Otherwise return the full array for backward compatibility
+    // (the Excel export relies on the full list).
+    const hasPagination = q.page !== undefined || q.limit !== undefined;
+
+    let docs: any[];
+    let total: number;
+    let page = 1;
+    let limit = 20;
+
+    const projection = {
+      'rmsUnits.serialImage': 0,
+      'rmsUnits.tagImage': 0,
+      'expanderUnits.serialImage': 0,
+      'expanderUnits.tagImage': 0,
+      'simCards.serialImage': 0,
+      'simCards.tagImage': 0,
+      'fenceLockUnits.serialImage': 0,
+      'fenceLockUnits.tagImage': 0,
+      'oduUnits.serialImage': 0,
+      'oduUnits.tagImage': 0,
+      'smartMeterUnits.serialImage': 0,
+      'smartMeterUnits.tagImage': 0,
+      'ctSplitUnits.serialImage': 0,
+      'ctSplitUnits.tagImage': 0,
+      'silboGatewayUnits.serialImage': 0,
+      'silboGatewayUnits.tagImage': 0,
+      'simSwapPairs.newSerialImage': 0,
+      'simSwapPairs.oldSerialImage': 0,
+      simSwapCtMainPhoto: 0,
+      simSwapMeterPhoto: 0,
+      'simSwapTenants.meterPhoto': 0,
+      'simSwapTenants.ctPhasePhotos': 0,
+    };
+
+    if (hasPagination) {
+      page = Math.max(1, q.page ?? 1);
+      limit = Math.min(100, Math.max(1, q.limit ?? 20));
+      const skip = (page - 1) * limit;
+      [docs, total] = await Promise.all([
+        this.siteModel
+          .find(filter, projection)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit),
+        this.siteModel.countDocuments(filter),
+      ]);
+    } else {
+      docs = await this.siteModel
+        .find(filter, projection)
+        .sort({ createdAt: -1 });
+      total = docs.length;
+    }
+
+    const sanitized = docs.map((d) => {
       const o: any = d.toObject({ versionKey: false });
       o._id = String(o._id);
       return o;
     });
+
+    if (!hasPagination) {
+      return sanitized;
+    }
+
+    return {
+      data: sanitized,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   private joinUnitField(
@@ -96,7 +162,13 @@ export class ReportsService {
   // Build an Excel workbook with one row per site (units summarized as counts;
   // detailed unit serial/tag data is exported in dedicated columns).
   async buildExcel(q: ReportQueryDto): Promise<Buffer> {
-    const sites = await this.listSites(q);
+    // The Excel export always needs the full dataset, so strip any pagination
+    // params before fetching.
+    const exportQuery: ReportQueryDto = { ...q };
+    delete exportQuery.page;
+    delete exportQuery.limit;
+    const result = await this.listSites(exportQuery);
+    const sites = Array.isArray(result) ? result : result.data;
 
     const wb = new ExcelJS.Workbook();
     const sheet = wb.addWorksheet('Sites');

@@ -233,16 +233,30 @@ export class SiteService {
       ];
     }
 
-    // Only return the summary fields needed for list views.
+    // Return all site fields EXCEPT heavy base64 image data.
     const projection = {
-      siteName: 1,
-      tawalId: 1,
-      region: 1,
-      siteCity: 1,
-      tcnNumber: 1,
-      rmsScope: 1,
-      status: 1,
-      createdAt: 1,
+      'rmsUnits.serialImage': 0,
+      'rmsUnits.tagImage': 0,
+      'expanderUnits.serialImage': 0,
+      'expanderUnits.tagImage': 0,
+      'simCards.serialImage': 0,
+      'simCards.tagImage': 0,
+      'fenceLockUnits.serialImage': 0,
+      'fenceLockUnits.tagImage': 0,
+      'oduUnits.serialImage': 0,
+      'oduUnits.tagImage': 0,
+      'smartMeterUnits.serialImage': 0,
+      'smartMeterUnits.tagImage': 0,
+      'ctSplitUnits.serialImage': 0,
+      'ctSplitUnits.tagImage': 0,
+      'silboGatewayUnits.serialImage': 0,
+      'silboGatewayUnits.tagImage': 0,
+      'simSwapPairs.newSerialImage': 0,
+      'simSwapPairs.oldSerialImage': 0,
+      simSwapCtMainPhoto: 0,
+      simSwapMeterPhoto: 0,
+      'simSwapTenants.meterPhoto': 0,
+      'simSwapTenants.ctPhasePhotos': 0,
     };
 
     // When pagination params are explicitly provided, return paginated response.
