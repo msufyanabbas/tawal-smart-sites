@@ -34,7 +34,7 @@ const StatusTick: React.FC<{ done: boolean; label: string }> = ({
   </span>
 );
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100, 0]; // 0 = All
 
 export const SitesListPage: React.FC = () => {
   const { user } = useAuth();
@@ -96,8 +96,9 @@ export const SitesListPage: React.FC = () => {
       ...(status ? { status } : {}),
       ...(debouncedSearch ? { search: debouncedSearch } : {}),
       ...(simSwapSerial ? { simSwapSerial } : {}),
-      page,
-      limit: pageSize,
+      // When "All" is selected (pageSize === 0), omit page/limit so the
+      // backend returns every site in a single response.
+      ...(pageSize > 0 ? { page, limit: pageSize } : {}),
     }),
     [
       region,
@@ -439,7 +440,7 @@ export const SitesListPage: React.FC = () => {
             >
               {PAGE_SIZE_OPTIONS.map((n) => (
                 <option key={n} value={n}>
-                  {n}
+                  {n === 0 ? "All" : n}
                 </option>
               ))}
             </select>

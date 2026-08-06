@@ -6,6 +6,7 @@ import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
 import { TextField } from "@/components/TextField";
 import { FullPageSpinner } from "@/components/Spinner";
+import { Pagination } from "@/components/Pagination";
 import { downloadReportExcel, listReportSites } from "@/api/reports";
 import { useDashboardData } from "@/hooks/useSites";
 import { RmsScope, SiteStatusFilter, type ReportFilters } from "@/types";
@@ -15,6 +16,8 @@ import {
   formatDate,
   rmsScopeLabel,
 } from "@/utils/helpers";
+
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
 
 const StatusTick: React.FC<{ done: boolean; label: string }> = ({
   done,
@@ -35,6 +38,8 @@ const StatusTick: React.FC<{ done: boolean; label: string }> = ({
 export const ReportsPage: React.FC = () => {
   const [filters, setFilters] = useState<ReportFilters>({});
   const [downloading, setDownloading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const cleanFilters = useMemo<ReportFilters>(() => {
     const out: ReportFilters = {};
@@ -46,14 +51,20 @@ export const ReportsPage: React.FC = () => {
     return out;
   }, [filters]);
 
-  const {
-    data: sites,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["reports", "sites", cleanFilters],
-    queryFn: () => listReportSites(cleanFilters),
+  const queryFilters = useMemo(
+    () => ({ ...cleanFilters, page, limit: pageSize }),
+    [cleanFilters, page, pageSize],
+  );
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["reports", "sites", queryFilters],
+    queryFn: () => listReportSites(queryFilters),
   });
+
+  const sites = useMemo(() => data?.data ?? [], [data]);
+  const total = data?.total ?? 0;
+  const totalPages = data?.totalPages ?? 0;
+  const currentPage = data?.page ?? 1;
 
   // Region filter options come from the dashboard API so we don't need to
   // fetch the full sites list just to populate the dropdown. React-query
@@ -79,6 +90,11 @@ export const ReportsPage: React.FC = () => {
     }
   };
 
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -99,21 +115,26 @@ export const ReportsPage: React.FC = () => {
             label="Region"
             placeholder="All regions"
             value={filters.region ?? ""}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, region: e.target.value || undefined }))
-            }
+            onChange={(e) => {
+              setFilters((f) => ({
+                ...f,
+                region: e.target.value || undefined,
+              }));
+              setPage(1);
+            }}
             options={regionOptions}
           />
           <SelectField
             label="Scope"
             placeholder="All scopes"
             value={filters.rmsScope ?? ""}
-            onChange={(e) =>
+            onChange={(e) => {
               setFilters((f) => ({
                 ...f,
                 rmsScope: (e.target.value || undefined) as RmsScope | undefined,
-              }))
-            }
+              }));
+              setPage(1);
+            }}
             options={Object.values(RmsScope).map((s) => ({
               value: s,
               label: rmsScopeLabel(s),
@@ -123,14 +144,15 @@ export const ReportsPage: React.FC = () => {
             label="Status"
             placeholder="Any status"
             value={filters.status ?? ""}
-            onChange={(e) =>
+            onChange={(e) => {
               setFilters((f) => ({
                 ...f,
                 status: (e.target.value || undefined) as
                   | SiteStatusFilter
                   | undefined,
-              }))
-            }
+              }));
+              setPage(1);
+            }}
             options={[
               { value: SiteStatusFilter.CREATED, label: "Created" },
               { value: SiteStatusFilter.ASSIGNED, label: "Assigned" },
@@ -143,17 +165,19 @@ export const ReportsPage: React.FC = () => {
             label="From"
             type="date"
             value={filters.from ?? ""}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, from: e.target.value || undefined }))
-            }
+            onChange={(e) => {
+              setFilters((f) => ({ ...f, from: e.target.value || undefined }));
+              setPage(1);
+            }}
           />
           <TextField
             label="To"
             type="date"
             value={filters.to ?? ""}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, to: e.target.value || undefined }))
-            }
+            onChange={(e) => {
+              setFilters((f) => ({ ...f, to: e.target.value || undefined }));
+              setPage(1);
+            }}
           />
         </div>
       </div>
@@ -199,7 +223,7 @@ export const ReportsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {(sites ?? []).map((s) => (
+              {sites.map((s) => (
                 <tr key={s._id} className="hover:bg-slate-50">
                   <td className="px-3 py-2">
                     <Link
@@ -228,7 +252,7 @@ export const ReportsPage: React.FC = () => {
                   </td>
                 </tr>
               ))}
-              {(sites ?? []).length === 0 && (
+              {sites.length === 0 && (
                 <tr>
                   <td
                     colSpan={5 + STATUS_STEPS.length}
@@ -240,6 +264,35 @@ export const ReportsPage: React.FC = () => {
               )}
             </tbody>
           </table>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-1 py-3">
+            <div className="flex items-center gap-2">
+              <label htmlFor="page-size" className="text-sm text-slate-500">
+                Rows per page:
+              </label>
+              <select
+                id="page-size"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+                className="rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                {PAGE_SIZE_OPTIONS.map((n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              total={total}
+              onPageChange={handlePageChange}
+            />
+          </div>
         </div>
       )}
     </div>

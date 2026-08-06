@@ -1,5 +1,6 @@
 import apiClient from "./client";
 import type { ReportFilters, Site } from "@/types";
+import type { PaginatedResponse } from "./sites";
 
 const clean = (obj: object): Record<string, string> => {
   const out: Record<string, string> = {};
@@ -9,12 +10,32 @@ const clean = (obj: object): Record<string, string> => {
   return out;
 };
 
+export interface ListReportSitesFilters extends ReportFilters {
+  page?: number;
+  limit?: number;
+}
+
 export const listReportSites = async (
-  filters: ReportFilters,
-): Promise<Site[]> => {
-  const { data } = await apiClient.get<Site[]>("/reports/sites", {
-    params: clean(filters),
-  });
+  filters: ListReportSitesFilters,
+): Promise<PaginatedResponse<Site>> => {
+  const { data } = await apiClient.get<PaginatedResponse<Site> | Site[]>(
+    "/reports/sites",
+    {
+      params: clean(filters),
+    },
+  );
+  // The backend returns a plain array when no pagination params are passed
+  // (for backward compatibility). Normalize it to the paginated shape the
+  // web UI expects so callers can always rely on `data.data`.
+  if (Array.isArray(data)) {
+    return {
+      data,
+      total: data.length,
+      page: 1,
+      limit: data.length,
+      totalPages: 1,
+    };
+  }
   return data;
 };
 

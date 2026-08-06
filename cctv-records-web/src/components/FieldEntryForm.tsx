@@ -619,7 +619,7 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                     key={idx}
                     className="rounded-lg border border-slate-200 p-4"
                   >
-                    <p className="mb-3 text-sm font-semibold text-slate-700">
+                    <p className="mb-3 text-sm font-semibold text-slate-800">
                       {singular} #{idx + 1}
                     </p>
                     <div className="grid gap-4 md:grid-cols-2">
