@@ -159,12 +159,15 @@ export const styles = StyleSheet.create({
   },
   dropdownSelectedText: {
     fontSize: fontSize.body,
-    color: colors.text,
+    color: "#000000",
+  },
+  dropdownItemText: {
+    color: "#000000",
   },
   dropdownSearchInput: {
     height: 40,
     fontSize: fontSize.body,
-    color: colors.text,
+    color: "#000000",
   },
   dropdownLabel: {
     fontSize: fontSize.sm,

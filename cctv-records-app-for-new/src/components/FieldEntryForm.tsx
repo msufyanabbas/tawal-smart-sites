@@ -494,6 +494,7 @@ const FieldEntryForm: React.FC<{
                             style={styles.dropdown}
                             placeholderStyle={styles.dropdownPlaceholder}
                             selectedTextStyle={styles.dropdownSelectedText}
+                            itemTextStyle={styles.dropdownItemText}
                             inputSearchStyle={styles.dropdownSearchInput}
                             data={options}
                             search
@@ -812,6 +813,7 @@ const FieldEntryForm: React.FC<{
                           style={styles.dropdown}
                           placeholderStyle={styles.dropdownPlaceholder}
                           selectedTextStyle={styles.dropdownSelectedText}
+                          itemTextStyle={styles.dropdownItemText}
                           inputSearchStyle={styles.dropdownSearchInput}
                           data={simOptions}
                           search

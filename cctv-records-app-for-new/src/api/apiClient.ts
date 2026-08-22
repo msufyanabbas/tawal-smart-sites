@@ -8,6 +8,7 @@ import { callExternalLogout } from "../contexts/AuthContext"; // <-- adjust path
 const API_BASE_URL =
   (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined) ??
   "https://tawal-site.smart-life.sa/api";
+
 // const API_BASE_URL =
 //   (process.env.EXPO_PUBLIC_API_BASE_URL as string | undefined) ??
 //   "http://192.168.1.196:3000";
