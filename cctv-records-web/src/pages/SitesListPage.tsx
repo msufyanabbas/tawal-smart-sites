@@ -63,7 +63,7 @@ export const SitesListPage: React.FC = () => {
   const [rmsScope, setRmsScope] = useState<RmsScope | "">("");
   const [status, setStatus] = useState<SiteStatusFilter | "">("");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(10);
 
   const handleSearchChange = (value: string) => {
     setSearch(value);
