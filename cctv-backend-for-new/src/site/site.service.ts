@@ -260,7 +260,7 @@ export class SiteService {
     };
 
     // When pagination params are explicitly provided, return paginated response.
-    // Otherwise return the full array for backward compatibility (mobile app).
+    // Otherwise return the full array for backward compatibility (mobile app). i was woking before
     const hasPagination = query.page !== undefined || query.limit !== undefined;
 
     let docs: any[];
@@ -288,10 +288,7 @@ export class SiteService {
       ]);
     } else {
       [docs, total] = await Promise.all([
-        this.siteModel
-          .find(filter, projection)
-          .sort({ createdAt: -1 })
-          .lean(),
+        this.siteModel.find(filter, projection).sort({ createdAt: -1 }).lean(),
         countQuery,
       ]);
     }
