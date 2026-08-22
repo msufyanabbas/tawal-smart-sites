@@ -263,10 +263,15 @@ export class SiteService {
     // Otherwise return the full array for backward compatibility (mobile app).
     const hasPagination = query.page !== undefined || query.limit !== undefined;
 
-    let docs: SiteDocument[];
+    let docs: any[];
     let total: number;
     let page = 1;
     let limit = 20;
+
+    const countQuery =
+      Object.keys(filter).length === 0
+        ? this.siteModel.estimatedDocumentCount()
+        : this.siteModel.countDocuments(filter);
 
     if (hasPagination) {
       page = Math.max(1, query.page ?? 1);
@@ -277,14 +282,18 @@ export class SiteService {
           .find(filter, projection)
           .sort({ createdAt: -1 })
           .skip(skip)
-          .limit(limit),
-        this.siteModel.countDocuments(filter),
+          .limit(limit)
+          .lean(),
+        countQuery,
       ]);
     } else {
-      docs = await this.siteModel
-        .find(filter, projection)
-        .sort({ createdAt: -1 });
-      total = docs.length;
+      [docs, total] = await Promise.all([
+        this.siteModel
+          .find(filter, projection)
+          .sort({ createdAt: -1 })
+          .lean(),
+        countQuery,
+      ]);
     }
 
     const sanitized = docs.map((d) => this.serialize(d));
@@ -306,7 +315,7 @@ export class SiteService {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid site id');
     }
-    const doc = await this.siteModel.findById(id);
+    const doc = await this.siteModel.findById(id).lean();
     if (!doc) throw new NotFoundException('Site not found');
 
     if (actor.role === Role.TECHNICIAN) {
@@ -496,9 +505,13 @@ export class SiteService {
   }
 
   // Normalize ObjectIds and timestamps so the client gets stable shapes.
-  serialize(doc: SiteDocument) {
-    const obj: any = doc.toObject({ versionKey: false });
-    obj._id = String(obj._id);
+  serialize(doc: any) {
+    const obj: any =
+      typeof doc?.toObject === 'function'
+        ? doc.toObject({ versionKey: false })
+        : { ...doc };
+    delete obj.__v;
+    if (obj._id) obj._id = String(obj._id);
     if (obj.createdBy) obj.createdBy = String(obj.createdBy);
     if (obj.status?.assigned?.assignedTo) {
       obj.status.assigned.assignedTo = String(obj.status.assigned.assignedTo);

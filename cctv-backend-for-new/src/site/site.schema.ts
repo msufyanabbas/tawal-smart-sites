@@ -242,5 +242,12 @@ export class Site {
 }
 
 export const SiteSchema = SchemaFactory.createForClass(Site);
-SiteSchema.index({ 'status.assigned.assignedTo': 1 });
-SiteSchema.index({ region: 1, rmsScope: 1 });
+SiteSchema.index({ createdAt: -1 });
+SiteSchema.index({ 'status.assigned.assignedTo': 1, createdAt: -1 });
+SiteSchema.index({ region: 1, siteCity: 1, rmsScope: 1, createdAt: -1 });
+SiteSchema.index({ siteName: 1 });
+SiteSchema.index({ tcnNumber: 1 });
+SiteSchema.index({ siteCity: 1 });
+SiteSchema.index({ 'simSwapPairs.newSerialNumber': 1 });
+SiteSchema.index({ 'simSwapPairs.oldSerialNumber': 1 });
+
