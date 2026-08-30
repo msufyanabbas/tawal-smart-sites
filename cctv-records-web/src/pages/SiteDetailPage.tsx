@@ -41,6 +41,9 @@ const SUBMITTED_GROUPS: Array<{
   { key: "smartMeterUnits", label: "Smart Meters" },
   { key: "ctSplitUnits", label: "CT Splits" },
   { key: "silboGatewayUnits", label: "Silbo Gateways" },
+  { key: "cctvCameraUnits", label: "CCTV Cameras" },
+  { key: "hardDiskUnits", label: "Hard Disks" },
+  { key: "nvrUnits", label: "NVRs" },
 ];
 
 // ── Manager assignment ──────────────────────────────────────────────────────

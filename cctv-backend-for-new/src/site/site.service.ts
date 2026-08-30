@@ -57,6 +57,13 @@ export class SiteService {
     out.numberOfSmartMeters = 0;
     out.numberOfCtSplits = 0;
     out.numberOfSilboGateways = 0;
+    out.numberOfCameras = 0;
+    out.numberOfHardDisks = 0;
+    out.numberOfNvr = 0;
+
+    // Item code is a free-text code applicable to any selected scope, so it's
+    // always carried through regardless of which scope is picked.
+    out.itemCode = input.itemCode ?? '';
 
     if (scope === RmsScope.RMS) {
       out.numberOfRms = input.numberOfRms ?? 0;
@@ -105,6 +112,10 @@ export class SiteService {
         out.numberOfCtSplits = tenants * 3;
         // RMS scope intentionally excludes silbo gateways.
       }
+    } else if (scope === RmsScope.CCTV) {
+      out.numberOfCameras = input.numberOfCameras ?? 0;
+      out.numberOfHardDisks = input.numberOfHardDisks ?? 0;
+      out.numberOfNvr = input.numberOfNvr ?? 0;
     }
 
     return out;
@@ -251,6 +262,12 @@ export class SiteService {
       'ctSplitUnits.tagImage': 0,
       'silboGatewayUnits.serialImage': 0,
       'silboGatewayUnits.tagImage': 0,
+      'cctvCameraUnits.serialImage': 0,
+      'cctvCameraUnits.tagImage': 0,
+      'hardDiskUnits.serialImage': 0,
+      'hardDiskUnits.tagImage': 0,
+      'nvrUnits.serialImage': 0,
+      'nvrUnits.tagImage': 0,
       'simSwapPairs.newSerialImage': 0,
       'simSwapPairs.oldSerialImage': 0,
       simSwapCtMainPhoto: 0,
@@ -473,6 +490,9 @@ export class SiteService {
       'smartMeterUnits',
       'ctSplitUnits',
       'silboGatewayUnits',
+      'cctvCameraUnits',
+      'hardDiskUnits',
+      'nvrUnits',
       'simSwapComments',
       'simSwapPairs',
       'simSwapSiteType',

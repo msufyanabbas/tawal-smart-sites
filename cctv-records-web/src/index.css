@@ -2,11 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root { height: 100%; }
+html,
+body,
+#root {
+  height: 100%;
+}
 body {
   background-color: #f4f6fb;
   color: #0f172a;
-  font-feature-settings: 'cv11', 'ss01';
+  font-feature-settings: "cv11", "ss01";
 }
 
 @layer components {
@@ -35,17 +39,27 @@ body {
            text-navy-900 placeholder:text-navy-400 focus:border-brand-500 focus:outline-none
            focus:ring-2 focus:ring-brand-200 disabled:cursor-not-allowed disabled:bg-navy-50;
   }
-  .input-error { @apply border-red-500 focus:border-red-500 focus:ring-red-200; }
+  .input-error {
+    @apply border-red-500 focus:border-red-500 focus:ring-red-200;
+  }
 
-  .label { @apply mb-1 block text-sm font-medium text-navy-700; }
-  .helper-text { @apply mt-1 text-xs text-red-600; }
+  .label {
+    @apply mb-1 block text-sm font-medium text-navy-700;
+  }
+  .helper-text {
+    @apply mt-1 text-xs text-red-600;
+  }
 
   .card {
     @apply rounded-2xl border border-navy-100 bg-white shadow-sm transition-shadow
            hover:shadow-md;
   }
-  .card-body { @apply p-5; }
-  .card-title { @apply text-lg font-semibold text-navy-900; }
+  .card-body {
+    @apply p-5;
+  }
+  .card-title {
+    @apply text-lg font-semibold text-navy-900;
+  }
 
   .section-title {
     @apply text-xs font-bold uppercase tracking-[0.18em] text-brand-600;
@@ -58,12 +72,12 @@ body {
   .chip-cyan {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs
            font-semibold text-white;
-    background-color: #2EB5E3;
+    background-color: #2eb5e3;
   }
   .chip-magenta {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs
            font-semibold text-white;
-    background-color: #E5358A;
+    background-color: #e5358a;
   }
   .chip-success {
     @apply inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5

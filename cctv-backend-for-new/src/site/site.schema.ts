@@ -11,6 +11,7 @@ export enum RmsScope {
   SMART_METER = 'SMART_METER',
   RMS_SERVICE = 'RMS_SERVICE',
   SIM_SWAP = 'SIM_SWAP',
+  CCTV = 'CCTV',
 }
 
 export const ALL_RMS_SCOPES: RmsScope[] = [
@@ -19,6 +20,7 @@ export const ALL_RMS_SCOPES: RmsScope[] = [
   RmsScope.SMART_METER,
   RmsScope.RMS_SERVICE,
   RmsScope.SIM_SWAP,
+  RmsScope.CCTV,
 ];
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -152,6 +154,10 @@ export class Site {
   @Prop({ required: true, enum: RmsScope })
   rmsScope: RmsScope;
 
+  // Item code — free-text code shown for any selected scope.
+  @Prop({ type: String, default: '' })
+  itemCode?: string;
+
   // ── Scope-specific counts (admin-supplied; see service for validation) ─
   @Prop({ type: Number, default: 0, min: 0 }) numberOfRms: number;
   @Prop({ type: Number, default: 0, min: 0 }) numberOfExpanders: number;
@@ -167,6 +173,11 @@ export class Site {
   @Prop({ type: Number, default: 0, min: 0 }) numberOfSmartMeters: number; // computed
   @Prop({ type: Number, default: 0, min: 0 }) numberOfCtSplits: number; // computed
   @Prop({ type: Number, default: 0, min: 0 }) numberOfSilboGateways: number; // computed
+
+  // ── CCTV specific count ───────────────────────────────────────────────
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfCameras: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfHardDisks: number;
+  @Prop({ type: Number, default: 0, min: 0 }) numberOfNvr: number;
 
   // ── Status milestones ──────────────────────────────────────────────────
   @Prop({ type: SiteStatusSchema, default: () => ({}) })
@@ -189,6 +200,14 @@ export class Site {
   ctSplitUnits: ImagedSerialTag[];
   @Prop({ type: [ImagedSerialTagSchema], default: [] })
   silboGatewayUnits: ImagedSerialTag[];
+
+  // ── CCTV unit arrays (filled after assignment) ─────────────────────────
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  cctvCameraUnits: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  hardDiskUnits: ImagedSerialTag[];
+  @Prop({ type: [ImagedSerialTagSchema], default: [] })
+  nvrUnits: ImagedSerialTag[];
 
   // ── SIM_SWAP specific fields ───────────────────────────────────────────
   @Prop({ type: String, default: '' }) simSwapComments?: string;
@@ -250,4 +269,3 @@ SiteSchema.index({ tcnNumber: 1 });
 SiteSchema.index({ siteCity: 1 });
 SiteSchema.index({ 'simSwapPairs.newSerialNumber': 1 });
 SiteSchema.index({ 'simSwapPairs.oldSerialNumber': 1 });
-

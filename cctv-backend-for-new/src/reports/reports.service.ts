@@ -74,6 +74,12 @@ export class ReportsService {
       'ctSplitUnits.tagImage': 0,
       'silboGatewayUnits.serialImage': 0,
       'silboGatewayUnits.tagImage': 0,
+      'cctvCameraUnits.serialImage': 0,
+      'cctvCameraUnits.tagImage': 0,
+      'hardDiskUnits.serialImage': 0,
+      'hardDiskUnits.tagImage': 0,
+      'nvrUnits.serialImage': 0,
+      'nvrUnits.tagImage': 0,
       'simSwapPairs.newSerialImage': 0,
       'simSwapPairs.oldSerialImage': 0,
       simSwapCtMainPhoto: 0,
@@ -208,6 +214,16 @@ export class ReportsService {
       { header: '# Silbo GW', key: 'numberOfSilboGateways', width: 11 },
       { header: 'Silbo GW Serials', key: 'silboGatewaySerials', width: 30 },
       { header: 'Silbo GW Tags', key: 'silboGatewayTags', width: 30 },
+      // ── CCTV Scope Specific Columns ──
+      { header: '# Cameras', key: 'numberOfCameras', width: 10 },
+      { header: 'Camera Serials', key: 'cameraSerials', width: 30 },
+      { header: 'Camera Tags', key: 'cameraTags', width: 30 },
+      { header: '# Hard Disks', key: 'numberOfHardDisks', width: 12 },
+      { header: 'Hard Disk Serials', key: 'hardDiskSerials', width: 30 },
+      { header: 'Hard Disk Tags', key: 'hardDiskTags', width: 30 },
+      { header: '# NVR', key: 'numberOfNvr', width: 9 },
+      { header: 'NVR Serials', key: 'nvrSerials', width: 30 },
+      { header: 'NVR Tags', key: 'nvrTags', width: 30 },
       // ── SIM Swap Scope Specific Columns ──
       { header: 'SIM Swap New Serials', key: 'simSwapNewSerials', width: 30 },
       { header: 'SIM Swap Old Serials', key: 'simSwapOldSerials', width: 30 },
@@ -277,6 +293,19 @@ export class ReportsService {
           s.silboGatewayUnits || [],
           'tagNumber',
         ),
+        // CCTV fields
+        cameraSerials: this.joinUnitField(
+          s.cctvCameraUnits || [],
+          'serialNumber',
+        ),
+        cameraTags: this.joinUnitField(s.cctvCameraUnits || [], 'tagNumber'),
+        hardDiskSerials: this.joinUnitField(
+          s.hardDiskUnits || [],
+          'serialNumber',
+        ),
+        hardDiskTags: this.joinUnitField(s.hardDiskUnits || [], 'tagNumber'),
+        nvrSerials: this.joinUnitField(s.nvrUnits || [], 'serialNumber'),
+        nvrTags: this.joinUnitField(s.nvrUnits || [], 'tagNumber'),
         // SIM Swap fields
         simSwapNewSerials: this.joinSimSwapPairs(
           s.simSwapPairs || [],

@@ -191,6 +191,25 @@ const relevantUnitGroups = (site: Site): UnitGroup[] => {
         needs: { serial: true, tag: true },
       });
     }
+  } else if (site.rmsScope === RmsScope.CCTV) {
+    out.push({
+      key: "cctvCameraUnits",
+      label: "CCTV Cameras",
+      count: site.numberOfCameras,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "hardDiskUnits",
+      label: "Hard Disks",
+      count: site.numberOfHardDisks,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "nvrUnits",
+      label: "NVRs",
+      count: site.numberOfNvr,
+      needs: { serial: true, tag: true },
+    });
   }
   return out;
 };

@@ -19,15 +19,15 @@ export const siteCreateSchema = z.object({
   rmsScope: z.nativeEnum(RmsScope, {
     errorMap: () => ({ message: "Scope is required" }),
   }),
+  itemCode: z.string().trim().optional(),
 
   numberOfRms: nonNegInt.optional(),
   numberOfExpanders: nonNegInt.optional(),
   numberOfSims: nonNegInt.optional(),
-
   hasSmartLock: z.boolean().optional(),
   numberOfFenceLocks: nonNegInt.optional(),
   numberOfOdus: nonNegInt.optional(),
-
+  //
   hasSmartMeter: z.boolean().optional(),
   numberOfTenants: nonNegInt.optional(),
   comments: z.string().optional(),
@@ -37,7 +37,15 @@ export const siteCreateSchema = z.object({
   simSwapLatitude: z.coerce.number().optional(),
   simSwapLongitude: z.coerce.number().optional(),
   numberOfSmartMeters: nonNegInt.optional(),
+
+  // CCTV scope — a simple count of installed cameras. `.catch(0)` makes an
+  // empty/unparseable field resolve to 0 instead of NaN, so leaving it blank
+  // (or clearing it) doesn't silently block submission.
+  numberOfCameras: z.coerce.number().int().min(0).optional().catch(0),
+  numberOfHardDisks: z.coerce.number().int().min(0).optional().catch(0),
+  numberOfNvr: z.coerce.number().int().min(0).optional().catch(0),
 });
+//
 
 export type SiteCreateValues = z.infer<typeof siteCreateSchema>;
 
@@ -88,6 +96,9 @@ export const unitsPayloadSchema = z.object({
   smartMeterUnits: z.array(unitSchema).optional(),
   ctSplitUnits: z.array(unitSchema).optional(),
   silboGatewayUnits: z.array(unitSchema).optional(),
+  cctvCameraUnits: z.array(unitSchema).optional(),
+  hardDiskUnits: z.array(unitSchema).optional(),
+  nvrUnits: z.array(unitSchema).optional(),
 });
 
 export type UnitsValues = z.infer<typeof unitsPayloadSchema>;

@@ -65,6 +65,7 @@ export const EditSitePage: React.FC = () => {
       siteCity: site.siteCity,
       tcnNumber: site.tcnNumber,
       rmsScope: site.rmsScope,
+      itemCode: site.itemCode,
       numberOfRms: site.numberOfRms,
       numberOfExpanders: site.numberOfExpanders,
       numberOfSims: site.numberOfSims,
@@ -73,6 +74,9 @@ export const EditSitePage: React.FC = () => {
       numberOfOdus: site.numberOfOdus,
       hasSmartMeter: site.hasSmartMeter,
       numberOfTenants: site.numberOfTenants,
+      numberOfCameras: site.numberOfCameras,
+      numberOfHardDisks: site.numberOfHardDisks,
+      numberOfNvr: site.numberOfNvr,
       simSwapSiteType: site.simSwapSiteType,
       simSwapLatitude: site.simSwapLatitude ?? undefined,
       simSwapLongitude: site.simSwapLongitude ?? undefined,
@@ -105,6 +109,7 @@ export const EditSitePage: React.FC = () => {
       siteCity: values.siteCity,
       tcnNumber: values.tcnNumber,
       rmsScope: values.rmsScope,
+      itemCode: values.itemCode,
       numberOfSmartMeters: values.numberOfTenants ?? 0,
     };
     if (values.rmsScope === RmsScope.RMS) {
@@ -134,6 +139,10 @@ export const EditSitePage: React.FC = () => {
         payload.numberOfTenants = values.numberOfTenants ?? 0;
         payload.numberOfSmartMeters = values.numberOfTenants ?? 0;
       }
+    } else if (values.rmsScope === RmsScope.CCTV) {
+      payload.numberOfCameras = values.numberOfCameras ?? 0;
+      payload.numberOfHardDisks = values.numberOfHardDisks ?? 0;
+      payload.numberOfNvr = values.numberOfNvr ?? 0;
     }
     try {
       await update.mutateAsync({ id: site._id, payload });
@@ -208,6 +217,15 @@ export const EditSitePage: React.FC = () => {
           <div className="card">
             <div className="card-body space-y-4">
               <h2 className="card-title">{rmsScopeLabel(scope)} details</h2>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <TextField
+                  label="Item code"
+                  placeholder="e.g. TWL-001"
+                  {...register("itemCode")}
+                  error={formState.errors.itemCode?.message}
+                />
+              </div>
 
               {scope === RmsScope.RMS && (
                 <>
@@ -361,6 +379,29 @@ export const EditSitePage: React.FC = () => {
                     min={0}
                     label="Number of tenants"
                     {...register("numberOfTenants", { valueAsNumber: true })}
+                  />
+                </div>
+              )}
+
+              {scope === RmsScope.CCTV && (
+                <div className="grid gap-4 md:grid-cols-3">
+                  <TextField
+                    type="number"
+                    min={0}
+                    label="Number of CCTV cameras"
+                    {...register("numberOfCameras", { valueAsNumber: true })}
+                  />
+                  <TextField
+                    type="number"
+                    min={0}
+                    label="Number of hard disks"
+                    {...register("numberOfHardDisks", { valueAsNumber: true })}
+                  />
+                  <TextField
+                    type="number"
+                    min={0}
+                    label="Number of NVR"
+                    {...register("numberOfNvr", { valueAsNumber: true })}
                   />
                 </div>
               )}

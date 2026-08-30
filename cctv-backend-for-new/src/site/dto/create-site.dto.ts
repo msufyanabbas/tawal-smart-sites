@@ -37,6 +37,8 @@ export class CreateSiteDto {
   @IsEnum(RmsScope)
   rmsScope: RmsScope;
 
+  @IsOptional() @IsString() itemCode?: string;
+
   // ── Counts (optional at the DTO level; service validates per scope) ────
   @IsOptional() @IsInt() @Min(0) numberOfRms?: number;
   @IsOptional() @IsInt() @Min(0) numberOfExpanders?: number;
@@ -58,4 +60,9 @@ export class CreateSiteDto {
   @IsOptional() @IsString() simSwapSiteType?: string;
   @IsOptional() @IsNumber() simSwapLatitude?: number | null;
   @IsOptional() @IsNumber() simSwapLongitude?: number | null;
+
+  // ── CCTV ────────────────────────────────────────────────────────────
+  @IsOptional() @IsInt() @Min(0) numberOfCameras?: number;
+  @IsOptional() @IsInt() @Min(0) numberOfHardDisks?: number;
+  @IsOptional() @IsInt() @Min(0) numberOfNvr?: number;
 }

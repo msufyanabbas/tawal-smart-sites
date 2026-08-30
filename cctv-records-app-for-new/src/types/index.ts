@@ -12,6 +12,7 @@ export enum RmsScope {
   SMART_METER = "SMART_METER",
   RMS_SERVICE = "RMS_SERVICE",
   SIM_SWAP = "SIM_SWAP",
+  CCTV = "CCTV",
 }
 
 export enum SiteStatusFilter {
@@ -90,6 +91,10 @@ export interface Site {
   numberOfSmartMeters: number;
   numberOfCtSplits: number;
   numberOfSilboGateways: number;
+  // CCTV counts
+  numberOfCameras: number;
+  numberOfHardDisks: number;
+  numberOfNvr: number;
 
   // SIM swap fields
   simSwapPairs?: SimSwapPair[];
@@ -114,6 +119,9 @@ export interface Site {
   smartMeterUnits: ImagedSerialTag[];
   ctSplitUnits: ImagedSerialTag[];
   silboGatewayUnits: ImagedSerialTag[];
+  cctvCameraUnits: ImagedSerialTag[];
+  hardDiskUnits: ImagedSerialTag[];
+  nvrUnits: ImagedSerialTag[];
 
   createdBy?: string;
   createdAt?: string;
@@ -136,6 +144,9 @@ export interface SiteCreatePayload {
   numberOfOdus?: number;
   hasSmartMeter?: boolean;
   numberOfTenants?: number;
+  numberOfCameras?: number;
+  numberOfHardDisks?: number;
+  numberOfNvr?: number;
 }
 export type SiteUpdatePayload = Partial<SiteCreatePayload>;
 
@@ -160,6 +171,9 @@ export interface SiteUnitsPayload {
   smartMeterUnits?: ImagedSerialTag[];
   ctSplitUnits?: ImagedSerialTag[];
   silboGatewayUnits?: ImagedSerialTag[];
+  cctvCameraUnits?: ImagedSerialTag[];
+  hardDiskUnits?: ImagedSerialTag[];
+  nvrUnits?: ImagedSerialTag[];
   simSwapComments?: string;
   // SIM swap fields
   simSwapPairs?: SimSwapPair[];

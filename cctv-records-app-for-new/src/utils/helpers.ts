@@ -73,6 +73,8 @@ export const rmsScopeLabel = (s: RmsScope): string => {
     case RmsScope.SMART_LOCK: return 'Smart Lock';
     case RmsScope.SMART_METER: return 'Smart Meter';
     case RmsScope.RMS_SERVICE: return 'RMS Service';
+    case RmsScope.SIM_SWAP: return 'SIM Swap';
+    case RmsScope.CCTV: return 'CCTV';
     default: return String(s);
   }
 };

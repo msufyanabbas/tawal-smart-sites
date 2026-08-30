@@ -4,7 +4,8 @@ import {
   RmsScope,
   SiteUnitsPayload,
 } from "@/types";
-import { useState } from "react";
+import { ZoomableImage } from "@/components/ZoomableImage";
+
 // All unit arrays surfaced in the admin/manager read-only view. Order matches
 // the field-entry form so the two views feel familiar.
 const SUBMITTED_GROUPS: Array<{
@@ -19,42 +20,10 @@ const SUBMITTED_GROUPS: Array<{
   { key: "smartMeterUnits", label: "Smart Meters" },
   { key: "ctSplitUnits", label: "CT Splits" },
   { key: "silboGatewayUnits", label: "Silbo Gateways" },
+  { key: "cctvCameraUnits", label: "CCTV Cameras" },
+  { key: "hardDiskUnits", label: "Hard Disks" },
+  { key: "nvrUnits", label: "NVRs" },
 ];
-
-// ── Manager assignment ──────────────────────────────────────────────────────
-
-const ZoomableImage: React.FC<{ src: string; alt: string }> = ({
-  src,
-  alt,
-}) => {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="block overflow-hidden rounded-lg border border-slate-200 transition hover:border-brand-500"
-      >
-        <img src={src} alt={alt} className="h-24 w-24 object-cover" />
-      </button>
-      {open && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setOpen(false)}
-          className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4"
-        >
-          <img
-            src={src}
-            alt={alt}
-            className="max-h-full max-w-full rounded-lg shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-      )}
-    </>
-  );
-};
 
 export const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
   const groups = SUBMITTED_GROUPS.map((g) => ({

@@ -2,48 +2,48 @@
 // two apps feel like the same product. Always import from this file rather
 // than typing hex codes directly in screens.
 
-import type { Role, RmsScope, SiteStatus } from './types';
+import type { Role, RmsScope, SiteStatus } from "./types";
 
 export const colors = {
   // Tawal primary (orange)
-  brand: '#FC4C02',
-  brandDark: '#D63D00',
-  brandLight: '#FFF1EA',
-  brandSubtle: '#FFDCC6',
+  brand: "#FC4C02",
+  brandDark: "#D63D00",
+  brandLight: "#FFF1EA",
+  brandSubtle: "#FFDCC6",
 
   // Navy navbar / hero
-  navy: '#1B2A47',
-  navyDeep: '#0F1A2E',
-  navyMid: '#293C5A',
-  navyMuted: '#5B7299',
+  navy: "#1B2A47",
+  navyDeep: "#0F1A2E",
+  navyMid: "#293C5A",
+  navyMuted: "#5B7299",
 
   // Smart Life accents
-  cyan: '#00BCD4',
-  cyanLight: '#E0F7FA',
-  magenta: '#E5358A',
-  violet: '#7B3F9E',
+  cyan: "#00BCD4",
+  cyanLight: "#E0F7FA",
+  magenta: "#E5358A",
+  violet: "#7B3F9E",
 
   // Neutrals
-  bg: '#F4F6FA',
-  card: '#FFFFFF',
-  border: '#E5E7EB',
-  borderStrong: '#D1D5DB',
-  inputBg: '#FFFFFF',
+  bg: "#F4F6FA",
+  card: "#FFFFFF",
+  border: "#E5E7EB",
+  borderStrong: "#D1D5DB",
+  inputBg: "#FFFFFF",
 
   // Text
-  text: '#1B2A47',
-  textMuted: '#6B7280',
-  textFaint: '#9CA3AF',
-  textOnDark: '#FFFFFF',
-  textOnDarkMuted: 'rgba(255,255,255,0.72)',
+  text: "#1B2A47",
+  textMuted: "#6B7280",
+  textFaint: "#9CA3AF",
+  textOnDark: "#FFFFFF",
+  textOnDarkMuted: "rgba(255,255,255,0.72)",
 
   // Semantic
-  success: '#10B981',
-  successLight: '#D1FAE5',
-  warning: '#F59E0B',
-  warningLight: '#FEF3C7',
-  danger: '#EF4444',
-  dangerLight: '#FEE2E2',
+  success: "#10B981",
+  successLight: "#D1FAE5",
+  warning: "#F59E0B",
+  warningLight: "#FEF3C7",
+  danger: "#EF4444",
+  dangerLight: "#FEE2E2",
 } as const;
 
 export const spacing = {
@@ -75,7 +75,7 @@ export const fontSize = {
 
 export const shadow = {
   card: {
-    shadowColor: '#0F1A2E',
+    shadowColor: "#0F1A2E",
     shadowOpacity: 0.06,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
@@ -101,11 +101,12 @@ export const statusColor: Record<keyof SiteStatus, string> = {
 };
 
 export const scopeColor: Record<RmsScope, string> = {
-  RMS: '#2563EB',           // blue
+  RMS: "#2563EB", // blue
   SMART_LOCK: colors.brand, // orange
   SMART_METER: colors.success, // green
-  RMS_SERVICE: colors.violet,  // purple
-  SIM_SWAP: colors.cyan,    // cyan
+  RMS_SERVICE: colors.violet, // purple
+  SIM_SWAP: colors.cyan, // cyan
+  CCTV: "#64748B", // slate
 };
 
 export const roleColor: Record<Role, string> = {

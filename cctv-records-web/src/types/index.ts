@@ -12,6 +12,7 @@ export enum RmsScope {
   SMART_METER = "SMART_METER",
   RMS_SERVICE = "RMS_SERVICE",
   SIM_SWAP = "SIM_SWAP",
+  CCTV = "CCTV",
 }
 
 export enum SiteStatusFilter {
@@ -77,6 +78,7 @@ export interface Site {
   siteCity: string;
   tcnNumber: string;
   rmsScope: RmsScope;
+  itemCode?: string;
 
   numberOfRms: number;
   numberOfExpanders: number;
@@ -92,6 +94,9 @@ export interface Site {
   numberOfSmartMeters: number;
   numberOfCtSplits: number;
   numberOfSilboGateways: number;
+  numberOfCameras: number;
+  numberOfHardDisks: number;
+  numberOfNvr: number;
   simSwapComments?: string;
   simSwapPairs?: SimSwapPair[];
   simSwapSiteType?: SimSwapSiteType;
@@ -111,6 +116,9 @@ export interface Site {
   smartMeterUnits: ImagedSerialTag[];
   ctSplitUnits: ImagedSerialTag[];
   silboGatewayUnits: ImagedSerialTag[];
+  cctvCameraUnits: ImagedSerialTag[];
+  hardDiskUnits: ImagedSerialTag[];
+  nvrUnits: ImagedSerialTag[];
 
   // Technician-entered material counts (separate from admin-set top-level counts)
   materials?: SiteMaterialsPayload;
@@ -128,6 +136,7 @@ export interface SiteCreatePayload {
   siteCity: string;
   tcnNumber: string;
   rmsScope: RmsScope;
+  itemCode?: string;
   numberOfRms?: number;
   numberOfExpanders?: number;
   numberOfSims?: number;
@@ -145,6 +154,9 @@ export interface SiteCreatePayload {
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
   numberOfSmartMeters?: number;
+  numberOfCameras?: number;
+  numberOfHardDisks?: number;
+  numberOfNvr?: number;
 }
 
 export type SiteUpdatePayload = Partial<SiteCreatePayload>;
@@ -171,6 +183,9 @@ export interface SiteUnitsPayload {
   smartMeterUnits?: ImagedSerialTag[];
   ctSplitUnits?: ImagedSerialTag[];
   silboGatewayUnits?: ImagedSerialTag[];
+  cctvCameraUnits?: ImagedSerialTag[];
+  hardDiskUnits?: ImagedSerialTag[];
+  nvrUnits?: ImagedSerialTag[];
   simSwapComments?: string;
   simSwapPairs?: SimSwapPair[];
   simSwapSiteType?: SimSwapSiteType;

@@ -119,6 +119,24 @@ export class SubmitSiteDto {
   silboGatewayUnits?: ImagedSerialTagDto[];
 
   @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
+  cctvCameraUnits?: ImagedSerialTagDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
+  hardDiskUnits?: ImagedSerialTagDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ImagedSerialTagDto)
+  nvrUnits?: ImagedSerialTagDto[];
+
+  @IsOptional()
   @IsString()
   simSwapComments?: string;
 

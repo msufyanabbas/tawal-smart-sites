@@ -4,7 +4,7 @@ import clsx from "clsx";
 import { useAuth } from "@/hooks/useAuth";
 import { Role } from "@/types";
 import { roleLabel } from "@/utils/helpers";
-
+import logo from "../assets/logo.png";
 interface NavItem {
   to: string;
   label: string;
@@ -25,7 +25,9 @@ const ALL_NAV: NavItem[] = [
 ];
 
 const BrandLockup: React.FC = () => (
-  <div className="flex items-center gap-3">TAWAL + Smart</div>
+  <div className="flex items-center gap-3">
+    <img src={logo} alt="Logo" className="h-10 w-40" />
+  </div>
 );
 
 export const Layout: React.FC = () => {
@@ -44,7 +46,7 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="bg-navy-gradient shadow-navy">
+      <header className="bg-[#313577] shadow-navy">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <BrandLockup />
 
@@ -58,7 +60,7 @@ export const Layout: React.FC = () => {
                   clsx(
                     "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-brand-500 text-white shadow-brand"
+                      ? "bg-white/20 text-white "
                       : "text-white/80 hover:bg-white/10 hover:text-white",
                   )
                 }

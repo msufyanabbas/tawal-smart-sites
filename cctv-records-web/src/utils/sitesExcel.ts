@@ -33,6 +33,10 @@ export const IMPORT_COLUMNS = [
   "simSwapSiteType",
   "simSwapLatitude",
   "simSwapLongitude",
+  // ── CCTV scope fields ─────────────────────────────────────────────────
+  "numberOfCameras",
+  "numberOfHardDisks",
+  "numberOfNvr",
 ] as const;
 
 // Human-readable headers  shown to the spreadsheet user on row 2. The parser
@@ -56,6 +60,9 @@ const IMPORT_DISPLAY_HEADERS: Record<(typeof IMPORT_COLUMNS)[number], string> =
     simSwapSiteType: "SIM Swap — Site Type",
     simSwapLatitude: "SIM Swap — Latitude",
     simSwapLongitude: "SIM Swap — Longitude",
+    numberOfCameras: "# Cameras",
+    numberOfHardDisks: "# Hard Disks",
+    numberOfNvr: "# NVR",
   };
 
 const triggerDownload = (wb: XLSX.WorkBook, filename: string) => {
@@ -176,6 +183,21 @@ export const downloadImportTemplate = () => {
     [
       "simSwapLongitude",
       "Optional admin pre-fill. Decimal degrees (e.g. 46.6753). Leave blank for other scopes.",
+    ],
+
+    // ── CCTV ──────────────────────────────────────────────────────────────
+    ["--- CCTV fields (rmsScope = CCTV) ---", ""],
+    [
+      "numberOfCameras",
+      "Number of CCTV cameras. Leave blank for scopes other than CCTV.",
+    ],
+    [
+      "numberOfHardDisks",
+      "Number of CCTV hard disks. Leave blank for scopes other than CCTV.",
+    ],
+    [
+      "numberOfNvr",
+      "Number of CCTV NVRs (Network Video Recorders). Leave blank for scopes other than CCTV.",
     ],
   ];
 
@@ -337,6 +359,9 @@ const validateRow = (
     ...(coerceFloat(row.simSwapLongitude) !== undefined
       ? { simSwapLongitude: coerceFloat(row.simSwapLongitude) }
       : {}),
+    numberOfCameras: coerceInt(row.numberOfCameras),
+    numberOfHardDisks: coerceInt(row.numberOfHardDisks),
+    numberOfNvr: coerceInt(row.numberOfNvr),
   };
 
   return { rowNumber, payload, errors };
@@ -426,6 +451,16 @@ const siteToExportRow = (s: Site, technicianName?: string) => {
     "# Silbo Gateways": s.numberOfSilboGateways,
     "Silbo Gateway Serials": joinUnitField(s.silboGatewayUnits, "serialNumber"),
     "Silbo Gateway Tags": joinUnitField(s.silboGatewayUnits, "tagNumber"),
+    // CCTV
+    "# Cameras": s.numberOfCameras,
+    "Camera Serials": joinUnitField(s.cctvCameraUnits, "serialNumber"),
+    "Camera Tags": joinUnitField(s.cctvCameraUnits, "tagNumber"),
+    "# Hard Disks": s.numberOfHardDisks,
+    "Hard Disk Serials": joinUnitField(s.hardDiskUnits, "serialNumber"),
+    "Hard Disk Tags": joinUnitField(s.hardDiskUnits, "tagNumber"),
+    "# NVR": s.numberOfNvr,
+    "NVR Serials": joinUnitField(s.nvrUnits, "serialNumber"),
+    "NVR Tags": joinUnitField(s.nvrUnits, "tagNumber"),
     // SIM Swap Specific Columns
     "SIM Swap New Serials": joinSimSwapPairs(s.simSwapPairs, "newSerialNumber"),
     "SIM Swap Old Serials": joinSimSwapPairs(s.simSwapPairs, "oldSerialNumber"),
