@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import smr from "../assets/smartlife-logo.png";
+import smr from "../assets/logo.png";
 import twl from "../assets/tawal-logo.svg";
 export const AuthLayout: React.FC = () => (
   <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-navy-gradient px-4 py-10">
@@ -13,7 +13,7 @@ export const AuthLayout: React.FC = () => (
     <div className="relative w-full max-w-md">
       <div className="mb-8 flex flex-col items-center gap-3">
         <div className="flex items-center gap-4">
-          <img src={smr} alt="Smart Life" className="h-10 w-auto" />
+          <img src={smr} alt="Smart Life" className=" w-auto" />
           <span className="select-none text-2xl font-light text-white/60">
             ×
           </span>

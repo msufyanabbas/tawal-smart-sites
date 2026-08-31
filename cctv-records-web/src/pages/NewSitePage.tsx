@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,6 +15,55 @@ import {
 } from "@/utils/siteSchema";
 import { RmsScope, type SiteCreatePayload } from "@/types";
 import { apiErrorMessage, rmsScopeLabel } from "@/utils/helpers";
+
+// ── Predefined item code mapping ────────────────────────────────────────────
+// Each code maps to a specific piece of equipment used in GCL generation.
+const ITEM_CODE = {
+  RMS: "Smart-TWR-001",
+  EXPANDER: "Smart-TWR-007",
+  FENCE_LOCK: "Smart-TWR-0025",
+  ODU: "Smart-TWR-0027",
+  SMART_METER: "Smart-TWR-0023",
+} as const;
+
+/** Returns the ordered list of item codes for the current form state.
+ * A code is only included when its corresponding count is > 0. */
+function deriveItemCodes(
+  scope: RmsScope | undefined,
+  opts: {
+    numberOfRms?: number;
+    numberOfExpanders?: number;
+    hasSmartLock?: boolean;
+    numberOfFenceLocks?: number;
+    numberOfOdus?: number;
+    hasSmartMeter?: boolean;
+    numberOfTenants?: number;
+  },
+): string[] {
+  if (!scope) return [];
+  const codes: string[] = [];
+  const gt0 = (n?: number) => (n ?? 0) > 0;
+
+  if (scope === RmsScope.RMS) {
+    if (gt0(opts.numberOfRms)) codes.push(ITEM_CODE.RMS);
+    if (gt0(opts.numberOfExpanders)) codes.push(ITEM_CODE.EXPANDER);
+    if (opts.hasSmartLock) {
+      if (gt0(opts.numberOfFenceLocks)) codes.push(ITEM_CODE.FENCE_LOCK);
+      if (gt0(opts.numberOfOdus)) codes.push(ITEM_CODE.ODU);
+    }
+    if (opts.hasSmartMeter && gt0(opts.numberOfTenants))
+      codes.push(ITEM_CODE.SMART_METER);
+  } else if (scope === RmsScope.SMART_LOCK) {
+    if (gt0(opts.numberOfFenceLocks)) codes.push(ITEM_CODE.FENCE_LOCK);
+    if (gt0(opts.numberOfOdus)) codes.push(ITEM_CODE.ODU);
+  } else if (scope === RmsScope.SMART_METER) {
+    if (gt0(opts.numberOfTenants)) codes.push(ITEM_CODE.SMART_METER);
+  } else if (scope === RmsScope.SIM_SWAP) {
+    if (opts.hasSmartMeter && gt0(opts.numberOfTenants))
+      codes.push(ITEM_CODE.SMART_METER);
+  }
+  return codes;
+}
 
 const ToggleField: React.FC<{
   label: string;
@@ -57,13 +107,31 @@ export const NewSitePage: React.FC = () => {
     } as Partial<SiteCreateValues> as SiteCreateValues,
   });
 
-  const { register, control, handleSubmit, formState } = form;
+  const { register, control, handleSubmit, formState, setValue } = form;
   const scope = useWatch({ control, name: "rmsScope" });
   const hasSmartLock = useWatch({ control, name: "hasSmartLock" });
   const hasSmartMeter = useWatch({ control, name: "hasSmartMeter" });
   const tenants = useWatch({ control, name: "numberOfTenants" });
+  const numberOfRms = useWatch({ control, name: "numberOfRms" });
+  const numberOfExpanders = useWatch({ control, name: "numberOfExpanders" });
+  const numberOfFenceLocks = useWatch({ control, name: "numberOfFenceLocks" });
+  const numberOfOdus = useWatch({ control, name: "numberOfOdus" });
 
   const derived = deriveCounts(scope, tenants);
+
+  // Auto-compute itemCode whenever scope, toggles, or counts change.
+  const itemCodes = deriveItemCodes(scope, {
+    numberOfRms,
+    numberOfExpanders,
+    hasSmartLock,
+    numberOfFenceLocks,
+    numberOfOdus,
+    hasSmartMeter,
+    numberOfTenants: tenants,
+  });
+  useEffect(() => {
+    setValue("itemCode", itemCodes.join(","), { shouldDirty: false });
+  }, [scope, hasSmartLock, hasSmartMeter, numberOfRms, numberOfExpanders, numberOfFenceLocks, numberOfOdus, tenants]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = async (values: SiteCreateValues) => {
     // Build the payload — only counts that are meaningful for the chosen scope.
@@ -183,14 +251,24 @@ export const NewSitePage: React.FC = () => {
             <div className="card-body space-y-4">
               <h2 className="card-title">{rmsScopeLabel(scope)} details</h2>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <TextField
-                  label="Item code"
-                  placeholder="e.g. TWL-001"
-                  {...register("itemCode")}
-                  error={formState.errors.itemCode?.message}
-                />
-              </div>
+              {/* Auto-derived item codes — read-only display */}
+              {itemCodes.length > 0 && (
+                <div>
+                  <p className="label">Item codes (auto-generated for GCL)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {itemCodes.map((code) => (
+                      <span
+                        key={code}
+                        className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-200"
+                      >
+                        {code}
+                      </span>
+                    ))}
+                  </div>
+                  {/* Hidden input keeps the value in the form state */}
+                  <input type="hidden" {...register("itemCode")} />
+                </div>
+              )}
 
               {scope === RmsScope.RMS && (
                 <>

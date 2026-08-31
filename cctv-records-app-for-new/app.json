@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "cctv-records-app",
+    "name": "Smart Tawal",
     "slug": "cctv-records-app",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/main.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/icon.png",
+      "image": "./assets/main.png",
       "resizeMode": "contain",
       "backgroundColor": "#0b03fc"
     },
@@ -21,14 +21,14 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.png",
+        "foregroundImage": "./assets/main.png",
         "backgroundColor": "#0b03fc"
       },
       "package": "com.msufyanabbas.cctvrecordsapp",
-      "versionCode": 17
+      "versionCode": 19
     },
     "web": {
-      "favicon": "./assets/icon.png"
+      "favicon": "./assets/main.png"
     },
     "extra": {
       "eas": {

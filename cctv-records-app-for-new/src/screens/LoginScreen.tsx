@@ -54,13 +54,7 @@ const LoginScreen: React.FC = () => {
       <View style={styles.hero}>
         <View style={styles.logoRow}>
           <Image
-            source={require("../../assets/smart-life.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <AppText style={styles.cross}>×</AppText>
-          <Image
-            source={require("../../assets/tawal.png")}
+            source={require("../../assets/logo.png")}
             style={styles.logo}
             resizeMode="contain"
           />

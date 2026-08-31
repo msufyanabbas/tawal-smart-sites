@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Role } from "@/types";
 import { roleLabel } from "@/utils/helpers";
 import logo from "../assets/logo.png";
+
 interface NavItem {
   to: string;
   label: string;
@@ -26,7 +27,7 @@ const ALL_NAV: NavItem[] = [
 
 const BrandLockup: React.FC = () => (
   <div className="flex items-center gap-3">
-    <img src={logo} alt="Logo" className="h-10 w-40" />
+    <img src={logo} alt="Logo" className="h-14 w-40" />
   </div>
 );
 

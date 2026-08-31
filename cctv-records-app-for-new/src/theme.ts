@@ -6,7 +6,7 @@ import type { Role, RmsScope, SiteStatus } from "./types";
 
 export const colors = {
   // Tawal primary (orange)
-  brand: "#FC4C02",
+  brand: "#313577",
   brandDark: "#D63D00",
   brandLight: "#FFF1EA",
   brandSubtle: "#FFDCC6",

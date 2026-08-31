@@ -1,8 +1,8 @@
-import clsx from 'clsx';
-import { ButtonHTMLAttributes } from 'react';
-import { Spinner } from './Spinner';
+import clsx from "clsx";
+import { ButtonHTMLAttributes } from "react";
+import { Spinner } from "./Spinner";
 
-type Variant = 'primary' | 'secondary' | 'danger';
+type Variant = "primary" | "secondary" | "danger";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -10,13 +10,13 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClass: Record<Variant, string> = {
-  primary: 'btn-primary',
-  secondary: 'btn-secondary',
-  danger: 'btn-danger',
+  primary: "btn-primary",
+  secondary: "btn-secondary",
+  danger: "btn-danger",
 };
 
 export const Button: React.FC<ButtonProps> = ({
-  variant = 'primary',
+  variant = "primary",
   loading,
   disabled,
   className,
