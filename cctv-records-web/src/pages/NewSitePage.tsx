@@ -131,7 +131,16 @@ export const NewSitePage: React.FC = () => {
   });
   useEffect(() => {
     setValue("itemCode", itemCodes.join(","), { shouldDirty: false });
-  }, [scope, hasSmartLock, hasSmartMeter, numberOfRms, numberOfExpanders, numberOfFenceLocks, numberOfOdus, tenants]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    scope,
+    hasSmartLock,
+    hasSmartMeter,
+    numberOfRms,
+    numberOfExpanders,
+    numberOfFenceLocks,
+    numberOfOdus,
+    tenants,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = async (values: SiteCreateValues) => {
     // Build the payload — only counts that are meaningful for the chosen scope.
@@ -259,7 +268,7 @@ export const NewSitePage: React.FC = () => {
                     {itemCodes.map((code) => (
                       <span
                         key={code}
-                        className="inline-flex items-center rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-200"
+                        className="inline-flex items-center rounded-full text-white bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700 ring-1 ring-brand-200"
                       >
                         {code}
                       </span>
