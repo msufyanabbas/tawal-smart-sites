@@ -334,8 +334,8 @@ export const SitesListPage: React.FC = () => {
       )}
 
       <div className="card overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          <thead className="bg-slate-50 text-left">
+        <table className="min-w-full divide-y divide-slate-200 text-sm ">
+          <thead className="bg-slate-50 text-left ">
             <tr>
               {!isTech && (
                 <th className="w-8 px-3 py-2">
