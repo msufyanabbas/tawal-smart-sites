@@ -290,19 +290,33 @@ export class SiteService {
         ? this.siteModel.estimatedDocumentCount()
         : this.siteModel.countDocuments(filter);
 
+    const isAll = query.limit === 0;
+
     if (hasPagination) {
-      page = Math.max(1, query.page ?? 1);
-      limit = Math.min(100, Math.max(1, query.limit ?? 20));
-      const skip = (page - 1) * limit;
-      [docs, total] = await Promise.all([
-        this.siteModel
-          .find(filter, projection)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit)
-          .lean(),
-        countQuery,
-      ]);
+      if (isAll) {
+        [docs, total] = await Promise.all([
+          this.siteModel
+            .find(filter, projection)
+            .sort({ createdAt: -1 })
+            .lean(),
+          countQuery,
+        ]);
+        page = 1;
+        limit = total;
+      } else {
+        page = Math.max(1, query.page ?? 1);
+        limit = Math.max(1, query.limit ?? 20);
+        const skip = (page - 1) * limit;
+        [docs, total] = await Promise.all([
+          this.siteModel
+            .find(filter, projection)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean(),
+          countQuery,
+        ]);
+      }
     } else {
       [docs, total] = await Promise.all([
         this.siteModel.find(filter, projection).sort({ createdAt: -1 }).lean(),
@@ -321,7 +335,7 @@ export class SiteService {
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages: isAll ? 1 : Math.ceil(total / limit) || 1,
     };
   }
 

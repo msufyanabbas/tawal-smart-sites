@@ -88,18 +88,31 @@ export class ReportsService {
       'simSwapTenants.ctPhasePhotos': 0,
     };
 
+    const isAll = q.limit === 0;
+
     if (hasPagination) {
-      page = Math.max(1, q.page ?? 1);
-      limit = Math.min(100, Math.max(1, q.limit ?? 20));
-      const skip = (page - 1) * limit;
-      [docs, total] = await Promise.all([
-        this.siteModel
-          .find(filter, projection)
-          .sort({ createdAt: -1 })
-          .skip(skip)
-          .limit(limit),
-        this.siteModel.countDocuments(filter),
-      ]);
+      if (isAll) {
+        [docs, total] = await Promise.all([
+          this.siteModel
+            .find(filter, projection)
+            .sort({ createdAt: -1 }),
+          this.siteModel.countDocuments(filter),
+        ]);
+        page = 1;
+        limit = total;
+      } else {
+        page = Math.max(1, q.page ?? 1);
+        limit = Math.max(1, q.limit ?? 20);
+        const skip = (page - 1) * limit;
+        [docs, total] = await Promise.all([
+          this.siteModel
+            .find(filter, projection)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit),
+          this.siteModel.countDocuments(filter),
+        ]);
+      }
     } else {
       docs = await this.siteModel
         .find(filter, projection)
@@ -122,7 +135,7 @@ export class ReportsService {
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages: isAll ? 1 : Math.ceil(total / limit) || 1,
     };
   }
 

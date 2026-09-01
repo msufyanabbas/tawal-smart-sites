@@ -17,7 +17,7 @@ import {
   rmsScopeLabel,
 } from "@/utils/helpers";
 
-const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50];
+const PAGE_SIZE_OPTIONS = [10, 20, 30, 40, 50, 100, 0]; // 0 = All
 
 const StatusTick: React.FC<{ done: boolean; label: string }> = ({
   done,
@@ -265,7 +265,7 @@ export const ReportsPage: React.FC = () => {
             </tbody>
           </table>
 
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-1 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-3 py-3">
             <div className="flex items-center gap-2">
               <label htmlFor="page-size" className="text-sm text-slate-500">
                 Rows per page:
@@ -281,10 +281,13 @@ export const ReportsPage: React.FC = () => {
               >
                 {PAGE_SIZE_OPTIONS.map((n) => (
                   <option key={n} value={n}>
-                    {n}
+                    {n === 0 ? "All" : n}
                   </option>
                 ))}
               </select>
+              <span className="text-sm text-slate-500">
+                (Showing {sites.length} of {total} total sites)
+              </span>
             </div>
             <Pagination
               page={currentPage}
