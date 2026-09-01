@@ -539,7 +539,7 @@ export const SerialsPage: React.FC = () => {
       </header>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
+      <div className="flex gap-1 rounded-xl bg-slate-200 p-1">
         {tabs.map((t) => (
           <button
             key={t.id}
