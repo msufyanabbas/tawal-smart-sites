@@ -21,6 +21,9 @@ const CountsCard: React.FC<{ site: Site }> = ({ site }) => {
   push("Smart Meters", site.numberOfSmartMeters);
   push("CT Splits", site.numberOfCtSplits);
   push("Silbo Gateways", site.numberOfSilboGateways);
+  push("CCTV Cameras", site.numberOfCameras);
+  push("Hard Disks", site.numberOfHardDisks);
+  push("NVRs", site.numberOfNvr);
   if (items.length === 0) return null;
   return (
     <Card>

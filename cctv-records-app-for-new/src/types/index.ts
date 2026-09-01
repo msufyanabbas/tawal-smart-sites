@@ -160,6 +160,9 @@ export interface SiteMaterialsPayload {
   numberOfSmartMeters?: number;
   numberOfCtSplits?: number;
   numberOfSilboGateways?: number;
+  numberOfCameras?: number;
+  numberOfHardDisks?: number;
+  numberOfNvr?: number;
 }
 
 export interface SiteUnitsPayload {
@@ -196,6 +199,9 @@ export interface SiteUnitsPayload {
   numberOfSmartMeters?: number;
   numberOfCtSplits?: number;
   numberOfSilboGateways?: number;
+  numberOfCameras?: number;
+  numberOfHardDisks?: number;
+  numberOfNvr?: number;
 }
 
 export interface AuthUser {

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import toast from "react-hot-toast";
-
 import { TextField } from "@/components/TextField";
 import { SelectField } from "@/components/SelectField";
 import { Button } from "@/components/Button";
@@ -24,6 +23,9 @@ const ITEM_CODE = {
   FENCE_LOCK: "Smart-TWR-0025",
   ODU: "Smart-TWR-0027",
   SMART_METER: "Smart-TWR-0023",
+  CCTV_CAMERA: "CCTV-001",
+  HARD_DISK: "CCTV-006",
+  NVR: "CCTV-002",
 } as const;
 
 /** Returns the ordered list of item codes for the current form state.
@@ -38,6 +40,9 @@ function deriveItemCodes(
     numberOfOdus?: number;
     hasSmartMeter?: boolean;
     numberOfTenants?: number;
+    numberOfCameras?: number;
+    numberOfHardDisks?: number;
+    numberOfNvr?: number;
   },
 ): string[] {
   if (!scope) return [];
@@ -61,6 +66,10 @@ function deriveItemCodes(
   } else if (scope === RmsScope.SIM_SWAP) {
     if (opts.hasSmartMeter && gt0(opts.numberOfTenants))
       codes.push(ITEM_CODE.SMART_METER);
+  } else if (scope === RmsScope.CCTV) {
+    if (gt0(opts.numberOfCameras)) codes.push(ITEM_CODE.CCTV_CAMERA);
+    if (gt0(opts.numberOfHardDisks)) codes.push(ITEM_CODE.HARD_DISK);
+    if (gt0(opts.numberOfNvr)) codes.push(ITEM_CODE.NVR);
   }
   return codes;
 }
@@ -116,6 +125,9 @@ export const NewSitePage: React.FC = () => {
   const numberOfExpanders = useWatch({ control, name: "numberOfExpanders" });
   const numberOfFenceLocks = useWatch({ control, name: "numberOfFenceLocks" });
   const numberOfOdus = useWatch({ control, name: "numberOfOdus" });
+  const numberOfCameras = useWatch({ control, name: "numberOfCameras" });
+  const numberOfHardDisks = useWatch({ control, name: "numberOfHardDisks" });
+  const numberOfNvr = useWatch({ control, name: "numberOfNvr" });
 
   const derived = deriveCounts(scope, tenants);
 
@@ -128,6 +140,9 @@ export const NewSitePage: React.FC = () => {
     numberOfOdus,
     hasSmartMeter,
     numberOfTenants: tenants,
+    numberOfCameras,
+    numberOfHardDisks,
+    numberOfNvr,
   });
   useEffect(() => {
     setValue("itemCode", itemCodes.join(","), { shouldDirty: false });
@@ -140,6 +155,9 @@ export const NewSitePage: React.FC = () => {
     numberOfFenceLocks,
     numberOfOdus,
     tenants,
+    numberOfCameras,
+    numberOfHardDisks,
+    numberOfNvr,
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSubmit = async (values: SiteCreateValues) => {

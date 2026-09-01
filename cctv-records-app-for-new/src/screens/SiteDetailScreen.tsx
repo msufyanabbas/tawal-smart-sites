@@ -347,6 +347,9 @@ const SiteDetailScreen: React.FC = () => {
         seeded.numberOfSmartMeters = res.data.numberOfSmartMeters ?? 0;
         seeded.numberOfCtSplits = res.data.numberOfCtSplits ?? 0;
         seeded.numberOfSilboGateways = res.data.numberOfSilboGateways ?? 0;
+        seeded.numberOfCameras = res.data.numberOfCameras ?? 0;
+        seeded.numberOfHardDisks = res.data.numberOfHardDisks ?? 0;
+        seeded.numberOfNvr = res.data.numberOfNvr ?? 0;
         // Seed materials sub-object from previously saved technician materials
         seeded.materials = {
           numberOfRms: res.data.materials?.numberOfRms ?? 0,

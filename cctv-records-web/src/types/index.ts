@@ -171,6 +171,9 @@ export interface SiteMaterialsPayload {
   numberOfSmartMeters?: number;
   numberOfCtSplits?: number;
   numberOfSilboGateways?: number;
+  numberOfCameras?: number;
+  numberOfHardDisks?: number;
+  numberOfNvr?: number;
 }
 
 // Shape sent to PATCH /sites/:id/draft and /sites/:id/submit.
@@ -204,6 +207,9 @@ export interface SiteUnitsPayload {
   numberOfSmartMeters?: number;
   numberOfCtSplits?: number;
   numberOfSilboGateways?: number;
+  numberOfCameras?: number;
+  numberOfHardDisks?: number;
+  numberOfNvr?: number;
 }
 
 export interface AuthUser {

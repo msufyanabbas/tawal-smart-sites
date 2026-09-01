@@ -1,5 +1,4 @@
 export const CountsCard: React.FC<{ site: any }> = ({ site }) => {
-  console.log(site);
   const counts: Array<[string, number]> = [];
   const push = (label: string, val: number) => {
     if (val > 0) counts.push([label, val]);
@@ -8,11 +7,15 @@ export const CountsCard: React.FC<{ site: any }> = ({ site }) => {
   push("Expanders", site.numberOfExpanders);
   push("SIMs", site.numberOfSims);
   push("Fence Locks", site.numberOfFenceLocks);
+  push("Shelter Locks", site.numberOfShelterLocks);
   push("ODUs", site.numberOfOdus);
   push("Tenants", site.numberOfTenants);
   push("Smart Meters", site.numberOfSmartMeters);
   push("CT Splits", site.numberOfCtSplits);
   push("Silbo Gateways", site.numberOfSilboGateways);
+  push("CCTV Cameras", site.numberOfCameras);
+  push("Hard Disks", site.numberOfHardDisks);
+  push("NVRs", site.numberOfNvr);
 
   if (counts.length === 0) return null;
   return (

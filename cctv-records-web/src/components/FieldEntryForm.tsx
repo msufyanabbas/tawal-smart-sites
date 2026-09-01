@@ -269,6 +269,9 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
     out.numberOfSmartMeters = site.numberOfSmartMeters ?? 0;
     out.numberOfCtSplits = site.numberOfCtSplits ?? 0;
     out.numberOfSilboGateways = site.numberOfSilboGateways ?? 0;
+    out.numberOfCameras = site.numberOfCameras ?? 0;
+    out.numberOfHardDisks = site.numberOfHardDisks ?? 0;
+    out.numberOfNvr = site.numberOfNvr ?? 0;
     return out;
   }, [site, groups]);
 
