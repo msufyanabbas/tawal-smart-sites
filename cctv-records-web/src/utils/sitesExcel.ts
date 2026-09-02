@@ -484,8 +484,8 @@ const siteToExportRow = (s: Site, technicianName?: string) => {
     "Created At": s.createdAt
       ? new Date(s.createdAt).toISOString().slice(0, 19).replace("T", " ")
       : "",
-      "Completed At": s.completedAt
-      ? new Date(s.completedAt).toISOString().slice(0, 19).replace("T", " ")
+      "Completed At": s.status.completed?.at
+      ? new Date(s.status.completed.at).toISOString().slice(0, 19).replace("T", " ")
       : "",
   };
 };
