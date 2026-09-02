@@ -126,6 +126,7 @@ export interface Site {
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  completedAt?: string;
 }
 
 // Shape sent to POST/PATCH /sites — counts only, no unit arrays.
