@@ -74,11 +74,9 @@ The web app needs no new dependency.
    the site against the BOQ without paging back through the photos. Spills onto
    further pages past 15 rows.
 
-   Equipment names carry their type's brand accent and appear once per type;
-   serials and tag numbers use the cover's brand blue. The accent for a type
-   comes from `groupAccent()` in `rfp-theme.ts` and is keyed on the type's
-   position in the resolved group list, so a type wears the same colour on the
-   Site Details card, the summary table and the key highlights.
+   The header row sits on a band in the Smart Life brand indigo (`#1E174B`,
+   sampled from the wordmark in the logo artwork) with white text. Body rows
+   are plain slate, with the Equipment column bold.
 6. **Site Installation Conclusion** — status, next action, key highlights,
    reviewer remarks.
 

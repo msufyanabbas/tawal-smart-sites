@@ -10,6 +10,11 @@
 export const COLORS = {
   /** Deep aubergine used for the full-bleed side panels. */
   ink: '1A0B2E',
+  /**
+   * Smart Life brand indigo, sampled from the wordmark in the logo artwork.
+   * Used for the Equipment Summary table header.
+   */
+  brand: '1E174B',
   /** Body/heading text on light backgrounds. */
   slate: '1E293B',
   /** Secondary/caption text. */

@@ -585,25 +585,19 @@ export class RfpReportService {
       unit: string;
       serial: string;
       tag: string;
-      /** Brand accent for this equipment type, shared with the rest of the deck. */
-      accent: string;
-      /** True only on the first row of a type, so the name is not repeated. */
-      firstOfType: boolean;
     }
 
     const rows: Row[] = [];
-    groups.forEach((group, groupIndex) => {
+    for (const group of groups) {
       group.units.forEach((unit, i) => {
         rows.push({
           type: group.label,
           unit: group.units.length === 1 ? group.singular : `${group.singular} ${i + 1}`,
           serial: unit.serialNumber?.trim() || '—',
           tag: group.hasTag ? unit.tagNumber?.trim() || '—' : 'n/a',
-          accent: groupAccent(groupIndex),
-          firstOfType: i === 0,
         });
       });
-    });
+    }
 
     if (!rows.length) return;
 
@@ -634,7 +628,8 @@ export class RfpReportService {
       );
 
       const tableY = 1.24;
-      const tableH = 0.44 + page.length * rowH + 0.18;
+      const headH = 0.5;
+      const tableH = headH + page.length * rowH + 0.14;
       slide.addShape('roundRect', {
         x: 0.62, y: tableY, w: SLIDE_W - 1.24, h: tableH,
         rectRadius: 0.06,
@@ -642,22 +637,30 @@ export class RfpReportService {
         line: { color: COLORS.border, width: 0.75 },
       });
 
-      // Header row.
+      // Header band in the Smart Life brand indigo. Drawn as a rounded rect so
+      // its top corners follow the card, then squared off along the bottom
+      // edge with a plain rect — pptxgenjs cannot round only two corners.
+      slide.addShape('roundRect', {
+        x: 0.62, y: tableY, w: SLIDE_W - 1.24, h: headH,
+        rectRadius: 0.06,
+        fill: { color: COLORS.brand }, line: { type: 'none' },
+      });
+      slide.addShape('rect', {
+        x: 0.62, y: tableY + headH / 2, w: SLIDE_W - 1.24, h: headH / 2,
+        fill: { color: COLORS.brand }, line: { type: 'none' },
+      });
+
       for (const col of cols) {
         slide.addText(col.label.toUpperCase(), {
           x: col.x, y: tableY + 0.1, w: col.w, h: 0.3,
           isTextBox: true, margin: 0,
-          fontFace: FONT, fontSize: SIZE.caption, bold: true, color: COLORS.muted,
+          fontFace: FONT, fontSize: SIZE.caption, bold: true, color: COLORS.white,
           charSpacing: 0.8, valign: 'middle',
         });
       }
-      slide.addShape('rect', {
-        x: 0.9, y: tableY + 0.42, w: SLIDE_W - 1.8, h: 0.012,
-        fill: { color: COLORS.border }, line: { type: 'none' },
-      });
 
       page.forEach((row, i) => {
-        const y = tableY + 0.5 + i * rowH;
+        const y = tableY + headH + i * rowH;
         // Zebra striping keeps long serial columns readable across the page.
         if (i % 2 === 1) {
           slide.addShape('rect', {
@@ -668,27 +671,14 @@ export class RfpReportService {
         for (const col of cols) {
           const value = row[col.key];
           const missing = value === '—' || value === 'n/a';
-          // Equipment name carries its type's accent and is shown once per
-          // type; the identifiers pick up the cover's brand blue. Anything not
+          // Equipment name is bold; everything else plain. Anything not
           // recorded stays grey so gaps read as gaps.
-          let color: string;
-          let bold = false;
-          if (col.key === 'type') {
-            if (!row.firstOfType) continue;
-            color = row.accent;
-            bold = true;
-          } else if (col.key === 'unit') {
-            color = COLORS.slate;
-          } else {
-            color = missing ? COLORS.faint : COLORS.coverBlue;
-            bold = !missing;
-          }
           slide.addText(value, {
             x: col.x, y, w: col.w, h: rowH - 0.02,
             isTextBox: true, margin: 0,
             fontFace: FONT, fontSize: 11,
-            bold,
-            color: missing && col.key !== 'type' ? COLORS.faint : color,
+            bold: col.key === 'type',
+            color: missing ? COLORS.faint : COLORS.slate,
             valign: 'middle', shrinkText: true,
           });
         }
