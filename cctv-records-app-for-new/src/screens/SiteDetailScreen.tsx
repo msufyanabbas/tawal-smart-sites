@@ -49,6 +49,7 @@ import {
   SimSwapTenant,
 } from "../types";
 import { formatErrorMessage, rmsScopeLabel } from "../utils/helpers";
+import { downloadSiteRfpReport } from "../utils/rfpReport";
 import { colors, scopeColor, spacing } from "../theme";
 import { styles } from "../utils/Styles";
 
@@ -257,6 +258,7 @@ const SiteDetailScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [locationBusy, setLocationBusy] = useState(false);
+  const [rfpBusy, setRfpBusy] = useState(false);
   const [unitValues, setUnitValues] = useState<SiteUnitsPayload>({});
 
   const [techs, setTechs] = useState<AppUser[]>([]);
@@ -541,6 +543,24 @@ const SiteDetailScreen: React.FC = () => {
     ]);
   };
 
+  // Generates the site's RFP deck on the server, saves it to the app cache
+  // and hands it to the OS share sheet. A site with many photos takes a few
+  // seconds to build, so the button shows a spinner meanwhile.
+  const handleGenerateRfp = async () => {
+    if (!site || rfpBusy) return;
+    setRfpBusy(true);
+    try {
+      const res = await downloadSiteRfpReport(site._id, site.siteName);
+      if (!res.success) {
+        Alert.alert("Report failed", formatErrorMessage(res.message));
+      } else if (res.message) {
+        Alert.alert("Report ready", res.message);
+      }
+    } finally {
+      setRfpBusy(false);
+    }
+  };
+
   const handleSaveDraft = async (silent = false): Promise<boolean> => {
     if (!site) return false;
     setActionBusy(true);
@@ -600,6 +620,9 @@ const SiteDetailScreen: React.FC = () => {
   const canAssign = (isManager || isAdmin) && !site.status?.reviewed?.done;
   // Editing site identity/counts is admin-only; managers still assign + review.
   const canEdit = isAdmin;
+  // RFP report generation matches the backend guard on /reports/*:
+  // admins and managers only.
+  const canGenerateRfp = isAdmin || isManager;
   const showEntry =
     isTech && site.status?.processing?.done && !site.status?.completed?.done;
   const showSubmitted =
@@ -662,9 +685,17 @@ const SiteDetailScreen: React.FC = () => {
         <CountsCard site={site} />
 
         {/* Role-specific actions */}
-        {(canAssign || canEdit) && (
+        {(canAssign || canEdit || canGenerateRfp) && (
           <Card>
             <AppText style={styles.cardTitle}>Actions</AppText>
+            {canGenerateRfp && (
+              <Button
+                title="Generate RFP report"
+                variant="secondary"
+                onPress={handleGenerateRfp}
+                loading={rfpBusy}
+              />
+            )}
             {canAssign && (
               <Button
                 title={

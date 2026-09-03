@@ -21,6 +21,7 @@ import {
   RmsScope,
 } from "@/types";
 import { apiErrorMessage, roleLabel, rmsScopeLabel } from "@/utils/helpers";
+import { downloadSiteRfpReport } from "@/api/reports";
 import { StatusTimeline } from "@/components/TimeLIne";
 import { SiteInfoCard } from "@/components/SiteInfoCard";
 import { CountsCard } from "@/components/CountCard";
@@ -100,6 +101,7 @@ export const SiteDetailPage: React.FC = () => {
   const review = useReviewSiteMutation();
   const del = useDeleteSiteMutation();
   const [reviewRemarks, setReviewRemarks] = useState("");
+  const [rfpBusy, setRfpBusy] = useState(false);
 
   if (isLoading) return <FullPageSpinner />;
   if (error || !site) {
@@ -157,6 +159,24 @@ export const SiteDetailPage: React.FC = () => {
     }
   };
 
+  // Builds the PowerPoint server-side and streams it back. The deck embeds
+  // every captured photo, so it can take a few seconds on a large site —
+  // hence the busy state on the button.
+  const onGenerateRfp = async () => {
+    setRfpBusy(true);
+    const toastId = toast.loading("Generating RFP report…");
+    try {
+      await downloadSiteRfpReport(site._id, site.siteName);
+      toast.success("RFP report downloaded", { id: toastId });
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Failed to generate RFP report"), {
+        id: toastId,
+      });
+    } finally {
+      setRfpBusy(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -167,6 +187,15 @@ export const SiteDetailPage: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          {(isAdmin || isManager) && (
+            <Button
+              variant="secondary"
+              onClick={onGenerateRfp}
+              loading={rfpBusy}
+            >
+              Generate RFP report
+            </Button>
+          )}
           {canAccept && (
             <Button onClick={onAccept} loading={accept.isPending}>
               Accept site

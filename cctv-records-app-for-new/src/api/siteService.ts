@@ -128,3 +128,18 @@ export const reportDownloadUrl = (
   const qs = params.toString();
   return `${baseUrl.replace(/\/$/, "")}/reports/generate${qs ? `?${qs}` : ""}`;
 };
+
+// ── Per-site RFP report ────────────────────────────────────────────────────
+
+/**
+ * The RFP deck is NOT fetched through `apiClient`. It is several megabytes of
+ * binary, so `src/utils/rfpReport.ts` streams it straight to disk with
+ * expo-file-system's `downloadAsync` and attaches the Bearer token itself.
+ *
+ * Worth knowing if you are copying the older Excel flow above: the API only
+ * reads the token from the Authorization header
+ * (`ExtractJwt.fromAuthHeaderAsBearerToken` in jwt.strategy.ts), so an
+ * `access_token` query parameter is ignored and the request will 401.
+ */
+export const siteRfpReportUrl = (baseUrl: string, siteId: string): string =>
+  `${baseUrl.replace(/\/$/, "")}/reports/sites/${siteId}/rfp`;

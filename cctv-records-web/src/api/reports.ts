@@ -60,3 +60,42 @@ export const downloadReportExcel = async (
   a.remove();
   URL.revokeObjectURL(url);
 };
+
+/**
+ * Downloads the per-site "Smart Tower Site RFP report" PowerPoint deck.
+ *
+ * The backend picks the filename (it derives it from the site name), so we
+ * read it back off Content-Disposition when the header is exposed and only
+ * fall back to building one locally if it isn't.
+ */
+export const downloadSiteRfpReport = async (
+  siteId: string,
+  fallbackName?: string,
+): Promise<void> => {
+  const response = await apiClient.get<Blob>(
+    `/reports/sites/${siteId}/rfp`,
+    { responseType: "blob" },
+  );
+
+  const disposition = String(
+    response.headers?.["content-disposition"] ?? "",
+  );
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+  const safeFallback = (fallbackName || "Site")
+    .replace(/[^A-Za-z0-9_-]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  const blob = new Blob([response.data], {
+    type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = match?.[1]
+    ? decodeURIComponent(match[1])
+    : `${safeFallback || "Site"}_Site_RFP_Report.pptx`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
