@@ -13,7 +13,10 @@ import {
   addPhotoFrame,
   addSidePanel,
   addStat,
+  addUnitCard,
   toPptxImageData,
+  gridLayout,
+  MAX_PER_PAGE,
   PptxSlide,
 } from './rfp-layout';
 import { RfpUnitGroup, resolveUnitGroups } from './rfp-groups';
@@ -60,17 +63,16 @@ export class RfpReportService {
     this.addCoverSlide(pres, site as Site);
     this.addSiteDetailsSlide(pres, site as Site, groups);
 
+    // One page per equipment type, then a single page tabulating every unit.
     for (const group of groups) {
-      this.addSectionDivider(pres, site as Site, group);
-      group.units.forEach((unit, i) => {
-        this.addUnitSlide(pres, site as Site, group, unit, i);
-      });
+      this.addGroupSlides(pres, site as Site, group);
     }
 
     if ((site as Site).rmsScope === RmsScope.SIM_SWAP) {
       this.addSimSwapSlides(pres, site as Site);
     }
 
+    this.addSummarySlides(pres, site as Site, groups);
     this.addConclusionSlide(pres, site as Site, groups);
     this.addThankYouSlide(pres);
 
@@ -302,83 +304,67 @@ export class RfpReportService {
     }
   }
 
-  // ── Section divider, one per equipment type ──────────────────────────────
+  // ── One page per equipment type ──────────────────────────────────────────
 
-  private addSectionDivider(pres: Pptx, site: Site, group: RfpUnitGroup): void {
-    const slide = pres.addSlide();
-    addBackground(slide);
-    addSidePanel(slide);
-    addLogoBadge(slide, 0.62, 0.62);
-
-    slide.addText(group.label, {
-      x: 0.62, y: 2.2, w: 3.9, h: 1.3,
-      isTextBox: true, margin: 0,
-      fontFace: FONT, fontSize: SIZE.panelTitle, bold: true, color: COLORS.white,
-    });
-    slide.addText(
-      `${group.units.length} unit${group.units.length === 1 ? '' : 's'} captured${
-        group.expected && group.expected !== group.units.length ? ` of ${group.expected} planned` : ''
-      }`,
-      {
-        x: 0.62, y: 3.66, w: 3.83, h: 0.4,
-        isTextBox: true, margin: 0,
-        fontFace: FONT, fontSize: 14, color: COLORS.cyan,
-      },
-    );
-    slide.addText(`${site.siteName ?? ''} · ${site.tawalId ?? ''}`, {
-      x: 0.62, y: 4.16, w: 3.83, h: 0.36,
-      isTextBox: true, margin: 0,
-      fontFace: FONT, fontSize: SIZE.body, color: 'C7BFD6',
-    });
-
-    // Index of the units that follow, so a reader can find one by tag number.
-    slide.addText('Units in this section', {
-      x: 6.15, y: 1.15, w: 6.4, h: 0.3,
-      isTextBox: true, margin: 0,
-      fontFace: FONT, fontSize: SIZE.cardTitle, bold: true, color: COLORS.slate,
-      valign: 'middle',
-    });
-
-    const perCol = 6;
-    const shown = group.units.slice(0, perCol * 2);
-    shown.forEach((unit, i) => {
-      const col = Math.floor(i / perCol);
-      const row = i % perCol;
-      const x = 6.15 + col * 3.3;
-      const y = 1.66 + row * 0.78;
-      slide.addShape('roundRect', {
-        x, y, w: 3.05, h: 0.66,
-        rectRadius: 0.05,
-        fill: { color: COLORS.white },
-        line: { color: COLORS.border, width: 0.75 },
-      });
-      slide.addShape('rect', {
-        x, y: y + 0.12, w: 0.05, h: 0.42,
-        fill: { color: COLORS.cyan }, line: { type: 'none' },
-      });
-      slide.addText(`${group.singular} ${i + 1}`, {
-        x: x + 0.2, y: y + 0.08, w: 2.7, h: 0.26,
-        isTextBox: true, margin: 0,
-        fontFace: FONT, fontSize: SIZE.label, bold: true, color: COLORS.slate,
-        valign: 'middle',
-      });
-      slide.addText(this.unitSubtitle(unit, group.hasTag), {
-        x: x + 0.2, y: y + 0.34, w: 2.7, h: 0.24,
-        isTextBox: true, margin: 0,
-        fontFace: FONT, fontSize: SIZE.caption, color: COLORS.muted,
-        valign: 'middle',
-      });
-    });
-
-    if (group.units.length > shown.length) {
-      slide.addText(`+ ${group.units.length - shown.length} more on the following pages`, {
-        x: 6.15, y: 1.66 + perCol * 0.78 + 0.1, w: 6.4, h: 0.28,
-        isTextBox: true, margin: 0,
-        fontFace: FONT, fontSize: SIZE.caption, color: COLORS.faint, valign: 'middle',
-      });
+  /**
+   * Renders a whole equipment type onto a single page: every unit of that type
+   * as a card carrying its photo, asset-tag photo, serial number and tag
+   * number. A type with one unit fills the page; nine sit in a 3x3.
+   *
+   * Beyond MAX_PER_PAGE units the type spills onto further pages rather than
+   * shrinking the cards past legibility.
+   */
+  private addGroupSlides(pres: Pptx, site: Site, group: RfpUnitGroup): void {
+    const pages: ImagedSerialTag[][] = [];
+    for (let i = 0; i < group.units.length; i += MAX_PER_PAGE) {
+      pages.push(group.units.slice(i, i + MAX_PER_PAGE));
     }
+    if (!pages.length) return;
 
-    addFooter(slide, `${group.label} · ${site.tawalId ?? ''}`);
+    pages.forEach((page, pageIndex) => {
+      const slide = pres.addSlide();
+      addBackground(slide);
+
+      const heading =
+        pages.length > 1
+          ? `${group.label} (${pageIndex + 1} of ${pages.length})`
+          : group.label;
+      const captured =
+        `${group.units.length} unit${group.units.length === 1 ? '' : 's'} captured` +
+        (group.expected && group.expected !== group.units.length
+          ? ` of ${group.expected} planned`
+          : '');
+      addContentHeader(
+        slide,
+        heading,
+        `${site.siteName ?? ''} · ${site.tawalId ?? ''} · ${captured}`,
+      );
+
+      const { cols, cardW, cardH, gap, originX, originY } = gridLayout(page.length);
+
+      page.forEach((unit, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const unitNumber = pageIndex * MAX_PER_PAGE + i + 1;
+        addUnitCard(slide, {
+          x: originX + col * (cardW + gap),
+          y: originY + row * (cardH + gap),
+          w: cardW,
+          h: cardH,
+          title:
+            group.units.length === 1
+              ? group.singular
+              : `${group.singular} ${unitNumber}`,
+          serialImage: toPptxImageData(unit.serialImage),
+          tagImage: toPptxImageData(unit.tagImage),
+          serialNumber: unit.serialNumber,
+          tagNumber: unit.tagNumber,
+          hasTag: group.hasTag,
+        });
+      });
+
+      addFooter(slide, `${group.label} · ${site.tawalId ?? ''}`);
+    });
   }
 
   /** "Tag ABC123 · S/N 998877", trimmed to whichever parts exist. */
@@ -389,62 +375,7 @@ export class RfpReportService {
     return parts.length ? parts.join('  ·  ') : 'No identifiers recorded';
   }
 
-  // ── One slide per unit: device photo + tag photo side by side ────────────
-
-  private addUnitSlide(
-    pres: Pptx,
-    site: Site,
-    group: RfpUnitGroup,
-    unit: ImagedSerialTag,
-    index: number,
-  ): void {
-    const slide = pres.addSlide();
-    addBackground(slide);
-    addContentHeader(
-      slide,
-      `${group.singular} ${index + 1} of ${group.units.length}`,
-      `${site.siteName ?? ''} · ${site.tawalId ?? ''} · ${group.label}`,
-    );
-
-    const serialData = toPptxImageData(unit.serialImage);
-    const tagData = toPptxImageData(unit.tagImage);
-
-    const frameY = 1.32;
-    const frameH = 4.32;
-
-    if (group.hasTag) {
-      // Two frames — the unit itself and its asset tag.
-      addPhotoFrame(slide, {
-        data: serialData, x: 0.62, y: frameY, w: 5.95, h: frameH,
-        caption: `${group.singular} — unit photo`,
-        emptyText: 'No unit photo captured',
-      });
-      addPhotoFrame(slide, {
-        data: tagData, x: 6.77, y: frameY, w: 5.95, h: frameH,
-        caption: 'Asset tag photo',
-        emptyText: 'No tag photo captured',
-      });
-      this.addIdentifierBar(slide, [
-        { label: 'Serial Number', value: unit.serialNumber, accent: COLORS.cyan },
-        { label: 'Tag Number', value: unit.tagNumber, accent: COLORS.magenta },
-      ]);
-    } else {
-      // Serial only (SIM cards, ODUs) — one centred frame reads better than a
-      // half-empty pair.
-      addPhotoFrame(slide, {
-        data: serialData, x: 3.5, y: frameY, w: 6.33, h: frameH,
-        caption: `${group.singular} — unit photo`,
-        emptyText: 'No unit photo captured',
-      });
-      this.addIdentifierBar(slide, [
-        { label: 'Serial Number', value: unit.serialNumber, accent: COLORS.cyan },
-      ]);
-    }
-
-    addFooter(slide, `${group.label} ${index + 1}/${group.units.length}`);
-  }
-
-  /** The serial/tag callout strip beneath the photos. */
+  /** The serial/tag callout strip beneath a full-width pair of photos. */
   private addIdentifierBar(
     slide: PptxSlide,
     items: Array<{ label: string; value?: string; accent: string }>,
@@ -548,31 +479,39 @@ export class RfpReportService {
     }
     addFooter(divider, `SIM Swap · ${site.tawalId ?? ''}`);
 
-    // One slide per old/new SIM pair.
-    pairs.forEach((pair, i) => {
+    // All SIM pairs on one page, old alongside new for each.
+    if (pairs.length) {
       const slide = pres.addSlide();
       addBackground(slide);
       addContentHeader(
         slide,
-        `SIM Swap ${i + 1} of ${pairs.length}`,
-        `${site.siteName ?? ''} · ${site.tawalId ?? ''}`,
+        'SIM Swaps',
+        `${site.siteName ?? ''} · ${site.tawalId ?? ''} · ${pairs.length} pair${pairs.length === 1 ? '' : 's'}`,
       );
-      addPhotoFrame(slide, {
-        data: toPptxImageData(pair.oldSerialImage),
-        x: 0.62, y: 1.32, w: 5.95, h: 4.32,
-        caption: 'Old SIM — removed', emptyText: 'No old SIM photo captured',
+
+      const { cols, cardW, cardH, gap, originX, originY } = gridLayout(
+        Math.min(pairs.length, MAX_PER_PAGE),
+      );
+
+      pairs.slice(0, MAX_PER_PAGE).forEach((pair, i) => {
+        addUnitCard(slide, {
+          x: originX + (i % cols) * (cardW + gap),
+          y: originY + Math.floor(i / cols) * (cardH + gap),
+          w: cardW,
+          h: cardH,
+          title: pairs.length === 1 ? 'SIM Swap' : `SIM Swap ${i + 1}`,
+          serialImage: toPptxImageData(pair.oldSerialImage),
+          tagImage: toPptxImageData(pair.newSerialImage),
+          serialNumber: pair.oldSerialNumber,
+          tagNumber: pair.newSerialNumber,
+          hasTag: true,
+          serialLabel: 'Old Serial',
+          tagLabel: 'New Serial',
+        });
       });
-      addPhotoFrame(slide, {
-        data: toPptxImageData(pair.newSerialImage),
-        x: 6.77, y: 1.32, w: 5.95, h: 4.32,
-        caption: 'New SIM — installed', emptyText: 'No new SIM photo captured',
-      });
-      this.addIdentifierBar(slide, [
-        { label: 'Old Serial Number', value: pair.oldSerialNumber, accent: COLORS.purple },
-        { label: 'New Serial Number', value: pair.newSerialNumber, accent: COLORS.cyan },
-      ]);
-      addFooter(slide, `SIM pair ${i + 1}/${pairs.length}`);
-    });
+
+      addFooter(slide, `SIM Swaps · ${site.tawalId ?? ''}`);
+    }
 
     // One slide per tenant: meter photo plus up to three CT phase photos.
     tenants.forEach((tenant, i) => {
@@ -616,6 +555,132 @@ export class RfpReportService {
     });
   }
 
+  // ── Summary of every captured unit ───────────────────────────────────────
+
+  /**
+   * A single table listing every unit in the deck — type, number, serial and
+   * tag — so a reviewer can check the whole site against the BOQ without
+   * paging back through the photo sections. Spills onto further pages if the
+   * site carries more rows than fit.
+   */
+  private addSummarySlides(pres: Pptx, site: Site, groups: RfpUnitGroup[]): void {
+    interface Row {
+      type: string;
+      unit: string;
+      serial: string;
+      tag: string;
+    }
+
+    const rows: Row[] = [];
+    for (const group of groups) {
+      group.units.forEach((unit, i) => {
+        rows.push({
+          type: group.label,
+          unit: group.units.length === 1 ? group.singular : `${group.singular} ${i + 1}`,
+          serial: unit.serialNumber?.trim() || '—',
+          tag: group.hasTag ? unit.tagNumber?.trim() || '—' : 'n/a',
+        });
+      });
+    }
+
+    if (!rows.length) return;
+
+    const ROWS_PER_PAGE = 15;
+    const pages: Row[][] = [];
+    for (let i = 0; i < rows.length; i += ROWS_PER_PAGE) {
+      pages.push(rows.slice(i, i + ROWS_PER_PAGE));
+    }
+
+    // Column geometry, shared by the header and every body row.
+    const cols = [
+      { key: 'type' as const, label: 'Equipment', x: 0.9, w: 3.0 },
+      { key: 'unit' as const, label: 'Unit', x: 3.9, w: 2.6 },
+      { key: 'serial' as const, label: 'Serial Number', w: 3.3, x: 6.5 },
+      { key: 'tag' as const, label: 'Tag Number', x: 9.8, w: 2.6 },
+    ];
+    const rowH = 0.34;
+
+    pages.forEach((page, pageIndex) => {
+      const slide = pres.addSlide();
+      addBackground(slide);
+      addContentHeader(
+        slide,
+        pages.length > 1
+          ? `Equipment Summary (${pageIndex + 1} of ${pages.length})`
+          : 'Equipment Summary',
+        `${site.siteName ?? ''} · ${site.tawalId ?? ''} · ${rows.length} unit${rows.length === 1 ? '' : 's'} total`,
+      );
+
+      const tableY = 1.24;
+      const tableH = 0.44 + page.length * rowH + 0.18;
+      slide.addShape('roundRect', {
+        x: 0.62, y: tableY, w: SLIDE_W - 1.24, h: tableH,
+        rectRadius: 0.06,
+        fill: { color: COLORS.white },
+        line: { color: COLORS.border, width: 0.75 },
+      });
+
+      // Header row.
+      for (const col of cols) {
+        slide.addText(col.label.toUpperCase(), {
+          x: col.x, y: tableY + 0.1, w: col.w, h: 0.3,
+          isTextBox: true, margin: 0,
+          fontFace: FONT, fontSize: SIZE.caption, bold: true, color: COLORS.muted,
+          charSpacing: 0.8, valign: 'middle',
+        });
+      }
+      slide.addShape('rect', {
+        x: 0.9, y: tableY + 0.42, w: SLIDE_W - 1.8, h: 0.012,
+        fill: { color: COLORS.border }, line: { type: 'none' },
+      });
+
+      page.forEach((row, i) => {
+        const y = tableY + 0.5 + i * rowH;
+        // Zebra striping keeps long serial columns readable across the page.
+        if (i % 2 === 1) {
+          slide.addShape('rect', {
+            x: 0.76, y: y - 0.02, w: SLIDE_W - 1.52, h: rowH,
+            fill: { color: 'F1F5F9' }, line: { type: 'none' },
+          });
+        }
+        for (const col of cols) {
+          const value = row[col.key];
+          const isFirst = col.key === 'type';
+          slide.addText(value, {
+            x: col.x, y, w: col.w, h: rowH - 0.02,
+            isTextBox: true, margin: 0,
+            fontFace: FONT, fontSize: 11,
+            bold: isFirst,
+            color: value === '—' || value === 'n/a' ? COLORS.faint : COLORS.slate,
+            valign: 'middle', shrinkText: true,
+          });
+        }
+      });
+
+      // Totals strip under the table, on the last page only.
+      if (pageIndex === pages.length - 1) {
+        const stripY = tableY + tableH + 0.22;
+        if (stripY + 0.72 < 6.9) {
+          const accents = [COLORS.cyan, COLORS.magenta, COLORS.purple, COLORS.coverBlue];
+          const shown = groups.slice(0, 6);
+          const cellW = (SLIDE_W - 1.24) / Math.max(shown.length, 1);
+          shown.forEach((g, i) => {
+            addStat(slide, {
+              x: 0.62 + i * cellW,
+              y: stripY,
+              w: cellW,
+              label: g.label,
+              value: String(g.units.length),
+              color: accents[i % accents.length],
+            });
+          });
+        }
+      }
+
+      addFooter(slide, `Equipment Summary · ${site.tawalId ?? ''}`);
+    });
+  }
+
   // ── Conclusion ───────────────────────────────────────────────────────────
 
   private addConclusionSlide(pres: Pptx, site: Site, groups: RfpUnitGroup[]): void {
@@ -624,10 +689,10 @@ export class RfpReportService {
     addSidePanel(slide);
     addLogoBadge(slide, 0.62, 0.62);
 
-    slide.addText('Site PAT\nconclusion', {
-      x: 0.62, y: 2.29, w: 3.9, h: 1.3,
+    slide.addText('Site Installation\nConclusion', {
+      x: 0.62, y: 2.29, w: 3.9, h: 1.4,
       isTextBox: true, margin: 0,
-      fontFace: FONT, fontSize: SIZE.panelTitle, bold: true, color: COLORS.white,
+      fontFace: FONT, fontSize: 28, bold: true, color: COLORS.white,
     });
 
     const reviewed = site.status?.reviewed?.done;
