@@ -64,6 +64,10 @@ export const downloadReportExcel = async (
 /**
  * Downloads the per-site "Smart Tower Site RFP report" PowerPoint deck.
  *
+ * `narrative` carries the Current Status / Next Action text the user typed in
+ * the generate dialog; blank fields are omitted and the backend falls back to
+ * text derived from the site's status.
+ *
  * The backend picks the filename (it derives it from the site name), so we
  * read it back off Content-Disposition when the header is exposed and only
  * fall back to building one locally if it isn't.
@@ -71,10 +75,17 @@ export const downloadReportExcel = async (
 export const downloadSiteRfpReport = async (
   siteId: string,
   fallbackName?: string,
+  narrative?: { currentStatus?: string; nextAction?: string },
 ): Promise<void> => {
+  const params: Record<string, string> = {};
+  if (narrative?.currentStatus?.trim())
+    params.currentStatus = narrative.currentStatus.trim();
+  if (narrative?.nextAction?.trim())
+    params.nextAction = narrative.nextAction.trim();
+
   const response = await apiClient.get<Blob>(
     `/reports/sites/${siteId}/rfp`,
-    { responseType: "blob" },
+    { params, responseType: "blob" },
   );
 
   const disposition = String(

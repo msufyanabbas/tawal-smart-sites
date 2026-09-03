@@ -17,6 +17,7 @@ equipment photos, serial numbers and tag numbers.
 | `src/reports/rfp/rfp-layout.ts` | new | Shared slide chrome: panel, stripe, logo badge, photo frames |
 | `src/reports/rfp/rfp-report.service.ts` | new | Builds the deck with pptxgenjs |
 | `src/reports/reports.controller.ts` | edited | `GET /reports/sites/:id/rfp` |
+| `src/reports/dto/rfp-report-query.dto.ts` | new | Validates the optional `currentStatus` / `nextAction` params |
 | `src/reports/reports.module.ts` | edited | Registers `RfpReportService` |
 | `package.json` | edited | `+ pptxgenjs ^4.0.1` |
 
@@ -25,13 +26,14 @@ equipment photos, serial numbers and tag numbers.
 | File | Status | What |
 |---|---|---|
 | `src/api/reports.ts` | edited | `downloadSiteRfpReport()` |
-| `src/pages/SiteDetailPage.tsx` | edited | Button in the header, admin/manager only |
+| `src/pages/SiteDetailPage.tsx` | edited | Button + generate dialog, admin/manager only |
 
 ### Mobile (`cctv-records-app-for-new`)
 
 | File | Status | What |
 |---|---|---|
 | `src/utils/rfpReport.ts` | new | Downloads to cache, opens the share sheet |
+| `src/components/RfpReportSheet.tsx` | new | Asks for Current Status / Next Action before generating |
 | `src/api/apiClient.ts` | edited | Exports `API_BASE_URL` |
 | `src/api/siteService.ts` | edited | `siteRfpReportUrl()` helper + note on the auth gotcha |
 | `src/screens/SiteDetailScreen.tsx` | edited | Button in the Actions card |
@@ -71,8 +73,20 @@ The web app needs no new dependency.
    unit, serial, tag) with per-type totals underneath, so a reviewer can check
    the site against the BOQ without paging back through the photos. Spills onto
    further pages past 15 rows.
+
+   Equipment names carry their type's brand accent and appear once per type;
+   serials and tag numbers use the cover's brand blue. The accent for a type
+   comes from `groupAccent()` in `rfp-theme.ts` and is keyed on the type's
+   position in the resolved group list, so a type wears the same colour on the
+   Site Details card, the summary table and the key highlights.
 6. **Site Installation Conclusion** — status, next action, key highlights,
    reviewer remarks.
+
+   **Current Status** and **Next Action** are typed by whoever generates the
+   report, in a dialog that opens when they press the button. Both are optional
+   and capped at 400 characters; a blank field falls back to wording derived
+   from the site's workflow state, so the slide is never empty. They reach the
+   backend as the `currentStatus` / `nextAction` query params.
 7. **Thank You.**
 
 Which equipment types appear is driven by `resolveUnitGroups()`, which mirrors

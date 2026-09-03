@@ -102,6 +102,9 @@ export const SiteDetailPage: React.FC = () => {
   const del = useDeleteSiteMutation();
   const [reviewRemarks, setReviewRemarks] = useState("");
   const [rfpBusy, setRfpBusy] = useState(false);
+  const [rfpOpen, setRfpOpen] = useState(false);
+  const [rfpStatus, setRfpStatus] = useState("");
+  const [rfpNextAction, setRfpNextAction] = useState("");
 
   if (isLoading) return <FullPageSpinner />;
   if (error || !site) {
@@ -166,8 +169,12 @@ export const SiteDetailPage: React.FC = () => {
     setRfpBusy(true);
     const toastId = toast.loading("Generating RFP report…");
     try {
-      await downloadSiteRfpReport(site._id, site.siteName);
+      await downloadSiteRfpReport(site._id, site.siteName, {
+        currentStatus: rfpStatus,
+        nextAction: rfpNextAction,
+      });
       toast.success("RFP report downloaded", { id: toastId });
+      setRfpOpen(false);
     } catch (err) {
       toast.error(apiErrorMessage(err, "Failed to generate RFP report"), {
         id: toastId,
@@ -188,11 +195,7 @@ export const SiteDetailPage: React.FC = () => {
         </div>
         <div className="flex gap-2">
           {(isAdmin || isManager) && (
-            <Button
-              variant="secondary"
-              onClick={onGenerateRfp}
-              loading={rfpBusy}
-            >
+            <Button variant="secondary" onClick={() => setRfpOpen(true)}>
               Generate RFP report
             </Button>
           )}
@@ -272,6 +275,77 @@ export const SiteDetailPage: React.FC = () => {
         <p className="text-right text-xs text-slate-400">
           Signed in as {user.email} ({roleLabel(user.role)})
         </p>
+      )}
+
+      {/* Both fields land on the report's conclusion slide. Leaving one blank
+          falls back to wording derived from the site's current status. */}
+      {rfpOpen && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          onClick={() => !rfpBusy && setRfpOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg rounded-xl bg-white shadow-2xl"
+          >
+            <div className="space-y-4 p-6">
+              <div>
+                <h3 className="card-title">Generate RFP report</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  These appear on the Site Installation Conclusion slide.
+                </p>
+              </div>
+
+              <div>
+                <label className="label" htmlFor="rfp-status">
+                  Current status
+                </label>
+                <textarea
+                  id="rfp-status"
+                  className="input min-h-[80px] resize-y"
+                  placeholder="e.g. Installation completed and verified on site."
+                  value={rfpStatus}
+                  onChange={(e) => setRfpStatus(e.target.value)}
+                  maxLength={400}
+                  disabled={rfpBusy}
+                />
+              </div>
+
+              <div>
+                <label className="label" htmlFor="rfp-next-action">
+                  Next action
+                </label>
+                <textarea
+                  id="rfp-next-action"
+                  className="input min-h-[80px] resize-y"
+                  placeholder="e.g. Awaiting TAWAL confirmation to proceed with PAT."
+                  value={rfpNextAction}
+                  onChange={(e) => setRfpNextAction(e.target.value)}
+                  maxLength={400}
+                  disabled={rfpBusy}
+                />
+              </div>
+
+              <p className="text-xs text-slate-400">
+                Leave a field blank to use the wording derived from this site's
+                status.
+              </p>
+
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => setRfpOpen(false)}
+                  disabled={rfpBusy}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={onGenerateRfp} loading={rfpBusy}>
+                  Generate
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

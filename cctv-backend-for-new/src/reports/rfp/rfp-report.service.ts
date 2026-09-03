@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { ImagedSerialTag, Site, SiteDocument, RmsScope } from '../../site/site.schema';
 import { TAWAL_LOGO, SMART_LIFE_LOGO, ICON_CUBES, ICON_BULB, ICON_CALENDAR, ICON_CLOCK } from './rfp-assets';
-import { COLORS, FONT, PANEL_W, SIZE, SLIDE_H, SLIDE_W, scopeLabel } from './rfp-theme';
+import { COLORS, FONT, PANEL_W, SIZE, SLIDE_H, SLIDE_W, groupAccent, scopeLabel } from './rfp-theme';
 import {
   addBackground,
   addContentHeader,
@@ -33,6 +33,20 @@ import { RfpUnitGroup, resolveUnitGroups } from './rfp-groups';
 const PptxGenJS: typeof import('pptxgenjs').default = require('pptxgenjs');
 type Pptx = InstanceType<typeof PptxGenJS>;
 
+/**
+ * Narrative fields the person generating the report fills in. Both are
+ * optional; a blank field falls back to text derived from the site's status.
+ */
+export interface RfpReportOptions {
+  /** Free text for the "Current Status" panel on the conclusion slide. */
+  currentStatus?: string;
+  /** Free text for the "Next Action" panel on the conclusion slide. */
+  nextAction?: string;
+}
+
+/** Guards against a pasted essay overflowing the conclusion cards. */
+export const RFP_NARRATIVE_MAX = 400;
+
 @Injectable()
 export class RfpReportService {
   constructor(@InjectModel(Site.name) private siteModel: Model<SiteDocument>) {}
@@ -43,7 +57,10 @@ export class RfpReportService {
    * Build the "Smart Tower Site RFP report" deck for one site and return it as
    * a buffer the controller can stream.
    */
-  async buildSiteRfp(siteId: string): Promise<{ buffer: Buffer; filename: string }> {
+  async buildSiteRfp(
+    siteId: string,
+    options: RfpReportOptions = {},
+  ): Promise<{ buffer: Buffer; filename: string }> {
     if (!Types.ObjectId.isValid(siteId)) {
       throw new BadRequestException('Invalid site id');
     }
@@ -73,7 +90,7 @@ export class RfpReportService {
     }
 
     this.addSummarySlides(pres, site as Site, groups);
-    this.addConclusionSlide(pres, site as Site, groups);
+    this.addConclusionSlide(pres, site as Site, groups, options);
     this.addThankYouSlide(pres);
 
     const buffer = (await pres.write({ outputType: 'nodebuffer' })) as Buffer;
@@ -261,7 +278,6 @@ export class RfpReportService {
     });
 
     if (groups.length) {
-      const accents = [COLORS.cyan, COLORS.magenta, COLORS.purple];
       shownGroups.forEach((g, i) => {
         const col = i % 2;
         const row = Math.floor(i / 2);
@@ -269,7 +285,7 @@ export class RfpReportService {
         const cy = cardY + 0.72 + row * 0.72;
         slide.addShape('ellipse', {
           x: cx, y: cy + 0.08, w: 0.16, h: 0.16,
-          fill: { color: accents[i % accents.length] }, line: { type: 'none' },
+          fill: { color: groupAccent(i) }, line: { type: 'none' },
         });
         slide.addText(g.label, {
           x: cx + 0.28, y: cy, w: 2.6, h: 0.3,
@@ -569,19 +585,25 @@ export class RfpReportService {
       unit: string;
       serial: string;
       tag: string;
+      /** Brand accent for this equipment type, shared with the rest of the deck. */
+      accent: string;
+      /** True only on the first row of a type, so the name is not repeated. */
+      firstOfType: boolean;
     }
 
     const rows: Row[] = [];
-    for (const group of groups) {
+    groups.forEach((group, groupIndex) => {
       group.units.forEach((unit, i) => {
         rows.push({
           type: group.label,
           unit: group.units.length === 1 ? group.singular : `${group.singular} ${i + 1}`,
           serial: unit.serialNumber?.trim() || '—',
           tag: group.hasTag ? unit.tagNumber?.trim() || '—' : 'n/a',
+          accent: groupAccent(groupIndex),
+          firstOfType: i === 0,
         });
       });
-    }
+    });
 
     if (!rows.length) return;
 
@@ -645,13 +667,28 @@ export class RfpReportService {
         }
         for (const col of cols) {
           const value = row[col.key];
-          const isFirst = col.key === 'type';
+          const missing = value === '—' || value === 'n/a';
+          // Equipment name carries its type's accent and is shown once per
+          // type; the identifiers pick up the cover's brand blue. Anything not
+          // recorded stays grey so gaps read as gaps.
+          let color: string;
+          let bold = false;
+          if (col.key === 'type') {
+            if (!row.firstOfType) continue;
+            color = row.accent;
+            bold = true;
+          } else if (col.key === 'unit') {
+            color = COLORS.slate;
+          } else {
+            color = missing ? COLORS.faint : COLORS.coverBlue;
+            bold = !missing;
+          }
           slide.addText(value, {
             x: col.x, y, w: col.w, h: rowH - 0.02,
             isTextBox: true, margin: 0,
             fontFace: FONT, fontSize: 11,
-            bold: isFirst,
-            color: value === '—' || value === 'n/a' ? COLORS.faint : COLORS.slate,
+            bold,
+            color: missing && col.key !== 'type' ? COLORS.faint : color,
             valign: 'middle', shrinkText: true,
           });
         }
@@ -661,7 +698,6 @@ export class RfpReportService {
       if (pageIndex === pages.length - 1) {
         const stripY = tableY + tableH + 0.22;
         if (stripY + 0.72 < 6.9) {
-          const accents = [COLORS.cyan, COLORS.magenta, COLORS.purple, COLORS.coverBlue];
           const shown = groups.slice(0, 6);
           const cellW = (SLIDE_W - 1.24) / Math.max(shown.length, 1);
           shown.forEach((g, i) => {
@@ -671,7 +707,7 @@ export class RfpReportService {
               w: cellW,
               label: g.label,
               value: String(g.units.length),
-              color: accents[i % accents.length],
+              color: groupAccent(i),
             });
           });
         }
@@ -683,7 +719,12 @@ export class RfpReportService {
 
   // ── Conclusion ───────────────────────────────────────────────────────────
 
-  private addConclusionSlide(pres: Pptx, site: Site, groups: RfpUnitGroup[]): void {
+  private addConclusionSlide(
+    pres: Pptx,
+    site: Site,
+    groups: RfpUnitGroup[],
+    options: RfpReportOptions = {},
+  ): void {
     const slide = pres.addSlide();
     addBackground(slide);
     addSidePanel(slide);
@@ -710,30 +751,36 @@ export class RfpReportService {
     });
 
     // Two status cards, matching the template's rescheduled/next-action pair.
+    // Whoever generates the report can write these two panels themselves. When
+    // they leave a field blank we fall back to text derived from the site's
+    // workflow state, so the slide is never empty.
+    const derivedStatus = reviewed
+      ? `Approved${this.formatDate(site.status?.reviewed?.at)}.`
+      : completed
+        ? `Submitted${this.formatDate(site.status?.completed?.at)} — pending manager review.`
+        : site.status?.processing?.done
+          ? 'Accepted by technician — field data entry in progress.'
+          : 'Awaiting technician acceptance.';
+    const derivedNextAction = reviewed
+      ? 'No further action required. Report ready for submission to TAWAL.'
+      : completed
+        ? 'Manager to review the submitted evidence and approve the site.'
+        : 'Technician to complete the remaining equipment capture.';
+
     const cards: Array<{ x: number; icon: string; accent: string; title: string; body: string }> = [
       {
         x: 6.15,
         icon: ICON_CUBES,
         accent: COLORS.magenta,
         title: 'Current Status',
-        body: reviewed
-          ? `Approved${this.formatDate(site.status?.reviewed?.at)}.`
-          : completed
-            ? `Submitted${this.formatDate(site.status?.completed?.at)} — pending manager review.`
-            : site.status?.processing?.done
-              ? 'Accepted by technician — field data entry in progress.'
-              : 'Awaiting technician acceptance.',
+        body: options.currentStatus?.trim() || derivedStatus,
       },
       {
         x: 9.79,
         icon: ICON_BULB,
         accent: COLORS.purple,
         title: 'Next Action',
-        body: reviewed
-          ? 'No further action required. Report ready for submission to TAWAL.'
-          : completed
-            ? 'Manager to review the submitted evidence and approve the site.'
-            : 'Technician to complete the remaining equipment capture.',
+        body: options.nextAction?.trim() || derivedNextAction,
       },
     ];
 
@@ -760,9 +807,10 @@ export class RfpReportService {
         valign: 'middle',
       });
       slide.addText(card.body, {
-        x: card.x + 0.28, y: 2.46, w: 2.18, h: 1.1,
+        x: card.x + 0.28, y: 2.46, w: 2.18, h: 1.16,
         isTextBox: true, margin: 0,
         fontFace: FONT, fontSize: 11, color: COLORS.muted,
+        shrinkText: true,
       });
     }
 
@@ -780,7 +828,6 @@ export class RfpReportService {
       valign: 'middle',
     });
 
-    const accents = [COLORS.cyan, COLORS.magenta, COLORS.purple, COLORS.coverBlue];
     // Three per row, not four — "Silbo Gateways" needs the width, and at four
     // columns the labels touch.
     const highlights = groups.slice(0, 6);
@@ -793,7 +840,7 @@ export class RfpReportService {
         slide.addText(g.label, {
           x, y, w: 1.94, h: 0.28,
           isTextBox: true, margin: 0,
-          fontFace: FONT, fontSize: 11, bold: true, color: accents[i % accents.length],
+          fontFace: FONT, fontSize: 11, bold: true, color: groupAccent(i),
           valign: 'middle',
         });
         slide.addText(`${g.units.length} unit${g.units.length === 1 ? '' : 's'}`, {

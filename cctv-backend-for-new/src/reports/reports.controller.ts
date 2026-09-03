@@ -12,6 +12,7 @@ import type { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { RfpReportService } from './rfp/rfp-report.service';
 import { ReportQueryDto } from './dto/report-query.dto';
+import { RfpReportQueryDto } from './dto/rfp-report-query.dto';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
@@ -64,9 +65,13 @@ export class ReportsController {
   )
   async generateSiteRfp(
     @Param('id') id: string,
+    @Query() query: RfpReportQueryDto,
     @Res({ passthrough: false }) res: Response,
   ) {
-    const { buffer, filename } = await this.rfpReportService.buildSiteRfp(id);
+    const { buffer, filename } = await this.rfpReportService.buildSiteRfp(id, {
+      currentStatus: query.currentStatus,
+      nextAction: query.nextAction,
+    });
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     // Exposed so the browser client can read the server-chosen filename off
     // the response rather than reconstructing it.
