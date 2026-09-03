@@ -93,9 +93,7 @@ export class ReportsService {
     if (hasPagination) {
       if (isAll) {
         [docs, total] = await Promise.all([
-          this.siteModel
-            .find(filter, projection)
-            .sort({ createdAt: -1 }),
+          this.siteModel.find(filter, projection).sort({ createdAt: -1 }),
           this.siteModel.countDocuments(filter),
         ]);
         page = 1;
