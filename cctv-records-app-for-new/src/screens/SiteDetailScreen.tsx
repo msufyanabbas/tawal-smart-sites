@@ -59,6 +59,7 @@ import { colors, scopeColor, spacing } from "../theme";
 import { styles } from "../utils/Styles";
 
 import AssignSheet from "../components/AssignSheet";
+import RfpReportSheet, { RfpNarrative } from "../components/RfpReportSheet";
 import CountsCard from "../components/CountsCard";
 import InfoCell from "../components/InfoCell";
 import StatusTimeline from "../components/StatusTimeLine";
@@ -264,6 +265,7 @@ const SiteDetailScreen: React.FC = () => {
   const [actionBusy, setActionBusy] = useState(false);
   const [locationBusy, setLocationBusy] = useState(false);
   const [rfpBusy, setRfpBusy] = useState(false);
+  const [rfpOpen, setRfpOpen] = useState(false);
   const [unitValues, setUnitValues] = useState<SiteUnitsPayload>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -596,15 +598,20 @@ const SiteDetailScreen: React.FC = () => {
   // Generates the site's RFP deck on the server, saves it to the app cache
   // and hands it to the OS share sheet. A site with many photos takes a few
   // seconds to build, so the button shows a spinner meanwhile.
-  const handleGenerateRfp = async () => {
+  const handleGenerateRfp = async (narrative: RfpNarrative) => {
     if (!site || rfpBusy) return;
     setRfpBusy(true);
     try {
-      const res = await downloadSiteRfpReport(site._id, site.siteName);
+      const res = await downloadSiteRfpReport(
+        site._id,
+        site.siteName,
+        narrative,
+      );
       if (!res.success) {
         Alert.alert("Report failed", formatErrorMessage(res.message));
-      } else if (res.message) {
-        Alert.alert("Report ready", res.message);
+      } else {
+        setRfpOpen(false);
+        if (res.message) Alert.alert("Report ready", res.message);
       }
     } finally {
       setRfpBusy(false);
@@ -754,8 +761,7 @@ const SiteDetailScreen: React.FC = () => {
               <Button
                 title="Generate RFP report"
                 variant="secondary"
-                onPress={handleGenerateRfp}
-                loading={rfpBusy}
+                onPress={() => setRfpOpen(true)}
               />
             )}
             {canAssign && (
@@ -906,6 +912,12 @@ const SiteDetailScreen: React.FC = () => {
         currentId={site.status?.assigned?.assignedTo}
         onClose={() => setAssignOpen(false)}
         onPick={handleAssign}
+      />
+      <RfpReportSheet
+        open={rfpOpen}
+        busy={rfpBusy}
+        onClose={() => setRfpOpen(false)}
+        onGenerate={handleGenerateRfp}
       />
       <ImageViewer uri={viewerUri} onClose={() => setViewerUri(undefined)} />
     </View>

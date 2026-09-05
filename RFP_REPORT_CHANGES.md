@@ -17,6 +17,7 @@ equipment photos, serial numbers and tag numbers.
 | `src/reports/rfp/rfp-layout.ts` | new | Shared slide chrome: panel, stripe, logo badge, photo frames |
 | `src/reports/rfp/rfp-report.service.ts` | new | Builds the deck with pptxgenjs |
 | `src/reports/reports.controller.ts` | edited | `GET /reports/sites/:id/rfp` |
+| `src/reports/dto/rfp-report-query.dto.ts` | new | Validates the optional `currentStatus` / `nextAction` params |
 | `src/reports/reports.module.ts` | edited | Registers `RfpReportService` |
 | `package.json` | edited | `+ pptxgenjs ^4.0.1` |
 
@@ -25,13 +26,14 @@ equipment photos, serial numbers and tag numbers.
 | File | Status | What |
 |---|---|---|
 | `src/api/reports.ts` | edited | `downloadSiteRfpReport()` |
-| `src/pages/SiteDetailPage.tsx` | edited | Button in the header, admin/manager only |
+| `src/pages/SiteDetailPage.tsx` | edited | Button + generate dialog, admin/manager only |
 
 ### Mobile (`cctv-records-app-for-new`)
 
 | File | Status | What |
 |---|---|---|
 | `src/utils/rfpReport.ts` | new | Downloads to cache, opens the share sheet |
+| `src/components/RfpReportSheet.tsx` | new | Asks for Current Status / Next Action before generating |
 | `src/api/apiClient.ts` | edited | Exports `API_BASE_URL` |
 | `src/api/siteService.ts` | edited | `siteRfpReportUrl()` helper + note on the auth gotcha |
 | `src/screens/SiteDetailScreen.tsx` | edited | Button in the Actions card |
@@ -55,25 +57,40 @@ The web app needs no new dependency.
    logo, title, then Site / TAWAL ID / Scope stat columns and the dated footer.
 2. **Site Details** — identification grid (site name, TAWAL ID, TCN, region,
    city, item code) plus an equipment summary card.
-3. **Per equipment type:**
-   - a **section divider** (dark panel) indexing every unit by tag and serial;
-   - then **one slide per unit** — unit photo left, asset tag photo right,
-     serial number and tag number in a callout bar underneath.
+3. **One page per equipment type.** Every unit of that type appears on the same
+   page as a card carrying its photo, asset-tag photo, serial number and tag
+   number. The grid adapts to the count: one unit fills the page, three sit in
+   a row, nine go 3x3. Past nine the type spills onto a second page rather than
+   shrinking the cards past legibility.
 
-   Types carrying no tag (SIM cards, ODUs) get a single centred photo instead
-   of a half-empty pair. A unit whose photo was never captured renders a
-   labelled placeholder rather than a gap.
-4. **SIM swap sites** additionally get an evidence divider, one slide per
-   old/new SIM pair, and one slide per tenant (meter photo + up to 3 CT phase
-   photos with their capacities).
-5. **Site PAT conclusion** — status, next action, key highlights, reviewer
-   remarks.
-6. **Thank You.**
+   Types with no asset tag (SIM cards, ODUs) show a single photo per card. A
+   unit whose photo was never captured renders a labelled placeholder rather
+   than a gap.
+4. **SIM swap sites** additionally get an evidence divider, one page holding
+   all old/new SIM pairs, and one page per tenant (meter photo + up to 3 CT
+   phase photos with their capacities).
+5. **Equipment Summary** — a single table of every unit in the deck (type,
+   unit, serial, tag) with per-type totals underneath, so a reviewer can check
+   the site against the BOQ without paging back through the photos. Spills onto
+   further pages past 15 rows.
+
+   The header row sits on a band in the Smart Life brand indigo (`#1E174B`,
+   sampled from the wordmark in the logo artwork) with white text. Body rows
+   are plain slate, with the Equipment column bold.
+6. **Site Installation Conclusion** — status, next action, key highlights,
+   reviewer remarks.
+
+   **Current Status** and **Next Action** are typed by whoever generates the
+   report, in a dialog that opens when they press the button. Both are optional
+   and capped at 400 characters; a blank field falls back to wording derived
+   from the site's workflow state, so the slide is never empty. They reach the
+   backend as the `currentStatus` / `nextAction` query params.
+7. **Thank You.**
 
 Which equipment types appear is driven by `resolveUnitGroups()`, which mirrors
 `relevantUnitGroups()` in `SiteDetailScreen.tsx`. **If you change one, change
 the other.** Empty pre-allocated units are filtered out, so a site expecting 9
-CT splits that only captured 4 produces 4 slides, not 9.
+CT splits that only captured 4 produces 4 cards, not 9.
 
 ## Notes for whoever picks this up next
 
@@ -92,7 +109,13 @@ CT splits that only captured 4 produces 4 slides, not 9.
   Authorization header.
 - **No image resizing.** The app already captures at `quality: 0.3`
   (`ImagePicker/index.tsx`), so no `sharp` or other native image dependency is
-  needed. A 22-slide deck lands around 2.3 MB and builds in ~170 ms.
+  needed. A 9-page deck lands around 3 MB and builds in ~200 ms.
+- **Aspect ratios are computed, not delegated.** pptxgenjs's
+  `sizing: { type: 'contain' }` does not reliably preserve proportions —
+  photos come out stretched. `imageSize()` in `rfp-layout.ts` reads the real
+  pixel dimensions from the JPEG/PNG header and `addFittedImage()` places an
+  exactly-proportioned, centred rectangle. Do not swap these back for
+  `sizing`.
 - **Access is admin/manager**, inherited from the `@Roles` decorator on
   `ReportsController`. To let technicians pull reports for their own sites, the
   endpoint needs moving off that controller and a per-site assignment check.
@@ -112,9 +135,10 @@ CT splits that only captured 4 produces 4 slides, not 9.
 - `nest build` clean; `tsc --noEmit` clean on all three apps (backend spec-file
   errors are pre-existing — the tsconfig `types` array omits jest).
 - `vite build` clean.
-- Two fixtures generated and rendered slide-by-slide: a SMART_METER site
+- Two fixtures generated and rendered page-by-page, using portrait 1200x1600
+  photos to match what the app actually captures: a SMART_METER site
   (3 meters / 9 CT splits / gateway / SIM, one tag photo deliberately missing)
-  → 22 slides, 2.29 MB; a SIM_SWAP site (2 pairs, 2 tenants) → 21 slides,
-  2.81 MB. Both pass OOXML validation.
+  → 9 pages, 3.05 MB; a SIM_SWAP site (2 pairs, 2 tenants) → 12 pages,
+  4.03 MB. Both pass OOXML validation.
 - End-to-end HTTP test through Nest: 200, correct Content-Type, correct
   `Content-Disposition` filename, 2.4 MB valid .pptx.

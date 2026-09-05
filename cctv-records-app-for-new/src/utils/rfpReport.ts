@@ -37,6 +37,7 @@ export interface RfpDownloadResult {
 export const downloadSiteRfpReport = async (
   siteId: string,
   siteName?: string,
+  narrative?: { currentStatus?: string; nextAction?: string },
 ): Promise<RfpDownloadResult> => {
   try {
     const token = await AsyncStorage.getItem("access_token");
@@ -49,7 +50,21 @@ export const downloadSiteRfpReport = async (
       return { success: false, message: "No writable storage available." };
     }
 
-    const url = `${API_BASE_URL.replace(/\/$/, "")}/reports/sites/${siteId}/rfp`;
+    // Current Status / Next Action go on the conclusion slide. Blank fields
+    // are omitted so the backend falls back to its status-derived wording.
+    const params: string[] = [];
+    if (narrative?.currentStatus?.trim()) {
+      params.push(
+        `currentStatus=${encodeURIComponent(narrative.currentStatus.trim())}`,
+      );
+    }
+    if (narrative?.nextAction?.trim()) {
+      params.push(
+        `nextAction=${encodeURIComponent(narrative.nextAction.trim())}`,
+      );
+    }
+    const qs = params.length ? `?${params.join("&")}` : "";
+    const url = `${API_BASE_URL.replace(/\/$/, "")}/reports/sites/${siteId}/rfp${qs}`;
     const target = `${dir}${safeFileName(siteName)}`;
 
     const result = await FileSystem.downloadAsync(url, target, {

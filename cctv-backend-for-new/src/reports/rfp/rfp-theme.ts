@@ -10,6 +10,11 @@
 export const COLORS = {
   /** Deep aubergine used for the full-bleed side panels. */
   ink: '1A0B2E',
+  /**
+   * Smart Life brand indigo, sampled from the wordmark in the logo artwork.
+   * Used for the Equipment Summary table header.
+   */
+  brand: '1E174B',
   /** Body/heading text on light backgrounds. */
   slate: '1E293B',
   /** Secondary/caption text. */
@@ -75,3 +80,19 @@ export const SCOPE_LABELS: Record<string, string> = {
 
 export const scopeLabel = (scope?: string): string =>
   (scope && SCOPE_LABELS[scope]) || scope || '—';
+
+/**
+ * Rotating brand accents used wherever equipment types are listed — the Site
+ * Details card, the Equipment Summary table, and the conclusion's key
+ * highlights. Index by the type's position in the resolved group list so a
+ * given type wears the same colour on every page of the deck.
+ */
+export const GROUP_ACCENTS: readonly string[] = [
+  COLORS.cyan,
+  COLORS.magenta,
+  COLORS.purple,
+  COLORS.coverBlue,
+];
+
+export const groupAccent = (index: number): string =>
+  GROUP_ACCENTS[index % GROUP_ACCENTS.length];
