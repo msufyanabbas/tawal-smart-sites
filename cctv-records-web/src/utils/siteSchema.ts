@@ -49,10 +49,18 @@ export const siteCreateSchema = z.object({
 
 export type SiteCreateValues = z.infer<typeof siteCreateSchema>;
 
+// If scope is SIM_SWAP: 1 tenant = 1 smart meter (e.g. 3 tenants = 3 smart meters).
+// For other scopes (RMS, SMART_METER, etc.):
 // One smart meter serves up to three tenants — round up so partial groups
-// still get a meter (e.g. 1 tenant still gets 1 meter, 4 tenants get 2).
-export const smartMetersFor = (tenants: number): number => {
+// still get a meter (e.g. 1 to 3 tenants get 1 meter, 4 to 6 tenants get 2 meters).
+export const smartMetersFor = (
+  tenants: number,
+  scope?: RmsScope | string,
+): number => {
   if (tenants <= 0) return 0;
+  if (scope === RmsScope.SIM_SWAP) {
+    return tenants;
+  }
   return Math.ceil(tenants / 3);
 };
 
@@ -68,7 +76,7 @@ export const deriveCounts = (
   sims: number;
 } => {
   const t = tenants ?? 0;
-  const smartMeters = t;
+  const smartMeters = smartMetersFor(t, scope);
   const ctSplits = t * 3;
   // Silbo gateway is a fixed appliance (one per site) and ships with one SIM.
   const silboGateways = scope === RmsScope.SMART_METER ? 1 : 0;

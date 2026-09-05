@@ -155,7 +155,7 @@ export const downloadImportTemplate = () => {
     ],
     [
       "numberOfSmartMeters (computed)",
-      "Math.ceil(numberOfTenants / 3) — one meter per up-to-3 tenants. Do NOT enter; backend computes this.",
+      "For SIM_SWAP: equal to numberOfTenants. For other scopes: Math.ceil(numberOfTenants / 3) — one meter per up-to-3 tenants. Do NOT enter; backend computes this.",
     ],
     [
       "numberOfCtSplits (computed)",

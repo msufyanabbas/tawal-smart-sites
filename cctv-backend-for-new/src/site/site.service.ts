@@ -30,9 +30,13 @@ export class SiteService {
   // ──────────────────────────────────────────────────────────────────────
 
   // One smart meter serves up to three tenants — round up so partial groups
-  // still get a meter (e.g. 1 tenant still gets 1 meter, 4 tenants get 2).
-  private static smartMetersFor(tenants: number): number {
+  // still get a meter (e.g. 1 to 3 tenants get 1 meter, 4 to 6 tenants get 2 meters).
+  // For SIM_SWAP scope: 1 tenant = 1 smart meter (e.g. 3 tenants = 3 smart meters).
+  private static smartMetersFor(tenants: number, scope?: RmsScope): number {
     if (tenants <= 0) return 0;
+    if (scope === RmsScope.SIM_SWAP) {
+      return tenants;
+    }
     return Math.ceil(tenants / 3);
   }
 
@@ -79,7 +83,7 @@ export class SiteService {
       if (out.hasSmartMeter) {
         const tenants = input.numberOfTenants ?? 0;
         out.numberOfTenants = tenants;
-        out.numberOfSmartMeters = tenants;
+        out.numberOfSmartMeters = SiteService.smartMetersFor(tenants, scope);
         out.numberOfCtSplits = tenants * 3;
         // RMS scope intentionally excludes silbo gateways.
       }
@@ -92,7 +96,7 @@ export class SiteService {
       out.hasSmartMeter = true;
       const tenants = input.numberOfTenants ?? 0;
       out.numberOfTenants = tenants;
-      out.numberOfSmartMeters = tenants;
+      out.numberOfSmartMeters = SiteService.smartMetersFor(tenants, scope);
       out.numberOfCtSplits = tenants * 3;
       // Silbo gateway count is a fixed appliance — always one per site.
       out.numberOfSilboGateways = 1;
@@ -108,7 +112,7 @@ export class SiteService {
       if (out.hasSmartMeter) {
         const tenants = input.numberOfTenants ?? 0;
         out.numberOfTenants = tenants;
-        out.numberOfSmartMeters = tenants;
+        out.numberOfSmartMeters = SiteService.smartMetersFor(tenants, scope);
         out.numberOfCtSplits = tenants * 3;
         // RMS scope intentionally excludes silbo gateways.
       }

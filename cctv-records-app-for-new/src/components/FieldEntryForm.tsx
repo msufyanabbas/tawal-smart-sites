@@ -23,6 +23,11 @@ import {
   SimSwapPair,
   SimSwapTenant,
 } from "../types";
+import {
+  buildFieldEntrySchema,
+  getFirstZodError,
+  getZodFieldErrors,
+} from "../utils/fieldEntryValidation";
 
 import { runOcr, scanSimSerialFromOcr } from "../utils/ocrUtils";
 import { colors, spacing } from "../theme";
@@ -57,6 +62,8 @@ const FieldEntryForm: React.FC<{
   setUnitValues?: React.Dispatch<React.SetStateAction<SiteUnitsPayload>>;
   /** Called after each image is selected so the photo is persisted to the API immediately */
   onUploadImage?: (payload: SiteUnitsPayload) => Promise<void>;
+  fieldErrors?: Record<string, string>;
+  setFieldErrors?: React.Dispatch<React.SetStateAction<Record<string, string>>>;
 }> = ({
   site,
   values,
@@ -78,6 +85,8 @@ const FieldEntryForm: React.FC<{
   smartLockOptions,
   setUnitValues,
   onUploadImage,
+  fieldErrors: propFieldErrors,
+  setFieldErrors: propSetFieldErrors,
 }) => {
   const groups = useMemo(() => relevantUnitGroups(site), [site]);
   const pairs = useMemo(() => values.simSwapPairs ?? [], [values.simSwapPairs]);
@@ -93,6 +102,46 @@ const FieldEntryForm: React.FC<{
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(
     new Set(),
   );
+
+  const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
+  const errors = propFieldErrors ?? localErrors;
+  const setErrors = propSetFieldErrors ?? setLocalErrors;
+
+  const clearFieldError = (key: string) => {
+    setErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  // ── Validation before submit (Zod) ──────────────────────────────────────
+  const validateAndSubmit = () => {
+    const schema = buildFieldEntrySchema(site, groups);
+    const result = schema.safeParse(values);
+    if (!result.success) {
+      const errs = getZodFieldErrors(result);
+      setErrors(errs);
+      const hasStep1Error = Object.keys(errs).some(
+        (k) => k.startsWith("simSwapPairs") || k === "simSwapSiteType",
+      );
+      if (hasStep1Error) {
+        setCurrentStep(1);
+        return;
+      }
+      const hasStep2Error = groups.some((g) =>
+        Object.keys(errs).some((k) => k.startsWith(g.key)),
+      );
+      if (hasStep2Error) {
+        setCurrentStep(2);
+        return;
+      }
+      return;
+    }
+    setErrors({});
+    onSubmit();
+  };
 
   const setUploading = (key: string, busy: boolean) => {
     setUploadingImages((prev) => {
@@ -177,6 +226,20 @@ const FieldEntryForm: React.FC<{
   };
 
   const handleSaveAndNext = async (nextStep: 1 | 2 | 3) => {
+    if (currentStep === 1 && nextStep === 2) {
+      const schema = buildFieldEntrySchema(site, []);
+      const result = schema.safeParse(values);
+      if (!result.success) {
+        const errs = getZodFieldErrors(result);
+        const step1Errs = Object.entries(errs).filter(([k]) =>
+          k.startsWith("simSwapPairs") || k === "simSwapSiteType",
+        );
+        if (step1Errs.length > 0) {
+          setErrors((prev) => ({ ...prev, ...Object.fromEntries(step1Errs) }));
+          return;
+        }
+      }
+    }
     setStepSaving(true);
     try {
       // Save only text data – images are already saved individually on selection
@@ -475,6 +538,8 @@ const FieldEntryForm: React.FC<{
               {g.needs.serial && (
                 <>
                   {(() => {
+                    const serialKey = `${String(g.key)}.${idx}.serialNumber`;
+                    const serialError = errors[serialKey];
                     const options =
                       g.key === "rmsUnits"
                         ? rmsOptions
@@ -488,10 +553,16 @@ const FieldEntryForm: React.FC<{
                       return (
                         <View style={{ marginBottom: spacing.md }}>
                           <AppText style={styles.dropdownLabel}>
-                            Serial number
+                            Serial number *
                           </AppText>
                           <Dropdown
-                            style={styles.dropdown}
+                            style={[
+                              styles.dropdown,
+                              !!serialError && {
+                                borderColor: colors.danger,
+                                borderWidth: 1.5,
+                              },
+                            ]}
                             placeholderStyle={styles.dropdownPlaceholder}
                             selectedTextStyle={styles.dropdownSelectedText}
                             itemTextStyle={styles.dropdownItemText}
@@ -504,23 +575,37 @@ const FieldEntryForm: React.FC<{
                             placeholder="Search serial..."
                             searchPlaceholder="Search serial..."
                             value={u.serialNumber ?? ""}
-                            onChange={(item) =>
+                            onChange={(item) => {
+                              clearFieldError(serialKey);
                               onChange(g.key, idx, {
                                 serialNumber: item.value,
-                              })
-                            }
+                              });
+                            }}
                           />
+                          {!!serialError && (
+                            <AppText
+                              style={{
+                                color: colors.danger,
+                                fontSize: 12,
+                                marginTop: 4,
+                              }}
+                            >
+                              {serialError}
+                            </AppText>
+                          )}
                         </View>
                       );
                     }
 
                     return (
                       <Field
-                        label="Serial number"
+                        label="Serial number *"
                         value={u.serialNumber ?? ""}
-                        onChangeText={(t) =>
-                          onChange(g.key, idx, { serialNumber: t })
-                        }
+                        error={serialError}
+                        onChangeText={(t) => {
+                          clearFieldError(serialKey);
+                          onChange(g.key, idx, { serialNumber: t });
+                        }}
                       />
                     );
                   })()}
@@ -616,9 +701,13 @@ const FieldEntryForm: React.FC<{
               {g.needs.tag && (
                 <>
                   <Field
-                    label="Tag number"
+                    label="Tag number *"
                     value={u.tagNumber ?? ""}
-                    onChangeText={(t) => onChange(g.key, idx, { tagNumber: t })}
+                    error={errors[`${String(g.key)}.${idx}.tagNumber`]}
+                    onChangeText={(t) => {
+                      clearFieldError(`${String(g.key)}.${idx}.tagNumber`);
+                      onChange(g.key, idx, { tagNumber: t });
+                    }}
                   />
                   <AppText style={styles.imgLabel}>Tag image</AppText>
                   {(() => {
@@ -805,31 +894,55 @@ const FieldEntryForm: React.FC<{
                       <AppText style={styles.unitHeading}>SIM #{i + 1}</AppText>
 
                       {/* New SIM */}
-                      <View style={{ marginBottom: spacing.md }}>
-                        <AppText style={styles.dropdownLabel}>
-                          New SIM serial numbers
-                        </AppText>
-                        <Dropdown
-                          style={styles.dropdown}
-                          placeholderStyle={styles.dropdownPlaceholder}
-                          selectedTextStyle={styles.dropdownSelectedText}
-                          itemTextStyle={styles.dropdownItemText}
-                          inputSearchStyle={styles.dropdownSearchInput}
-                          data={simOptions}
-                          search
-                          maxHeight={300}
-                          labelField="label"
-                          valueField="value"
-                          placeholder="Search SIM..."
-                          searchPlaceholder="Search SIM..."
-                          value={pair.newSerialNumber ?? ""}
-                          onChange={(item) =>
-                            onUpdateSimSwapPair(i, {
-                              newSerialNumber: item.value,
-                            })
-                          }
-                        />
-                      </View>
+                      {(() => {
+                        const newSimKey = `simSwapPairs.${i}.newSerialNumber`;
+                        const newSimErr = errors[newSimKey];
+                        return (
+                          <View style={{ marginBottom: spacing.md }}>
+                            <AppText style={styles.dropdownLabel}>
+                              New SIM serial numbers *
+                            </AppText>
+                            <Dropdown
+                              style={[
+                                styles.dropdown,
+                                !!newSimErr && {
+                                  borderColor: colors.danger,
+                                  borderWidth: 1.5,
+                                },
+                              ]}
+                              placeholderStyle={styles.dropdownPlaceholder}
+                              selectedTextStyle={styles.dropdownSelectedText}
+                              itemTextStyle={styles.dropdownItemText}
+                              inputSearchStyle={styles.dropdownSearchInput}
+                              data={simOptions}
+                              search
+                              maxHeight={300}
+                              labelField="label"
+                              valueField="value"
+                              placeholder="Search SIM..."
+                              searchPlaceholder="Search SIM..."
+                              value={pair.newSerialNumber ?? ""}
+                              onChange={(item) => {
+                                clearFieldError(newSimKey);
+                                onUpdateSimSwapPair(i, {
+                                  newSerialNumber: item.value,
+                                });
+                              }}
+                            />
+                            {!!newSimErr && (
+                              <AppText
+                                style={{
+                                  color: colors.danger,
+                                  fontSize: 12,
+                                  marginTop: 4,
+                                }}
+                              >
+                                {newSimErr}
+                              </AppText>
+                            )}
+                          </View>
+                        );
+                      })()}
                       <AppText style={styles.imgLabel}>New SIM image</AppText>
                       {pair.newSerialImage ? (
                         <TouchableOpacity
@@ -871,11 +984,13 @@ const FieldEntryForm: React.FC<{
 
                       {/* Old SIM */}
                       <Field
-                        label="Old SIM serial number"
+                        label="Old SIM serial number *"
                         value={pair.oldSerialNumber ?? ""}
-                        onChangeText={(t) =>
-                          onUpdateSimSwapPair(i, { oldSerialNumber: t })
-                        }
+                        error={errors[`simSwapPairs.${i}.oldSerialNumber`]}
+                        onChangeText={(t) => {
+                          clearFieldError(`simSwapPairs.${i}.oldSerialNumber`);
+                          onUpdateSimSwapPair(i, { oldSerialNumber: t });
+                        }}
                       />
                       <AppText style={styles.imgLabel}>Old SIM image</AppText>
                       {pair.oldSerialImage ? (
@@ -916,6 +1031,7 @@ const FieldEntryForm: React.FC<{
                 <View style={{ marginTop: spacing.md }}>
                   <PickerField
                     label="Site type *"
+                    error={errors["simSwapSiteType"]}
                     value={
                       values.simSwapSiteType === "green_field"
                         ? "Green field"
@@ -925,6 +1041,7 @@ const FieldEntryForm: React.FC<{
                     }
                     options={["Green field", "Roof top"]}
                     onChange={(val) => {
+                      clearFieldError("simSwapSiteType");
                       onUpdateSimSwapField(
                         "simSwapSiteType",
                         val === "Green field" ? "green_field" : "roof_top",
@@ -1281,7 +1398,7 @@ const FieldEntryForm: React.FC<{
               <View style={{ flex: 1.5 }}>
                 <Button
                   title="Submit work"
-                  onPress={onSubmit}
+                  onPress={validateAndSubmit}
                   loading={saving || stepSaving}
                 />
               </View>

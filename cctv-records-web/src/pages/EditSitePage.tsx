@@ -11,6 +11,7 @@ import { FullPageSpinner } from "@/components/Spinner";
 import { useSiteQuery, useUpdateSiteMutation } from "@/hooks/useSites";
 import {
   deriveCounts,
+  smartMetersFor,
   siteCreateSchema,
   type SiteCreateValues,
 } from "@/utils/siteSchema";
@@ -110,7 +111,6 @@ export const EditSitePage: React.FC = () => {
       tcnNumber: values.tcnNumber,
       rmsScope: values.rmsScope,
       itemCode: values.itemCode,
-      numberOfSmartMeters: values.numberOfTenants ?? 0,
     };
     if (values.rmsScope === RmsScope.RMS) {
       payload.numberOfRms = values.numberOfRms ?? 0;
@@ -124,12 +124,20 @@ export const EditSitePage: React.FC = () => {
       payload.hasSmartMeter = !!values.hasSmartMeter;
       if (values.hasSmartMeter) {
         payload.numberOfTenants = values.numberOfTenants ?? 0;
+        payload.numberOfSmartMeters = smartMetersFor(
+          values.numberOfTenants ?? 0,
+          values.rmsScope,
+        );
       }
     } else if (values.rmsScope === RmsScope.SMART_LOCK) {
       payload.numberOfFenceLocks = values.numberOfFenceLocks ?? 0;
       payload.numberOfOdus = values.numberOfOdus ?? 0;
     } else if (values.rmsScope === RmsScope.SMART_METER) {
       payload.numberOfTenants = values.numberOfTenants ?? 0;
+      payload.numberOfSmartMeters = smartMetersFor(
+        values.numberOfTenants ?? 0,
+        values.rmsScope,
+      );
     } else if (values.rmsScope === RmsScope.RMS_SERVICE) {
       payload.numberOfTenants = values.numberOfTenants ?? 0;
     } else if (values.rmsScope === RmsScope.SIM_SWAP) {
@@ -137,7 +145,10 @@ export const EditSitePage: React.FC = () => {
       payload.hasSmartMeter = !!values.hasSmartMeter;
       if (values.hasSmartMeter) {
         payload.numberOfTenants = values.numberOfTenants ?? 0;
-        payload.numberOfSmartMeters = values.numberOfTenants ?? 0;
+        payload.numberOfSmartMeters = smartMetersFor(
+          values.numberOfTenants ?? 0,
+          values.rmsScope,
+        );
       }
     } else if (values.rmsScope === RmsScope.CCTV) {
       payload.numberOfCameras = values.numberOfCameras ?? 0;

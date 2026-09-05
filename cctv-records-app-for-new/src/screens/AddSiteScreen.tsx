@@ -176,6 +176,12 @@ const AddSiteScreen: React.FC = () => {
       payload.numberOfTenants = numericToInt(form.numberOfTenants);
     } else if (form.rmsScope === RmsScope.RMS_SERVICE) {
       payload.numberOfTenants = numericToInt(form.numberOfTenants);
+    } else if (form.rmsScope === RmsScope.SIM_SWAP) {
+      payload.numberOfSims = numericToInt(form.numberOfSims);
+      payload.hasSmartMeter = form.hasSmartMeter;
+      if (form.hasSmartMeter) {
+        payload.numberOfTenants = numericToInt(form.numberOfTenants);
+      }
     }
 
     setSubmitting(true);

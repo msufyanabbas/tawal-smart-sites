@@ -18,6 +18,11 @@ import {
 } from "@/types";
 import { apiErrorMessage } from "@/utils/helpers";
 import {
+  buildFieldEntrySchema,
+  getFirstZodError,
+  getZodFieldErrors,
+} from "@/utils/fieldEntryValidation";
+import {
   useRmsSerialsQuery,
   useSimSerialsQuery,
   useSmartLockSerialsQuery,
@@ -276,11 +281,21 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
   }, [site, groups]);
 
   const [values, setValues] = useState<SiteUnitsPayload>(initial);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [locationBusy, setLocationBusy] = useState(false);
   const [locationError, setLocationError] = useState("");
   useEffect(() => {
     setValues(initial);
   }, [initial]);
+
+  const clearFieldError = (key: string) => {
+    setFieldErrors((prev) => {
+      if (!prev[key]) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
 
   const updateUnit = (
     groupKey: UnitGroupKey,
@@ -294,6 +309,12 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
       arr[idx] = { ...arr[idx], ...patch };
       return { ...prev, [groupKey]: arr };
     });
+    if (patch.serialNumber !== undefined) {
+      clearFieldError(`${groupKey}.${idx}.serialNumber`);
+    }
+    if (patch.tagNumber !== undefined) {
+      clearFieldError(`${groupKey}.${idx}.tagNumber`);
+    }
   };
 
   const onSaveDraft = async () => {
@@ -336,13 +357,16 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
   };
 
   const onSubmit = async () => {
-    // Validate required SIM swap fields
-    if (site.rmsScope === RmsScope.SIM_SWAP) {
-      if (!(values as any).simSwapSiteType) {
-        toast.error("Site type is required");
-        return;
-      }
+    // ── Zod validation ────────────────────────────────────────────────────
+    const schema = buildFieldEntrySchema(site, groups);
+    const result = schema.safeParse(values);
+    if (!result.success) {
+      const errors = getZodFieldErrors(result);
+      setFieldErrors(errors);
+      return;
     }
+    setFieldErrors({});
+
     if (
       !window.confirm(
         "Submit field data? You will not be able to edit afterward.",
@@ -408,7 +432,16 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                   newPairs[idx] = { ...newPairs[idx], ...patch };
                   return { ...(prev ?? {}), simSwapPairs: newPairs };
                 });
+                if (patch.newSerialNumber !== undefined) {
+                  clearFieldError(`simSwapPairs.${idx}.newSerialNumber`);
+                }
+                if (patch.oldSerialNumber !== undefined) {
+                  clearFieldError(`simSwapPairs.${idx}.oldSerialNumber`);
+                }
               };
+
+              const newSimErr = fieldErrors[`simSwapPairs.${i}.newSerialNumber`];
+              const oldSimErr = fieldErrors[`simSwapPairs.${i}.oldSerialNumber`];
 
               return (
                 <div key={i} className="rounded-lg border border-slate-200 p-4">
@@ -420,7 +453,7 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                     <div className="grid gap-4 md:grid-cols-2">
                       <div className="flex w-full flex-col">
                         <label className="label mb-1 block">
-                          New SIM serial number
+                          New SIM serial number *
                         </label>
                         <Select
                           options={availableSims.map((s) => ({
@@ -448,9 +481,9 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                             control: (base) => ({
                               ...base,
                               borderRadius: "0.5rem",
-                              borderColor: "#e2e8f0",
+                              borderColor: newSimErr ? "#ef4444" : "#e2e8f0",
                               boxShadow: "none",
-                              "&:hover": { borderColor: "#cbd5e1" },
+                              "&:hover": { borderColor: newSimErr ? "#ef4444" : "#cbd5e1" },
                             }),
                             input: (base) => ({
                               ...base,
@@ -458,6 +491,7 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                             }),
                           }}
                         />
+                        {newSimErr && <p className="helper-text">{newSimErr}</p>}
                       </div>
                       {!readOnly ? (
                         <ImageUploadField
@@ -479,8 +513,9 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <TextField
-                        label="Old SIM serial number"
+                        label="Old SIM serial number *"
                         value={pair.oldSerialNumber ?? ""}
+                        error={oldSimErr}
                         disabled={readOnly}
                         onChange={(e) =>
                           updatePair(i, { oldSerialNumber: e.target.value })
@@ -513,13 +548,15 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
               label="Site type *"
               placeholder="Select site type"
               value={(values as any).simSwapSiteType ?? ""}
+              error={fieldErrors["simSwapSiteType"]}
               disabled={readOnly}
-              onChange={(e) =>
+              onChange={(e) => {
+                clearFieldError("simSwapSiteType");
                 setValues((prev) => ({
                   ...(prev ?? {}),
                   simSwapSiteType: e.target.value as SimSwapSiteType,
-                }))
-              }
+                }));
+              }}
               options={[
                 { label: "Green field", value: "green_field" },
                 { label: "Roof top", value: "roof_top" },
@@ -651,6 +688,7 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                       {g.needs.serial && (
                         <>
                           {(() => {
+                            const serialErr = fieldErrors[`${g.key}.${idx}.serialNumber`];
                             // Pick the right serial list based on the group key
                             const serialOptions =
                               g.key === "rmsUnits"
@@ -674,7 +712,7 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                             return serialOptions ? (
                               <div className="flex w-full flex-col">
                                 <label className="label mb-1 block">
-                                  Serial number
+                                  Serial number *
                                 </label>
                                 <Select
                                   options={serialOptions}
@@ -699,9 +737,9 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                                     control: (base) => ({
                                       ...base,
                                       borderRadius: "0.5rem",
-                                      borderColor: "#e2e8f0",
+                                      borderColor: serialErr ? "#ef4444" : "#e2e8f0",
                                       boxShadow: "none",
-                                      "&:hover": { borderColor: "#cbd5e1" },
+                                      "&:hover": { borderColor: serialErr ? "#ef4444" : "#cbd5e1" },
                                     }),
                                     input: (base) => ({
                                       ...base,
@@ -709,11 +747,13 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                                     }),
                                   }}
                                 />
+                                {serialErr && <p className="helper-text">{serialErr}</p>}
                               </div>
                             ) : (
                               <TextField
-                                label="Serial number"
+                                label="Serial number *"
                                 value={u.serialNumber ?? ""}
+                                error={serialErr}
                                 disabled={readOnly}
                                 onChange={(e) =>
                                   updateUnit(g.key, idx, {
@@ -746,8 +786,9 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                       {g.needs.tag && (
                         <>
                           <TextField
-                            label="Tag number"
+                            label="Tag number *"
                             value={u.tagNumber ?? ""}
+                            error={fieldErrors[`${g.key}.${idx}.tagNumber`]}
                             disabled={readOnly}
                             onChange={(e) =>
                               updateUnit(g.key, idx, {

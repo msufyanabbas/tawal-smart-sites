@@ -1,13 +1,20 @@
-import { Role, RmsScope, Site, SiteStatus } from '../types';
+import { Role, RmsScope, Site, SiteStatus } from "../types";
 
 // ── Derived counts (mirrors web's utils/siteSchema.ts) ─────────────────────
 //
 // One smart meter serves up to three tenants — round up so partial groups
-// still get a meter (e.g. 1 tenant still gets 1 meter, 4 tenants get 2).
+// still get a meter (e.g. 1 to 3 tenants get 1 meter, 4 to 6 tenants get 2 meters).
+// For SIM_SWAP scope: 1 tenant = 1 smart meter (e.g. 3 tenants = 3 smart meters).
 // CT splits stay 3×tenants. Silbo gateways and SIM cards are fixed-1 for
 // SMART_METER (one per site, plus its SIM).
-export const smartMetersFor = (tenants: number): number => {
+export const smartMetersFor = (
+  tenants: number,
+  scope?: RmsScope | "" | string,
+): number => {
   if (tenants <= 0) return 0;
+  if (scope === RmsScope.SIM_SWAP) {
+    return tenants;
+  }
   return Math.ceil(tenants / 3);
 };
 
@@ -19,90 +26,110 @@ export interface DerivedCounts {
 }
 
 export const deriveCounts = (
-  scope: RmsScope | '' | undefined,
+  scope: RmsScope | "" | undefined,
   tenants: number,
 ): DerivedCounts => ({
-  smartMeters: smartMetersFor(tenants),
+  smartMeters: smartMetersFor(tenants, scope),
   ctSplits: tenants * 3,
   silboGateways: scope === RmsScope.SMART_METER ? 1 : 0,
   sims: scope === RmsScope.SMART_METER ? 1 : 0,
 });
 
 export const formatDate = (date?: Date | string): string => {
-  if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
   });
 };
 
 export const formatDateTime = (date?: Date | string): string => {
-  if (!date) return '';
-  const d = typeof date === 'string' ? new Date(date) : date;
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleString('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+  if (!date) return "";
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
 export const isNonEmptyString = (value: string | undefined): boolean =>
-  typeof value === 'string' && value.trim() !== '';
+  typeof value === "string" && value.trim() !== "";
 
 export const generateUniqueId = (): string =>
   Math.random().toString(36).substring(2, 15) +
   Math.random().toString(36).substring(2, 15);
 
 export const formatErrorMessage = (error: any): string => {
-  if (typeof error === 'string') return error;
+  if (typeof error === "string") return error;
   if (error?.response?.data?.message) {
     const m = error.response.data.message;
-    return Array.isArray(m) ? m.join(', ') : String(m);
+    return Array.isArray(m) ? m.join(", ") : String(m);
   }
   if (error?.message) return error.message;
-  return 'An unexpected error occurred';
+  return "An unexpected error occurred";
 };
 
 const formatEnum = (v: string): string =>
-  v.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  v.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
 export const rmsScopeLabel = (s: RmsScope): string => {
   switch (s) {
-    case RmsScope.RMS: return 'RMS';
-    case RmsScope.SMART_LOCK: return 'Smart Lock';
-    case RmsScope.SMART_METER: return 'Smart Meter';
-    case RmsScope.RMS_SERVICE: return 'RMS Service';
-    case RmsScope.SIM_SWAP: return 'SIM Swap';
-    case RmsScope.CCTV: return 'CCTV';
-    default: return String(s);
+    case RmsScope.RMS:
+      return "RMS";
+    case RmsScope.SMART_LOCK:
+      return "Smart Lock";
+    case RmsScope.SMART_METER:
+      return "Smart Meter";
+    case RmsScope.RMS_SERVICE:
+      return "RMS Service";
+    case RmsScope.SIM_SWAP:
+      return "SIM Swap";
+    case RmsScope.CCTV:
+      return "CCTV";
+    default:
+      return String(s);
   }
 };
 
 export const roleLabel = (r: Role): string => {
   switch (r) {
-    case Role.ADMIN: return 'Admin';
-    case Role.MANAGER: return 'Manager';
-    case Role.TECHNICIAN: return 'Technician';
-    default: return String(r);
+    case Role.ADMIN:
+      return "Admin";
+    case Role.MANAGER:
+      return "Manager";
+    case Role.TECHNICIAN:
+      return "Technician";
+    default:
+      return String(r);
   }
 };
 
 export const STATUS_STEPS: Array<{ key: keyof SiteStatus; label: string }> = [
-  { key: 'created', label: 'Created' },
-  { key: 'assigned', label: 'Assigned' },
-  { key: 'processing', label: 'Processing' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'reviewed', label: 'Reviewed' },
+  { key: "created", label: "Created" },
+  { key: "assigned", label: "Assigned" },
+  { key: "processing", label: "Processing" },
+  { key: "completed", label: "Completed" },
+  { key: "reviewed", label: "Reviewed" },
 ];
 
 export const isNumericString = (v: string): boolean => /^\d+$/.test(v.trim());
 
 export const currentStage = (site: Site): string => {
   const order: Array<keyof SiteStatus> = [
-    'created', 'assigned', 'processing', 'completed', 'reviewed',
+    "created",
+    "assigned",
+    "processing",
+    "completed",
+    "reviewed",
   ];
-  let last: string = 'created';
+  let last: string = "created";
   for (const k of order) {
     if (site.status?.[k]?.done) last = k;
   }

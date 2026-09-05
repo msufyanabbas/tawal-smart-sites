@@ -49,6 +49,11 @@ import {
   SimSwapTenant,
 } from "../types";
 import { formatErrorMessage, rmsScopeLabel } from "../utils/helpers";
+import {
+  buildFieldEntrySchema,
+  getFirstZodError,
+  getZodFieldErrors,
+} from "../utils/fieldEntryValidation";
 import { downloadSiteRfpReport } from "../utils/rfpReport";
 import { colors, scopeColor, spacing } from "../theme";
 import { styles } from "../utils/Styles";
@@ -260,6 +265,7 @@ const SiteDetailScreen: React.FC = () => {
   const [locationBusy, setLocationBusy] = useState(false);
   const [rfpBusy, setRfpBusy] = useState(false);
   const [unitValues, setUnitValues] = useState<SiteUnitsPayload>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const [techs, setTechs] = useState<AppUser[]>([]);
   const [techsLoading, setTechsLoading] = useState(false);
@@ -430,6 +436,24 @@ const SiteDetailScreen: React.FC = () => {
       arr[idx] = { ...arr[idx], ...patch };
       return { ...prev, [groupKey]: arr };
     });
+    if (patch.serialNumber !== undefined) {
+      setFieldErrors((prev) => {
+        const k = `${String(groupKey)}.${idx}.serialNumber`;
+        if (!prev[k]) return prev;
+        const next = { ...prev };
+        delete next[k];
+        return next;
+      });
+    }
+    if (patch.tagNumber !== undefined) {
+      setFieldErrors((prev) => {
+        const k = `${String(groupKey)}.${idx}.tagNumber`;
+        if (!prev[k]) return prev;
+        const next = { ...prev };
+        delete next[k];
+        return next;
+      });
+    }
   };
 
   const updateSimSwapPair = (idx: number, patch: Partial<SimSwapPair>) => {
@@ -438,6 +462,24 @@ const SiteDetailScreen: React.FC = () => {
       pairs[idx] = { ...pairs[idx], ...patch };
       return { ...prev, simSwapPairs: pairs };
     });
+    if (patch.newSerialNumber !== undefined) {
+      setFieldErrors((prev) => {
+        const k = `simSwapPairs.${idx}.newSerialNumber`;
+        if (!prev[k]) return prev;
+        const next = { ...prev };
+        delete next[k];
+        return next;
+      });
+    }
+    if (patch.oldSerialNumber !== undefined) {
+      setFieldErrors((prev) => {
+        const k = `simSwapPairs.${idx}.oldSerialNumber`;
+        if (!prev[k]) return prev;
+        const next = { ...prev };
+        delete next[k];
+        return next;
+      });
+    }
   };
 
   const updateSimSwapField = (
@@ -445,6 +487,14 @@ const SiteDetailScreen: React.FC = () => {
     value: any,
   ) => {
     setUnitValues((prev) => ({ ...prev, [field]: value }));
+    if (field === "simSwapSiteType") {
+      setFieldErrors((prev) => {
+        if (!prev["simSwapSiteType"]) return prev;
+        const next = { ...prev };
+        delete next["simSwapSiteType"];
+        return next;
+      });
+    }
   };
 
   const updateSimSwapTenant = (idx: number, patch: Partial<SimSwapTenant>) => {
@@ -586,6 +636,18 @@ const SiteDetailScreen: React.FC = () => {
 
   const handleSubmitWork = () => {
     if (!site) return;
+
+    // ── Zod validation ─────────────────────────────────────────────────
+    const groups = relevantUnitGroups(site);
+    const schema = buildFieldEntrySchema(site, groups);
+    const result = schema.safeParse(unitValues);
+    if (!result.success) {
+      const errors = getZodFieldErrors(result);
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+
     Alert.alert("Submit work?", "You will not be able to edit afterward.", [
       { text: "Cancel", style: "cancel" },
       {
@@ -790,6 +852,8 @@ const SiteDetailScreen: React.FC = () => {
           <FieldEntryForm
             site={site}
             values={unitValues}
+            fieldErrors={fieldErrors}
+            setFieldErrors={setFieldErrors}
             relevantUnitGroups={relevantUnitGroups}
             onChange={updateUnit}
             onUpdateSimSwapPair={updateSimSwapPair}
