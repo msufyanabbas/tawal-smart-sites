@@ -120,6 +120,15 @@ export interface Site {
   hardDiskUnits: ImagedSerialTag[];
   nvrUnits: ImagedSerialTag[];
 
+  // CCTV Site Installation Images
+  cctvNvrPhoto?: string;
+  cctvNvrMainBoxPhoto?: string;
+  cctvCameraPhoto?: string;
+  cctvHardDiskPhoto?: string;
+  cctvCameraPhotos?: string[];
+  cctvHardDiskPhotos?: string[];
+  cctvFullSitePhoto?: string;
+
   // Technician-entered material counts (separate from admin-set top-level counts)
   materials?: SiteMaterialsPayload;
 
@@ -195,6 +204,14 @@ export interface SiteUnitsPayload {
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
   simSwapTenants?: SimSwapTenant[];
+  // CCTV Site Installation Images
+  cctvNvrPhoto?: string;
+  cctvNvrMainBoxPhoto?: string;
+  cctvCameraPhoto?: string;
+  cctvHardDiskPhoto?: string;
+  cctvCameraPhotos?: string[];
+  cctvHardDiskPhotos?: string[];
+  cctvFullSitePhoto?: string;
   // Materials (nested object for material counts)
   materials?: SiteMaterialsPayload;
   // Counts (kept for backward compatibility)

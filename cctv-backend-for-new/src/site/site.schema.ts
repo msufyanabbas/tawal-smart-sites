@@ -209,6 +209,15 @@ export class Site {
   @Prop({ type: [ImagedSerialTagSchema], default: [] })
   nvrUnits: ImagedSerialTag[];
 
+  // ── CCTV Site Installation Images ─────────────────────────────────────
+  @Prop({ type: String, default: '' }) cctvNvrPhoto?: string;
+  @Prop({ type: String, default: '' }) cctvNvrMainBoxPhoto?: string;
+  @Prop({ type: String, default: '' }) cctvCameraPhoto?: string;
+  @Prop({ type: String, default: '' }) cctvHardDiskPhoto?: string;
+  @Prop({ type: [String], default: [] }) cctvCameraPhotos?: string[];
+  @Prop({ type: [String], default: [] }) cctvHardDiskPhotos?: string[];
+  @Prop({ type: String, default: '' }) cctvFullSitePhoto?: string;
+
   // ── SIM_SWAP specific fields ───────────────────────────────────────────
   @Prop({ type: String, default: '' }) simSwapComments?: string;
   @Prop({

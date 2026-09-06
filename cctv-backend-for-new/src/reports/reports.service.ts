@@ -86,6 +86,13 @@ export class ReportsService {
       simSwapMeterPhoto: 0,
       'simSwapTenants.meterPhoto': 0,
       'simSwapTenants.ctPhasePhotos': 0,
+      cctvNvrPhoto: 0,
+      cctvNvrMainBoxPhoto: 0,
+      cctvCameraPhoto: 0,
+      cctvHardDiskPhoto: 0,
+      cctvCameraPhotos: 0,
+      cctvHardDiskPhotos: 0,
+      cctvFullSitePhoto: 0,
     };
 
     const isAll = q.limit === 0;

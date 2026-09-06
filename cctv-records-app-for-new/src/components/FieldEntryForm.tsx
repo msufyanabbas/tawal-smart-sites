@@ -402,6 +402,321 @@ const FieldEntryForm: React.FC<{
     });
   };
 
+  type CctvPhotoKey =
+    | "cctvNvrPhoto"
+    | "cctvNvrMainBoxPhoto"
+    | "cctvFullSitePhoto";
+
+  const cameraCount = Math.max(0, site.numberOfCameras ?? 0);
+  const hardDiskCount = Math.max(0, site.numberOfHardDisks ?? 0);
+
+  /** Handle CCTV Installation photo selection with upload and loader */
+  const handleCctvPhotoPicked = (fieldKey: CctvPhotoKey, uri: string) => {
+    clearFieldError(fieldKey);
+    withImageUpload(fieldKey, () => {
+      if (setUnitValues) {
+        setUnitValues((prev) => ({ ...prev, [fieldKey]: uri }));
+      }
+      return { ...values, [fieldKey]: uri };
+    });
+  };
+
+  /** Handle clearing / replacing a CCTV Installation photo */
+  const handleCctvPhotoCleared = (fieldKey: CctvPhotoKey) => {
+    if (setUnitValues) {
+      setUnitValues((prev) => ({ ...prev, [fieldKey]: undefined }));
+    }
+  };
+
+  const handleCctvCameraPhotoPicked = (idx: number, uri: string) => {
+    const errorKey = `cctvCameraPhotos.${idx}`;
+    clearFieldError(errorKey);
+    clearFieldError("cctvCameraPhotos");
+    withImageUpload(errorKey, () => {
+      const arr = [...(values.cctvCameraPhotos ?? [])];
+      while (arr.length <= idx) arr.push("");
+      arr[idx] = uri;
+      const patch = {
+        cctvCameraPhotos: arr,
+        cctvCameraPhoto: arr[0] ?? "",
+      };
+      if (setUnitValues) {
+        setUnitValues((prev) => ({ ...prev, ...patch }));
+      }
+      return { ...values, ...patch };
+    });
+  };
+
+  const handleCctvCameraPhotoCleared = (idx: number) => {
+    const arr = [...(values.cctvCameraPhotos ?? [])];
+    if (arr[idx]) {
+      arr[idx] = "";
+      const patch = {
+        cctvCameraPhotos: arr,
+        cctvCameraPhoto: arr[0] ?? "",
+      };
+      if (setUnitValues) {
+        setUnitValues((prev) => ({ ...prev, ...patch }));
+      }
+    }
+  };
+
+  const handleCctvHardDiskPhotoPicked = (idx: number, uri: string) => {
+    const errorKey = `cctvHardDiskPhotos.${idx}`;
+    clearFieldError(errorKey);
+    clearFieldError("cctvHardDiskPhotos");
+    withImageUpload(errorKey, () => {
+      const arr = [...(values.cctvHardDiskPhotos ?? [])];
+      while (arr.length <= idx) arr.push("");
+      arr[idx] = uri;
+      const patch = {
+        cctvHardDiskPhotos: arr,
+        cctvHardDiskPhoto: arr[0] ?? "",
+      };
+      if (setUnitValues) {
+        setUnitValues((prev) => ({ ...prev, ...patch }));
+      }
+      return { ...values, ...patch };
+    });
+  };
+
+  const handleCctvHardDiskPhotoCleared = (idx: number) => {
+    const arr = [...(values.cctvHardDiskPhotos ?? [])];
+    if (arr[idx]) {
+      arr[idx] = "";
+      const patch = {
+        cctvHardDiskPhotos: arr,
+        cctvHardDiskPhoto: arr[0] ?? "",
+      };
+      if (setUnitValues) {
+        setUnitValues((prev) => ({ ...prev, ...patch }));
+      }
+    }
+  };
+
+  const renderCctvInstallationPhotoItem = (
+    fieldKey: CctvPhotoKey,
+    label: string,
+  ) => {
+    const uri = values[fieldKey];
+    const isUp = isUploading(fieldKey);
+    const err = errors[fieldKey];
+
+    return (
+      <View key={fieldKey} style={{ marginTop: spacing.md }}>
+        <AppText style={styles.imgLabel}>{label} *</AppText>
+        {uri ? (
+          <TouchableOpacity
+            onPress={() => onOpenImage(uri)}
+            onLongPress={() =>
+              Alert.alert(`Replace ${label}?`, "", [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Replace",
+                  onPress: () => handleCctvPhotoCleared(fieldKey),
+                },
+              ])
+            }
+          >
+            <View style={styles.thumbContainer}>
+              <Image source={{ uri }} style={styles.thumbLg} />
+              {isUp && (
+                <View style={styles.uploadOverlay}>
+                  <ActivityIndicator size="small" color="#fff" />
+                  <AppText
+                    style={{
+                      color: "#fff",
+                      fontSize: 10,
+                      marginTop: 4,
+                    }}
+                  >
+                    Saving…
+                  </AppText>
+                </View>
+              )}
+            </View>
+            <AppText style={[styles.thumbCaption, { textAlign: "left" }]}>
+              Long-press to replace
+            </AppText>
+          </TouchableOpacity>
+        ) : isUp ? (
+          <View style={styles.uploadingPlaceholder}>
+            <ActivityIndicator size="small" color={colors.brand} />
+            <AppText
+              style={{
+                color: colors.brand,
+                fontSize: 10,
+                marginTop: 6,
+              }}
+            >
+              Uploading {label}…
+            </AppText>
+          </View>
+        ) : (
+          <CustomImagePicker
+            imageUri={undefined}
+            onImageSelected={(uri) => handleCctvPhotoPicked(fieldKey, uri)}
+            label={`Tap to add ${label}`}
+          />
+        )}
+        {!!err && (
+          <AppText
+            style={{
+              color: colors.danger,
+              fontSize: 12,
+              marginTop: 4,
+            }}
+          >
+            {err}
+          </AppText>
+        )}
+      </View>
+    );
+  };
+
+  const renderCctvCameraPhotoItem = (idx: number, count: number) => {
+    const label = count > 1 ? `CCTV Camera #${idx + 1} Photo` : "CCTV Camera Photo";
+    const uri = values.cctvCameraPhotos?.[idx] || (idx === 0 ? values.cctvCameraPhoto : undefined);
+    const uploadKey = `cctvCameraPhotos.${idx}`;
+    const isUp = isUploading(uploadKey);
+    const err = errors[uploadKey] || (idx === 0 ? errors.cctvCameraPhotos : undefined);
+
+    return (
+      <View key={`cctv-cam-${idx}`} style={{ marginTop: spacing.md }}>
+        <AppText style={styles.imgLabel}>{label} *</AppText>
+        {uri ? (
+          <TouchableOpacity
+            onPress={() => onOpenImage(uri)}
+            onLongPress={() =>
+              Alert.alert(`Replace ${label}?`, "", [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Replace",
+                  onPress: () => handleCctvCameraPhotoCleared(idx),
+                },
+              ])
+            }
+          >
+            <View style={styles.thumbContainer}>
+              <Image source={{ uri }} style={styles.thumbLg} />
+              {isUp && (
+                <View style={styles.uploadOverlay}>
+                  <ActivityIndicator size="small" color="#fff" />
+                  <AppText style={{ color: "#fff", fontSize: 10, marginTop: 4 }}>
+                    Saving…
+                  </AppText>
+                </View>
+              )}
+            </View>
+            <AppText style={[styles.thumbCaption, { textAlign: "left" }]}>
+              Long-press to replace
+            </AppText>
+          </TouchableOpacity>
+        ) : isUp ? (
+          <View style={styles.uploadingPlaceholder}>
+            <ActivityIndicator size="small" color={colors.brand} />
+            <AppText style={{ color: colors.brand, fontSize: 10, marginTop: 6 }}>
+              Uploading {label}…
+            </AppText>
+          </View>
+        ) : (
+          <CustomImagePicker
+            imageUri={undefined}
+            onImageSelected={(pickedUri) => handleCctvCameraPhotoPicked(idx, pickedUri)}
+            label={`Tap to add ${label}`}
+          />
+        )}
+        {!!err && (
+          <AppText style={{ color: colors.danger, fontSize: 12, marginTop: 4 }}>
+            {err}
+          </AppText>
+        )}
+      </View>
+    );
+  };
+
+  const renderCctvHardDiskPhotoItem = (idx: number, count: number) => {
+    const label = count > 1 ? `Hard Disk #${idx + 1} Photo` : "Hard Disk Photo";
+    const uri = values.cctvHardDiskPhotos?.[idx] || (idx === 0 ? values.cctvHardDiskPhoto : undefined);
+    const uploadKey = `cctvHardDiskPhotos.${idx}`;
+    const isUp = isUploading(uploadKey);
+    const err = errors[uploadKey] || (idx === 0 ? errors.cctvHardDiskPhotos : undefined);
+
+    return (
+      <View key={`cctv-hd-${idx}`} style={{ marginTop: spacing.md }}>
+        <AppText style={styles.imgLabel}>{label} *</AppText>
+        {uri ? (
+          <TouchableOpacity
+            onPress={() => onOpenImage(uri)}
+            onLongPress={() =>
+              Alert.alert(`Replace ${label}?`, "", [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Replace",
+                  onPress: () => handleCctvHardDiskPhotoCleared(idx),
+                },
+              ])
+            }
+          >
+            <View style={styles.thumbContainer}>
+              <Image source={{ uri }} style={styles.thumbLg} />
+              {isUp && (
+                <View style={styles.uploadOverlay}>
+                  <ActivityIndicator size="small" color="#fff" />
+                  <AppText style={{ color: "#fff", fontSize: 10, marginTop: 4 }}>
+                    Saving…
+                  </AppText>
+                </View>
+              )}
+            </View>
+            <AppText style={[styles.thumbCaption, { textAlign: "left" }]}>
+              Long-press to replace
+            </AppText>
+          </TouchableOpacity>
+        ) : isUp ? (
+          <View style={styles.uploadingPlaceholder}>
+            <ActivityIndicator size="small" color={colors.brand} />
+            <AppText style={{ color: colors.brand, fontSize: 10, marginTop: 6 }}>
+              Uploading {label}…
+            </AppText>
+          </View>
+        ) : (
+          <CustomImagePicker
+            imageUri={undefined}
+            onImageSelected={(pickedUri) => handleCctvHardDiskPhotoPicked(idx, pickedUri)}
+            label={`Tap to add ${label}`}
+          />
+        )}
+        {!!err && (
+          <AppText style={{ color: colors.danger, fontSize: 12, marginTop: 4 }}>
+            {err}
+          </AppText>
+        )}
+      </View>
+    );
+  };
+
+  const renderCctvInstallationImages = () => (
+    <Card style={{ marginTop: spacing.md }}>
+      <AppText style={styles.cardTitle}>Site Installation Images</AppText>
+      <AppText style={[styles.muted, { marginBottom: spacing.xs }]}>
+        Capture photos of the installed equipment and full site view.
+      </AppText>
+      {renderCctvInstallationPhotoItem("cctvNvrPhoto", "NVR Photo")}
+      {renderCctvInstallationPhotoItem(
+        "cctvNvrMainBoxPhoto",
+        "NVR Main Box Photo",
+      )}
+      {Array.from({ length: cameraCount }, (_, idx) =>
+        renderCctvCameraPhotoItem(idx, cameraCount),
+      )}
+      {Array.from({ length: hardDiskCount }, (_, idx) =>
+        renderCctvHardDiskPhotoItem(idx, hardDiskCount),
+      )}
+      {renderCctvInstallationPhotoItem("cctvFullSitePhoto", "Full Site Photo")}
+    </Card>
+  );
+
   const renderStepIndicator = () => {
     if (!isSimSwap) return null;
     return (
@@ -1422,6 +1737,7 @@ const FieldEntryForm: React.FC<{
       )}
 
       {renderUnitGroups(groups)}
+      {site.rmsScope === RmsScope.CCTV && renderCctvInstallationImages()}
     </>
   );
 };

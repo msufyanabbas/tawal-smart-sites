@@ -347,6 +347,22 @@ const SiteDetailScreen: React.FC = () => {
           res.data.simSwapLongitude ?? undefined;
         (seeded as any).simSwapCtMainPhoto = res.data.simSwapCtMainPhoto ?? "";
         (seeded as any).simSwapMeterPhoto = res.data.simSwapMeterPhoto ?? "";
+        // Seed CCTV Site Installation Images
+        seeded.cctvNvrPhoto = res.data.cctvNvrPhoto ?? "";
+        seeded.cctvNvrMainBoxPhoto = res.data.cctvNvrMainBoxPhoto ?? "";
+        seeded.cctvFullSitePhoto = res.data.cctvFullSitePhoto ?? "";
+
+        const cCount = Math.max(0, res.data.numberOfCameras ?? 0);
+        const hdCount = Math.max(0, res.data.numberOfHardDisks ?? 0);
+
+        seeded.cctvCameraPhotos = Array.from({ length: cCount }, (_, i) => {
+          return res.data.cctvCameraPhotos?.[i] ?? (i === 0 ? (res.data.cctvCameraPhoto ?? "") : "");
+        });
+        seeded.cctvHardDiskPhotos = Array.from({ length: hdCount }, (_, i) => {
+          return res.data.cctvHardDiskPhotos?.[i] ?? (i === 0 ? (res.data.cctvHardDiskPhoto ?? "") : "");
+        });
+        seeded.cctvCameraPhoto = seeded.cctvCameraPhotos[0] ?? res.data.cctvCameraPhoto ?? "";
+        seeded.cctvHardDiskPhoto = seeded.cctvHardDiskPhotos[0] ?? res.data.cctvHardDiskPhoto ?? "";
         // Seed counts
         seeded.numberOfRms = res.data.numberOfRms ?? 0;
         seeded.numberOfExpanders = res.data.numberOfExpanders ?? 0;

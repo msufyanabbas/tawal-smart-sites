@@ -608,6 +608,115 @@ const SubmittedDataView: React.FC<{
           </Card>
         );
       })}
+      {/* CCTV Site Installation Images */}
+      {(site.rmsScope === RmsScope.CCTV ||
+        !!site.cctvNvrPhoto ||
+        !!site.cctvNvrMainBoxPhoto ||
+        !!site.cctvCameraPhoto ||
+        !!site.cctvHardDiskPhoto ||
+        (site.cctvCameraPhotos && site.cctvCameraPhotos.length > 0) ||
+        (site.cctvHardDiskPhotos && site.cctvHardDiskPhotos.length > 0) ||
+        !!site.cctvFullSitePhoto) && (
+        <Card>
+          <AppText style={styles.cardTitle}>Site Installation Images</AppText>
+          <View style={{ gap: spacing.md }}>
+            {!!site.cctvNvrPhoto && (
+              <View>
+                <AppText style={styles.dataKey}>NVR Photo</AppText>
+                <TouchableOpacity
+                  onPress={() => onOpenImage(site.cctvNvrPhoto!)}
+                  style={{ marginTop: spacing.xs }}
+                >
+                  <Image
+                    source={{ uri: site.cctvNvrPhoto }}
+                    style={styles.thumbLg}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+            {!!site.cctvNvrMainBoxPhoto && (
+              <View>
+                <AppText style={styles.dataKey}>NVR Main Box Photo</AppText>
+                <TouchableOpacity
+                  onPress={() => onOpenImage(site.cctvNvrMainBoxPhoto!)}
+                  style={{ marginTop: spacing.xs }}
+                >
+                  <Image
+                    source={{ uri: site.cctvNvrMainBoxPhoto }}
+                    style={styles.thumbLg}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+            {(() => {
+              const photos =
+                site.cctvCameraPhotos && site.cctvCameraPhotos.length > 0
+                  ? site.cctvCameraPhotos
+                  : site.cctvCameraPhoto
+                    ? [site.cctvCameraPhoto]
+                    : [];
+              return photos.map((url, idx) => {
+                if (!url) return null;
+                const label =
+                  photos.length > 1
+                    ? `CCTV Camera #${idx + 1} Photo`
+                    : "CCTV Camera Photo";
+                return (
+                  <View key={`cctv-cam-sub-${idx}`}>
+                    <AppText style={styles.dataKey}>{label}</AppText>
+                    <TouchableOpacity
+                      onPress={() => onOpenImage(url)}
+                      style={{ marginTop: spacing.xs }}
+                    >
+                      <Image source={{ uri: url }} style={styles.thumbLg} />
+                    </TouchableOpacity>
+                  </View>
+                );
+              });
+            })()}
+            {(() => {
+              const photos =
+                site.cctvHardDiskPhotos && site.cctvHardDiskPhotos.length > 0
+                  ? site.cctvHardDiskPhotos
+                  : site.cctvHardDiskPhoto
+                    ? [site.cctvHardDiskPhoto]
+                    : [];
+              return photos.map((url, idx) => {
+                if (!url) return null;
+                const label =
+                  photos.length > 1
+                    ? `Hard Disk #${idx + 1} Photo`
+                    : "Hard Disk Photo";
+                return (
+                  <View key={`cctv-hd-sub-${idx}`}>
+                    <AppText style={styles.dataKey}>{label}</AppText>
+                    <TouchableOpacity
+                      onPress={() => onOpenImage(url)}
+                      style={{ marginTop: spacing.xs }}
+                    >
+                      <Image source={{ uri: url }} style={styles.thumbLg} />
+                    </TouchableOpacity>
+                  </View>
+                );
+              });
+            })()}
+            {!!site.cctvFullSitePhoto && (
+              <View>
+                <AppText style={styles.dataKey}>Full Site Photo</AppText>
+                <TouchableOpacity
+                  onPress={() => onOpenImage(site.cctvFullSitePhoto!)}
+                  style={{ marginTop: spacing.xs }}
+                >
+                  <Image
+                    source={{ uri: site.cctvFullSitePhoto }}
+                    style={styles.thumbLg}
+                  />
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </Card>
+      )}
     </>
   );
 };

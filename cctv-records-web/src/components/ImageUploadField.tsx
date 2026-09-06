@@ -9,6 +9,7 @@ interface ImageUploadFieldProps {
   onChange: (value: string | undefined) => void;
   className?: string;
   maxSizeMB?: number;
+  error?: string;
 }
 
 export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
@@ -17,6 +18,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   onChange,
   className,
   maxSizeMB = 5,
+  error,
 }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [busy, setBusy] = useState(false);
@@ -42,7 +44,10 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
       <p className="label">{label}</p>
       <div className="flex items-start gap-3">
         <div
-          className="flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed border-slate-300 bg-slate-50 text-xs text-slate-400 hover:border-brand-400"
+          className={clsx(
+            "flex h-24 w-24 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-dashed bg-slate-50 text-xs text-slate-400 hover:border-brand-400",
+            error ? "border-red-400" : "border-slate-300",
+          )}
           onClick={() => inputRef.current?.click()}
         >
           {value ? (
@@ -72,6 +77,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
           )}
         </div>
       </div>
+      {error && <p className="helper-text">{error}</p>}
       <input
         ref={inputRef}
         type="file"

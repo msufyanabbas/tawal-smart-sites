@@ -278,6 +278,13 @@ export class SiteService {
       simSwapMeterPhoto: 0,
       'simSwapTenants.meterPhoto': 0,
       'simSwapTenants.ctPhasePhotos': 0,
+      cctvNvrPhoto: 0,
+      cctvNvrMainBoxPhoto: 0,
+      cctvCameraPhoto: 0,
+      cctvHardDiskPhoto: 0,
+      cctvCameraPhotos: 0,
+      cctvHardDiskPhotos: 0,
+      cctvFullSitePhoto: 0,
     };
 
     // When pagination params are explicitly provided, return paginated response.
@@ -519,6 +526,13 @@ export class SiteService {
       'simSwapTenants',
       'simSwapCtMainPhoto',
       'simSwapMeterPhoto',
+      'cctvNvrPhoto',
+      'cctvNvrMainBoxPhoto',
+      'cctvCameraPhoto',
+      'cctvHardDiskPhoto',
+      'cctvCameraPhotos',
+      'cctvHardDiskPhotos',
+      'cctvFullSitePhoto',
       'numberOfRms',
       'numberOfExpanders',
       'numberOfSims',
@@ -531,6 +545,17 @@ export class SiteService {
     ];
     for (const k of keys) {
       if (dto[k] !== undefined) (doc as any)[k] = dto[k];
+    }
+    // Synchronize array and legacy single photo fields for CCTV
+    if (dto.cctvCameraPhotos && Array.isArray(dto.cctvCameraPhotos) && dto.cctvCameraPhotos.length > 0) {
+      (doc as any).cctvCameraPhoto = dto.cctvCameraPhotos[0] || '';
+    } else if (dto.cctvCameraPhoto && !dto.cctvCameraPhotos) {
+      (doc as any).cctvCameraPhotos = [dto.cctvCameraPhoto];
+    }
+    if (dto.cctvHardDiskPhotos && Array.isArray(dto.cctvHardDiskPhotos) && dto.cctvHardDiskPhotos.length > 0) {
+      (doc as any).cctvHardDiskPhoto = dto.cctvHardDiskPhotos[0] || '';
+    } else if (dto.cctvHardDiskPhoto && !dto.cctvHardDiskPhotos) {
+      (doc as any).cctvHardDiskPhotos = [dto.cctvHardDiskPhoto];
     }
     // Handle nested materials object - store ONLY as a nested sub-document
     // (separate from admin-set top-level counts)

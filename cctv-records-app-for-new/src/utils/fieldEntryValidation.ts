@@ -1,4 +1,4 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { RmsScope, type Site } from "../types";
 
 // ── Primitives ─────────────────────────────────────────────────────────────
@@ -100,6 +100,46 @@ export function buildFieldEntrySchema(site: Site, groups: UnitGroupMeta[]) {
         }
       }
     });
+  }
+
+  // ── CCTV Installation Images ─────────────────────────────────────────────
+  if (site.rmsScope === RmsScope.CCTV) {
+    shape.cctvNvrPhoto = z
+      .string({ required_error: "NVR photo is required" })
+      .trim()
+      .min(1, "NVR photo is required");
+    shape.cctvNvrMainBoxPhoto = z
+      .string({ required_error: "NVR main box photo is required" })
+      .trim()
+      .min(1, "NVR main box photo is required");
+    shape.cctvFullSitePhoto = z
+      .string({ required_error: "Full site photo is required" })
+      .trim()
+      .min(1, "Full site photo is required");
+
+    const cameraCount = Math.max(0, site.numberOfCameras ?? 0);
+    if (cameraCount > 0) {
+      shape.cctvCameraPhotos = z
+        .array(
+          z
+            .string({ required_error: "CCTV camera photo is required" })
+            .trim()
+            .min(1, "CCTV camera photo is required"),
+        )
+        .min(cameraCount, `All ${cameraCount} CCTV camera photos are required`);
+    }
+
+    const hardDiskCount = Math.max(0, site.numberOfHardDisks ?? 0);
+    if (hardDiskCount > 0) {
+      shape.cctvHardDiskPhotos = z
+        .array(
+          z
+            .string({ required_error: "Hard disk photo is required" })
+            .trim()
+            .min(1, "Hard disk photo is required"),
+        )
+        .min(hardDiskCount, `All ${hardDiskCount} hard disk photos are required`);
+    }
   }
 
   return z.object(shape).passthrough();

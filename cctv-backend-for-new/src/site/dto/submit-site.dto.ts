@@ -173,6 +173,34 @@ export class SubmitSiteDto {
   simSwapMeterPhoto?: string;
 
   @IsOptional()
+  @IsString()
+  cctvNvrPhoto?: string;
+
+  @IsOptional()
+  @IsString()
+  cctvNvrMainBoxPhoto?: string;
+
+  @IsOptional()
+  @IsString()
+  cctvCameraPhoto?: string;
+
+  @IsOptional()
+  @IsString()
+  cctvHardDiskPhoto?: string;
+
+  @IsOptional()
+  @IsArray()
+  cctvCameraPhotos?: string[];
+
+  @IsOptional()
+  @IsArray()
+  cctvHardDiskPhotos?: string[];
+
+  @IsOptional()
+  @IsString()
+  cctvFullSitePhoto?: string;
+
+  @IsOptional()
   @ValidateNested()
   @Type(() => MaterialCountsDto)
   materials?: MaterialCountsDto;

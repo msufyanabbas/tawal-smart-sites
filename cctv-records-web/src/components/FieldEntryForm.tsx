@@ -277,6 +277,25 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
     out.numberOfCameras = site.numberOfCameras ?? 0;
     out.numberOfHardDisks = site.numberOfHardDisks ?? 0;
     out.numberOfNvr = site.numberOfNvr ?? 0;
+    // Seed CCTV Installation Photos
+    out.cctvNvrPhoto = site.cctvNvrPhoto ?? "";
+    out.cctvNvrMainBoxPhoto = site.cctvNvrMainBoxPhoto ?? "";
+    out.cctvFullSitePhoto = site.cctvFullSitePhoto ?? "";
+
+    const cCount = Math.max(0, site.numberOfCameras ?? 0);
+    const hdCount = Math.max(0, site.numberOfHardDisks ?? 0);
+
+    const seededCameraPhotos = Array.from({ length: cCount }, (_, i) => {
+      return site.cctvCameraPhotos?.[i] ?? (i === 0 ? (site.cctvCameraPhoto ?? "") : "");
+    });
+    const seededHardDiskPhotos = Array.from({ length: hdCount }, (_, i) => {
+      return site.cctvHardDiskPhotos?.[i] ?? (i === 0 ? (site.cctvHardDiskPhoto ?? "") : "");
+    });
+
+    out.cctvCameraPhotos = seededCameraPhotos;
+    out.cctvHardDiskPhotos = seededHardDiskPhotos;
+    out.cctvCameraPhoto = seededCameraPhotos[0] ?? site.cctvCameraPhoto ?? "";
+    out.cctvHardDiskPhoto = seededHardDiskPhotos[0] ?? site.cctvHardDiskPhoto ?? "";
     return out;
   }, [site, groups]);
 
@@ -294,6 +313,41 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
       const next = { ...prev };
       delete next[key];
       return next;
+    });
+  };
+
+  const cameraCount = Math.max(0, site.numberOfCameras ?? 0);
+  const hardDiskCount = Math.max(0, site.numberOfHardDisks ?? 0);
+
+  const updateCctvCameraPhoto = (idx: number, v?: string) => {
+    clearFieldError(`cctvCameraPhotos.${idx}`);
+    clearFieldError("cctvCameraPhotos");
+    clearFieldError("cctvCameraPhoto");
+    setValues((prev) => {
+      const arr = [...(prev.cctvCameraPhotos ?? [])];
+      while (arr.length <= idx) arr.push("");
+      arr[idx] = v ?? "";
+      return {
+        ...prev,
+        cctvCameraPhotos: arr,
+        cctvCameraPhoto: arr[0] ?? "",
+      };
+    });
+  };
+
+  const updateCctvHardDiskPhoto = (idx: number, v?: string) => {
+    clearFieldError(`cctvHardDiskPhotos.${idx}`);
+    clearFieldError("cctvHardDiskPhotos");
+    clearFieldError("cctvHardDiskPhoto");
+    setValues((prev) => {
+      const arr = [...(prev.cctvHardDiskPhotos ?? [])];
+      while (arr.length <= idx) arr.push("");
+      arr[idx] = v ?? "";
+      return {
+        ...prev,
+        cctvHardDiskPhotos: arr,
+        cctvHardDiskPhoto: arr[0] ?? "",
+      };
     });
   };
 
@@ -384,7 +438,11 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
     }
   };
 
-  if (groups.length === 0) {
+  if (
+    groups.length === 0 &&
+    site.rmsScope !== RmsScope.SIM_SWAP &&
+    site.rmsScope !== RmsScope.CCTV
+  ) {
     return (
       <div className="card">
         <div className="card-body text-sm text-slate-500">
@@ -829,6 +887,173 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
           </div>
         );
       })}
+      {/* CCTV Site Installation Images */}
+      {site.rmsScope === RmsScope.CCTV && (
+        <div className="card">
+          <div className="card-body space-y-4">
+            <div>
+              <h3 className="card-title">Site Installation Images</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Upload photos of the installed equipment and full site view.
+              </p>
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div>
+                {!readOnly ? (
+                  <ImageUploadField
+                    label="NVR Photo *"
+                    value={values.cctvNvrPhoto}
+                    error={fieldErrors.cctvNvrPhoto}
+                    onChange={(v) => {
+                      clearFieldError("cctvNvrPhoto");
+                      setValues((prev) => ({ ...prev, cctvNvrPhoto: v }));
+                    }}
+                  />
+                ) : values.cctvNvrPhoto ? (
+                  <div>
+                    <p className="label">NVR Photo</p>
+                    <img
+                      src={values.cctvNvrPhoto}
+                      alt="NVR Photo"
+                      className="h-24 w-24 rounded-lg object-cover"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">No NVR photo</p>
+                )}
+              </div>
+
+              <div>
+                {!readOnly ? (
+                  <ImageUploadField
+                    label="NVR Main Box Photo *"
+                    value={values.cctvNvrMainBoxPhoto}
+                    error={fieldErrors.cctvNvrMainBoxPhoto}
+                    onChange={(v) => {
+                      clearFieldError("cctvNvrMainBoxPhoto");
+                      setValues((prev) => ({ ...prev, cctvNvrMainBoxPhoto: v }));
+                    }}
+                  />
+                ) : values.cctvNvrMainBoxPhoto ? (
+                  <div>
+                    <p className="label">NVR Main Box Photo</p>
+                    <img
+                      src={values.cctvNvrMainBoxPhoto}
+                      alt="NVR Main Box Photo"
+                      className="h-24 w-24 rounded-lg object-cover"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">No NVR main box photo</p>
+                )}
+              </div>
+
+              {/* Dynamic CCTV Camera Photos */}
+              {Array.from({ length: cameraCount }, (_, idx) => {
+                const label =
+                  cameraCount > 1
+                    ? `CCTV Camera #${idx + 1} Photo *`
+                    : "CCTV Camera Photo *";
+                const err =
+                  fieldErrors[`cctvCameraPhotos.${idx}`] ||
+                  (idx === 0 ? fieldErrors.cctvCameraPhotos : undefined);
+                const photoUrl =
+                  values.cctvCameraPhotos?.[idx] ||
+                  (idx === 0 ? values.cctvCameraPhoto : "");
+                return (
+                  <div key={`cctv-camera-photo-${idx}`}>
+                    {!readOnly ? (
+                      <ImageUploadField
+                        label={label}
+                        value={photoUrl}
+                        error={err}
+                        onChange={(v) => updateCctvCameraPhoto(idx, v)}
+                      />
+                    ) : photoUrl ? (
+                      <div>
+                        <p className="label">{label.replace(" *", "")}</p>
+                        <img
+                          src={photoUrl}
+                          alt={label}
+                          className="h-24 w-24 rounded-lg object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400">
+                        No {label.replace(" *", "").toLowerCase()}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Dynamic Hard Disk Photos */}
+              {Array.from({ length: hardDiskCount }, (_, idx) => {
+                const label =
+                  hardDiskCount > 1
+                    ? `Hard Disk #${idx + 1} Photo *`
+                    : "Hard Disk Photo *";
+                const err =
+                  fieldErrors[`cctvHardDiskPhotos.${idx}`] ||
+                  (idx === 0 ? fieldErrors.cctvHardDiskPhotos : undefined);
+                const photoUrl =
+                  values.cctvHardDiskPhotos?.[idx] ||
+                  (idx === 0 ? values.cctvHardDiskPhoto : "");
+                return (
+                  <div key={`cctv-harddisk-photo-${idx}`}>
+                    {!readOnly ? (
+                      <ImageUploadField
+                        label={label}
+                        value={photoUrl}
+                        error={err}
+                        onChange={(v) => updateCctvHardDiskPhoto(idx, v)}
+                      />
+                    ) : photoUrl ? (
+                      <div>
+                        <p className="label">{label.replace(" *", "")}</p>
+                        <img
+                          src={photoUrl}
+                          alt={label}
+                          className="h-24 w-24 rounded-lg object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-slate-400">
+                        No {label.replace(" *", "").toLowerCase()}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+
+              <div>
+                {!readOnly ? (
+                  <ImageUploadField
+                    label="Full Site Photo *"
+                    value={values.cctvFullSitePhoto}
+                    error={fieldErrors.cctvFullSitePhoto}
+                    onChange={(v) => {
+                      clearFieldError("cctvFullSitePhoto");
+                      setValues((prev) => ({ ...prev, cctvFullSitePhoto: v }));
+                    }}
+                  />
+                ) : values.cctvFullSitePhoto ? (
+                  <div>
+                    <p className="label">Full Site Photo</p>
+                    <img
+                      src={values.cctvFullSitePhoto}
+                      alt="Full Site Photo"
+                      className="h-24 w-24 rounded-lg object-cover"
+                    />
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-400">No full site photo</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Material Details for SIM_SWAP - shown in both edit and read-only modes */}
       {site.rmsScope === RmsScope.SIM_SWAP && (
         <>

@@ -485,6 +485,100 @@ export const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
           </div>
         );
       })}
+
+      {/* CCTV Site Installation Images */}
+      {(site.rmsScope === RmsScope.CCTV ||
+        !!site.cctvNvrPhoto ||
+        !!site.cctvNvrMainBoxPhoto ||
+        !!site.cctvCameraPhoto ||
+        !!site.cctvHardDiskPhoto ||
+        (site.cctvCameraPhotos && site.cctvCameraPhotos.length > 0) ||
+        (site.cctvHardDiskPhotos && site.cctvHardDiskPhotos.length > 0) ||
+        !!site.cctvFullSitePhoto) && (
+        <div className="card">
+          <div className="card-body space-y-4">
+            <h3 className="card-title">Site Installation Images</h3>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {site.cctvNvrPhoto && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                    NVR Photo
+                  </p>
+                  <ZoomableImage src={site.cctvNvrPhoto} alt="NVR Photo" />
+                </div>
+              )}
+              {site.cctvNvrMainBoxPhoto && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                    NVR Main Box Photo
+                  </p>
+                  <ZoomableImage
+                    src={site.cctvNvrMainBoxPhoto}
+                    alt="NVR Main Box Photo"
+                  />
+                </div>
+              )}
+              {(() => {
+                const photos =
+                  site.cctvCameraPhotos && site.cctvCameraPhotos.length > 0
+                    ? site.cctvCameraPhotos
+                    : site.cctvCameraPhoto
+                      ? [site.cctvCameraPhoto]
+                      : [];
+                return photos.map((url, idx) => {
+                  if (!url) return null;
+                  const label =
+                    photos.length > 1
+                      ? `CCTV Camera #${idx + 1} Photo`
+                      : "CCTV Camera Photo";
+                  return (
+                    <div key={`cctv-cam-view-${idx}`}>
+                      <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                        {label}
+                      </p>
+                      <ZoomableImage src={url} alt={label} />
+                    </div>
+                  );
+                });
+              })()}
+              {(() => {
+                const photos =
+                  site.cctvHardDiskPhotos && site.cctvHardDiskPhotos.length > 0
+                    ? site.cctvHardDiskPhotos
+                    : site.cctvHardDiskPhoto
+                      ? [site.cctvHardDiskPhoto]
+                      : [];
+                return photos.map((url, idx) => {
+                  if (!url) return null;
+                  const label =
+                    photos.length > 1
+                      ? `Hard Disk #${idx + 1} Photo`
+                      : "Hard Disk Photo";
+                  return (
+                    <div key={`cctv-hd-view-${idx}`}>
+                      <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                        {label}
+                      </p>
+                      <ZoomableImage src={url} alt={label} />
+                    </div>
+                  );
+                });
+              })()}
+              {site.cctvFullSitePhoto && (
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                    Full Site Photo
+                  </p>
+                  <ZoomableImage
+                    src={site.cctvFullSitePhoto}
+                    alt="Full Site Photo"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

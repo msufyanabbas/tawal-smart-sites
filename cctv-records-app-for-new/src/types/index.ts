@@ -123,6 +123,15 @@ export interface Site {
   hardDiskUnits: ImagedSerialTag[];
   nvrUnits: ImagedSerialTag[];
 
+  // CCTV Site Installation Images
+  cctvNvrPhoto?: string;
+  cctvNvrMainBoxPhoto?: string;
+  cctvCameraPhoto?: string;
+  cctvHardDiskPhoto?: string;
+  cctvCameraPhotos?: string[];
+  cctvHardDiskPhotos?: string[];
+  cctvFullSitePhoto?: string;
+
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -187,6 +196,14 @@ export interface SiteUnitsPayload {
   simSwapCtMainPhoto?: string;
   // Single meter photo (shown once before tenant details)
   simSwapMeterPhoto?: string;
+  // CCTV Site Installation Images
+  cctvNvrPhoto?: string;
+  cctvNvrMainBoxPhoto?: string;
+  cctvCameraPhoto?: string;
+  cctvHardDiskPhoto?: string;
+  cctvCameraPhotos?: string[];
+  cctvHardDiskPhotos?: string[];
+  cctvFullSitePhoto?: string;
   // Materials (nested object for material counts)
   materials?: SiteMaterialsPayload;
   // Counts (kept for backward compatibility)
