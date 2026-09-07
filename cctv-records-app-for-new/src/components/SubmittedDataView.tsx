@@ -161,6 +161,44 @@ const relevantUnitGroups = (site: Site): UnitGroup[] => {
       count: site.numberOfNvr,
       needs: { serial: true, tag: true },
     });
+  } else if (site.rmsScope === RmsScope.LEGACY_POO_METER) {
+    out.push({
+      key: "smartMeterUnits",
+      label: "Smart Meters",
+      count: site.numberOfSmartMeters,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "ctSplitUnits",
+      label: "CT Splits",
+      count: site.numberOfCtSplits,
+      needs: { serial: true, tag: true },
+    });
+  } else if (site.rmsScope === RmsScope.COLLOCATION_METER) {
+    out.push({
+      key: "smartMeterUnits",
+      label: "Smart Meters",
+      count: site.numberOfSmartMeters,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "ctSplitUnits",
+      label: "CT Splits",
+      count: site.numberOfCtSplits,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "fenceLockUnits",
+      label: "Fence Locks",
+      count: site.numberOfFenceLocks,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "oduUnits",
+      label: "ODUs",
+      count: site.numberOfOdus,
+      needs: { serial: true, tag: false },
+    });
   }
   return out;
 };
@@ -198,12 +236,14 @@ const SubmittedDataView: React.FC<{
     site?.materials?.numberOfSilboGateways > 0;
 
   const hasComments = !!site.simSwapComments;
+  const hasOtherPhotos = (site.otherSitePhotos?.length ?? 0) > 0;
 
   if (
     groups.length === 0 &&
     !hasSimSwapFields &&
     !hasMaterialDetails &&
-    !hasComments
+    !hasComments &&
+    !hasOtherPhotos
   ) {
     return (
       <Card>

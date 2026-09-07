@@ -55,7 +55,14 @@ export const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
       (m.numberOfCtSplits ?? 0) > 0 ||
       (m.numberOfSilboGateways ?? 0) > 0);
 
-  if (groups.length === 0 && !hasSimSwapFields && !hasMaterialDetails) {
+  const hasOtherSitePhotos = (site.otherSitePhotos?.length ?? 0) > 0;
+
+  if (
+    groups.length === 0 &&
+    !hasSimSwapFields &&
+    !hasMaterialDetails &&
+    !hasOtherSitePhotos
+  ) {
     return (
       <div className="card">
         <div className="card-body text-sm text-slate-500">
@@ -590,10 +597,7 @@ export const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
                 <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
                   Photo #{idx + 1}
                 </p>
-                <ZoomableImage
-                  src={url}
-                  alt={`Other Site Photo #${idx + 1}`}
-                />
+                <ZoomableImage src={url} alt={`Other Site Photo #${idx + 1}`} />
               </div>
             ))}
           </div>

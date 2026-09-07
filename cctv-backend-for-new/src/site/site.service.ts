@@ -660,6 +660,7 @@ export class SiteService {
 
       return {
         id: site._id ? site._id.toString() : '',
+        siteName: site.siteName || '',
         tagsByItemCode,
       };
     });
