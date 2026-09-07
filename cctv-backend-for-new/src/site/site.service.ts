@@ -566,12 +566,20 @@ export class SiteService {
       if (dto[k] !== undefined) (doc as any)[k] = dto[k];
     }
     // Synchronize array and legacy single photo fields for CCTV
-    if (dto.cctvCameraPhotos && Array.isArray(dto.cctvCameraPhotos) && dto.cctvCameraPhotos.length > 0) {
+    if (
+      dto.cctvCameraPhotos &&
+      Array.isArray(dto.cctvCameraPhotos) &&
+      dto.cctvCameraPhotos.length > 0
+    ) {
       (doc as any).cctvCameraPhoto = dto.cctvCameraPhotos[0] || '';
     } else if (dto.cctvCameraPhoto && !dto.cctvCameraPhotos) {
       (doc as any).cctvCameraPhotos = [dto.cctvCameraPhoto];
     }
-    if (dto.cctvHardDiskPhotos && Array.isArray(dto.cctvHardDiskPhotos) && dto.cctvHardDiskPhotos.length > 0) {
+    if (
+      dto.cctvHardDiskPhotos &&
+      Array.isArray(dto.cctvHardDiskPhotos) &&
+      dto.cctvHardDiskPhotos.length > 0
+    ) {
       (doc as any).cctvHardDiskPhoto = dto.cctvHardDiskPhotos[0] || '';
     } else if (dto.cctvHardDiskPhoto && !dto.cctvHardDiskPhotos) {
       (doc as any).cctvHardDiskPhotos = [dto.cctvHardDiskPhoto];
@@ -604,90 +612,56 @@ export class SiteService {
     return obj;
   }
 
-  // Public endpoint helper: returns sites details along with item codes, tag numbers, and serial numbers.
+  // Public endpoint helper: returns concise sites details with non-empty tagsByItemCode and serialsByItemCode.
   async getSitesTags() {
     const sites = await this.siteModel.find().lean().exec();
 
+    const unitGroupSpecs = [
+      { key: 'rmsUnits', itemCode: 'Smart-TWR-001' },
+      { key: 'expanderUnits', itemCode: 'Smart-TWR-007' },
+      { key: 'fenceLockUnits', itemCode: 'Smart-TWR-0025' },
+      { key: 'oduUnits', itemCode: 'Smart-TWR-0027' },
+      { key: 'smartMeterUnits', itemCode: 'Smart-TWR-0023' },
+      { key: 'cctvCameraUnits', itemCode: 'CCTV-001' },
+      { key: 'hardDiskUnits', itemCode: 'CCTV-006' },
+      { key: 'nvrUnits', itemCode: 'CCTV-002' },
+    ];
+
     return sites.map((site: any) => {
-      const unitGroups = [
-        { name: 'rmsUnits', units: site.rmsUnits || [] },
-        { name: 'expanderUnits', units: site.expanderUnits || [] },
-        { name: 'simCards', units: site.simCards || [] },
-        { name: 'fenceLockUnits', units: site.fenceLockUnits || [] },
-        { name: 'oduUnits', units: site.oduUnits || [] },
-        { name: 'smartMeterUnits', units: site.smartMeterUnits || [] },
-        { name: 'ctSplitUnits', units: site.ctSplitUnits || [] },
-        { name: 'silboGatewayUnits', units: site.silboGatewayUnits || [] },
-        { name: 'cctvCameraUnits', units: site.cctvCameraUnits || [] },
-        { name: 'hardDiskUnits', units: site.hardDiskUnits || [] },
-        { name: 'nvrUnits', units: site.nvrUnits || [] },
-      ];
+      const tagsByItemCode: Record<string, string[]> = {};
+      const serialsByItemCode: Record<string, string[]> = {};
 
-      const tagNumbersSet = new Set<string>();
-      const serialNumbersSet = new Set<string>();
-      const unitsList: Array<{ group: string; serialNumber?: string; tagNumber?: string }> = [];
+      for (const spec of unitGroupSpecs) {
+        const rawUnits = site[spec.key];
+        const tags: string[] = [];
+        const serials: string[] = [];
 
-      for (const group of unitGroups) {
-        if (Array.isArray(group.units)) {
-          for (const item of group.units) {
-            const serial = item?.serialNumber?.trim();
-            const tag = item?.tagNumber?.trim();
+        if (Array.isArray(rawUnits)) {
+          for (const item of rawUnits) {
+            const serial = item?.serialNumber?.trim() || '';
+            const tag = item?.tagNumber?.trim() || '';
 
-            if (serial) {
-              serialNumbersSet.add(serial);
-            }
             if (tag) {
-              tagNumbersSet.add(tag);
+              tags.push(tag);
             }
-            if (serial || tag) {
-              unitsList.push({
-                group: group.name,
-                serialNumber: serial || '',
-                tagNumber: tag || '',
-              });
+            if (serial) {
+              serials.push(serial);
             }
           }
         }
-      }
 
-      if (Array.isArray(site.simSwapPairs)) {
-        for (const pair of site.simSwapPairs) {
-          if (pair?.newSerialNumber?.trim()) {
-            serialNumbersSet.add(pair.newSerialNumber.trim());
-          }
-          if (pair?.oldSerialNumber?.trim()) {
-            serialNumbersSet.add(pair.oldSerialNumber.trim());
-          }
+        if (tags.length > 0) {
+          tagsByItemCode[spec.itemCode] = tags;
         }
-      }
-
-      const itemCodesSet = new Set<string>();
-      if (site.itemCode?.trim()) {
-        itemCodesSet.add(site.itemCode.trim());
-      }
-      if (Array.isArray(site.itemCodes)) {
-        for (const code of site.itemCodes) {
-          if (typeof code === 'string' && code.trim()) {
-            itemCodesSet.add(code.trim());
-          }
+        if (serials.length > 0) {
+          serialsByItemCode[spec.itemCode] = serials;
         }
       }
 
       return {
         id: site._id ? site._id.toString() : '',
-        siteName: site.siteName || '',
-        tawalId: site.tawalId || '',
-        tcnNumber: site.tcnNumber || '',
-        region: site.region || '',
-        siteCity: site.siteCity || '',
-        rmsScope: site.rmsScope || '',
-        itemCode: site.itemCode || '',
-        itemCodes: Array.from(itemCodesSet),
-        tagNumbers: Array.from(tagNumbersSet),
-        serialNumbers: Array.from(serialNumbersSet),
-        units: unitsList,
+        tagsByItemCode,
       };
     });
   }
 }
-
