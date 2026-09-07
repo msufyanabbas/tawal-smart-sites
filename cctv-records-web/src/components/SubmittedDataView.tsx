@@ -579,6 +579,26 @@ export const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
           </div>
         </div>
       )}
+
+      {/* Other Site Photos card */}
+      {site.otherSitePhotos && site.otherSitePhotos.length > 0 && (
+        <div className="card">
+          <h3 className="card-title mb-4">Other Site Photos</h3>
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {site.otherSitePhotos.map((url, idx) => (
+              <div key={`view-other-site-photo-${idx}`}>
+                <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                  Photo #{idx + 1}
+                </p>
+                <ZoomableImage
+                  src={url}
+                  alt={`Other Site Photo #${idx + 1}`}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

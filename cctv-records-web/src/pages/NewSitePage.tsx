@@ -70,6 +70,12 @@ function deriveItemCodes(
     if (gt0(opts.numberOfCameras)) codes.push(ITEM_CODE.CCTV_CAMERA);
     if (gt0(opts.numberOfHardDisks)) codes.push(ITEM_CODE.HARD_DISK);
     if (gt0(opts.numberOfNvr)) codes.push(ITEM_CODE.NVR);
+  } else if (scope === RmsScope.LEGACY_POO_METER) {
+    if (gt0(opts.numberOfTenants)) codes.push(ITEM_CODE.SMART_METER);
+  } else if (scope === RmsScope.COLLOCATION_METER) {
+    if (gt0(opts.numberOfTenants)) codes.push(ITEM_CODE.SMART_METER);
+    if (gt0(opts.numberOfFenceLocks)) codes.push(ITEM_CODE.FENCE_LOCK);
+    if (gt0(opts.numberOfOdus)) codes.push(ITEM_CODE.ODU);
   }
   return codes;
 }
@@ -202,6 +208,12 @@ export const NewSitePage: React.FC = () => {
       payload.numberOfCameras = values.numberOfCameras ?? 0;
       payload.numberOfHardDisks = values.numberOfHardDisks ?? 0;
       payload.numberOfNvr = values.numberOfNvr ?? 0;
+    } else if (values.rmsScope === RmsScope.LEGACY_POO_METER) {
+      payload.numberOfTenants = values.numberOfTenants ?? 0;
+    } else if (values.rmsScope === RmsScope.COLLOCATION_METER) {
+      payload.numberOfTenants = values.numberOfTenants ?? 0;
+      payload.numberOfFenceLocks = values.numberOfFenceLocks ?? 0;
+      payload.numberOfOdus = values.numberOfOdus ?? 0;
     }
     try {
       const created = await create.mutateAsync(payload);
@@ -526,6 +538,64 @@ export const NewSitePage: React.FC = () => {
                     {...register("numberOfNvr", { valueAsNumber: true })}
                   />
                 </div>
+              )}
+
+              {scope === RmsScope.LEGACY_POO_METER && (
+                <>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <TextField
+                      type="number"
+                      min={0}
+                      label="Number of tenants"
+                      {...register("numberOfTenants", { valueAsNumber: true })}
+                    />
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <ReadOnlyStat
+                      label="Smart meters (computed)"
+                      value={derived.smartMeters}
+                    />
+                    <ReadOnlyStat
+                      label="CT splits (computed)"
+                      value={derived.ctSplits}
+                    />
+                  </div>
+                </>
+              )}
+
+              {scope === RmsScope.COLLOCATION_METER && (
+                <>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <TextField
+                      type="number"
+                      min={0}
+                      label="Number of tenants"
+                      {...register("numberOfTenants", { valueAsNumber: true })}
+                    />
+                    <TextField
+                      type="number"
+                      min={0}
+                      label="Number of fence locks"
+                      {...register("numberOfFenceLocks", { valueAsNumber: true })}
+                    />
+                    <TextField
+                      type="number"
+                      min={0}
+                      label="Number of ODUs"
+                      {...register("numberOfOdus", { valueAsNumber: true })}
+                    />
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <ReadOnlyStat
+                      label="Smart meters (computed)"
+                      value={derived.smartMeters}
+                    />
+                    <ReadOnlyStat
+                      label="CT splits (computed)"
+                      value={derived.ctSplits}
+                    />
+                  </div>
+                </>
               )}
             </div>
           </div>

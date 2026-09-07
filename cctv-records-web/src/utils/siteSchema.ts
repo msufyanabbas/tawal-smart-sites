@@ -107,6 +107,7 @@ export const unitsPayloadSchema = z.object({
   cctvCameraUnits: z.array(unitSchema).optional(),
   hardDiskUnits: z.array(unitSchema).optional(),
   nvrUnits: z.array(unitSchema).optional(),
+  otherSitePhotos: z.array(z.string()).optional(),
 });
 
 export type UnitsValues = z.infer<typeof unitsPayloadSchema>;

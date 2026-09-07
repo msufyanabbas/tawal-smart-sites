@@ -13,6 +13,8 @@ export enum RmsScope {
   RMS_SERVICE = "RMS_SERVICE",
   SIM_SWAP = "SIM_SWAP",
   CCTV = "CCTV",
+  LEGACY_POO_METER = "LEGACY_POO_METER",
+  COLLOCATION_METER = "COLLOCATION_METER",
 }
 
 export enum SiteStatusFilter {
@@ -128,6 +130,7 @@ export interface Site {
   cctvCameraPhotos?: string[];
   cctvHardDiskPhotos?: string[];
   cctvFullSitePhoto?: string;
+  otherSitePhotos?: string[];
 
   // Technician-entered material counts (separate from admin-set top-level counts)
   materials?: SiteMaterialsPayload;
@@ -212,6 +215,7 @@ export interface SiteUnitsPayload {
   cctvCameraPhotos?: string[];
   cctvHardDiskPhotos?: string[];
   cctvFullSitePhoto?: string;
+  otherSitePhotos?: string[];
   // Materials (nested object for material counts)
   materials?: SiteMaterialsPayload;
   // Counts (kept for backward compatibility)

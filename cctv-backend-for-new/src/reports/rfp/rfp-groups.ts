@@ -61,19 +61,67 @@ const specsForScope = (site: Site): GroupSpec[] => {
   const scope = site.rmsScope;
 
   const rmsCore = () => {
-    out.push({ key: 'rmsUnits', label: 'RMS Units', singular: 'RMS Unit', expected: site.numberOfRms, hasTag: true });
-    out.push({ key: 'expanderUnits', label: 'Expanders', singular: 'Expander', expected: site.numberOfExpanders, hasTag: true });
-    out.push({ key: 'simCards', label: 'SIM Cards', singular: 'SIM Card', expected: site.numberOfSims, hasTag: false });
+    out.push({
+      key: 'rmsUnits',
+      label: 'RMS Units',
+      singular: 'RMS Unit',
+      expected: site.numberOfRms,
+      hasTag: true,
+    });
+    out.push({
+      key: 'expanderUnits',
+      label: 'Expanders',
+      singular: 'Expander',
+      expected: site.numberOfExpanders,
+      hasTag: true,
+    });
+    out.push({
+      key: 'simCards',
+      label: 'SIM Cards',
+      singular: 'SIM Card',
+      expected: site.numberOfSims,
+      hasTag: false,
+    });
   };
   const smartLock = () => {
-    out.push({ key: 'fenceLockUnits', label: 'Fence Locks', singular: 'Fence Lock', expected: site.numberOfFenceLocks, hasTag: true });
-    out.push({ key: 'oduUnits', label: 'ODUs', singular: 'ODU', expected: site.numberOfOdus, hasTag: false });
+    out.push({
+      key: 'fenceLockUnits',
+      label: 'Fence Locks',
+      singular: 'Fence Lock',
+      expected: site.numberOfFenceLocks,
+      hasTag: true,
+    });
+    out.push({
+      key: 'oduUnits',
+      label: 'ODUs',
+      singular: 'ODU',
+      expected: site.numberOfOdus,
+      hasTag: false,
+    });
   };
   const smartMeter = (withGateway: boolean) => {
-    out.push({ key: 'smartMeterUnits', label: 'Smart Meters', singular: 'Smart Meter', expected: site.numberOfSmartMeters, hasTag: true });
-    out.push({ key: 'ctSplitUnits', label: 'CT Splits', singular: 'CT Split', expected: site.numberOfCtSplits, hasTag: true });
+    out.push({
+      key: 'smartMeterUnits',
+      label: 'Smart Meters',
+      singular: 'Smart Meter',
+      expected: site.numberOfSmartMeters,
+      hasTag: true,
+    });
+    out.push({
+      key: 'ctSplitUnits',
+      label: 'CT Splits',
+      singular: 'CT Split',
+      expected: site.numberOfCtSplits,
+      hasTag: true,
+    });
     if (withGateway) {
-      out.push({ key: 'silboGatewayUnits', label: 'Silbo Gateways', singular: 'Silbo Gateway', expected: site.numberOfSilboGateways, hasTag: true });
+      out.push({
+        key: 'silboGatewayUnits',
+        label: 'Silbo Gateways',
+        singular: 'Silbo Gateway',
+        expected: site.numberOfSilboGateways,
+        hasTag: true,
+      });
     }
   };
 
@@ -85,14 +133,43 @@ const specsForScope = (site: Site): GroupSpec[] => {
     smartLock();
   } else if (scope === RmsScope.SMART_METER) {
     smartMeter(true);
-    out.push({ key: 'simCards', label: 'SIM Cards', singular: 'SIM Card', expected: site.numberOfSims, hasTag: false });
+    out.push({
+      key: 'simCards',
+      label: 'SIM Cards',
+      singular: 'SIM Card',
+      expected: site.numberOfSims,
+      hasTag: false,
+    });
   } else if (scope === RmsScope.SIM_SWAP) {
     if (site.hasSmartLock) smartLock();
     if (site.hasSmartMeter) smartMeter(true);
   } else if (scope === RmsScope.CCTV) {
-    out.push({ key: 'cctvCameraUnits', label: 'CCTV Cameras', singular: 'CCTV Camera', expected: site.numberOfCameras, hasTag: true });
-    out.push({ key: 'hardDiskUnits', label: 'Hard Disks', singular: 'Hard Disk', expected: site.numberOfHardDisks, hasTag: true });
-    out.push({ key: 'nvrUnits', label: 'NVRs', singular: 'NVR', expected: site.numberOfNvr, hasTag: true });
+    out.push({
+      key: 'cctvCameraUnits',
+      label: 'CCTV Cameras',
+      singular: 'CCTV Camera',
+      expected: site.numberOfCameras,
+      hasTag: true,
+    });
+    out.push({
+      key: 'hardDiskUnits',
+      label: 'Hard Disks',
+      singular: 'Hard Disk',
+      expected: site.numberOfHardDisks,
+      hasTag: true,
+    });
+    out.push({
+      key: 'nvrUnits',
+      label: 'NVRs',
+      singular: 'NVR',
+      expected: site.numberOfNvr,
+      hasTag: true,
+    });
+  } else if (scope === RmsScope.LEGACY_POO_METER) {
+    smartMeter(false);
+  } else if (scope === RmsScope.COLLOCATION_METER) {
+    smartMeter(false);
+    smartLock();
   }
 
   return out;
@@ -105,15 +182,50 @@ const specsForScope = (site: Site): GroupSpec[] => {
  */
 const ALL_SPECS: Array<Omit<GroupSpec, 'expected'>> = [
   { key: 'rmsUnits', label: 'RMS Units', singular: 'RMS Unit', hasTag: true },
-  { key: 'expanderUnits', label: 'Expanders', singular: 'Expander', hasTag: true },
+  {
+    key: 'expanderUnits',
+    label: 'Expanders',
+    singular: 'Expander',
+    hasTag: true,
+  },
   { key: 'simCards', label: 'SIM Cards', singular: 'SIM Card', hasTag: false },
-  { key: 'fenceLockUnits', label: 'Fence Locks', singular: 'Fence Lock', hasTag: true },
+  {
+    key: 'fenceLockUnits',
+    label: 'Fence Locks',
+    singular: 'Fence Lock',
+    hasTag: true,
+  },
   { key: 'oduUnits', label: 'ODUs', singular: 'ODU', hasTag: false },
-  { key: 'smartMeterUnits', label: 'Smart Meters', singular: 'Smart Meter', hasTag: true },
-  { key: 'ctSplitUnits', label: 'CT Splits', singular: 'CT Split', hasTag: true },
-  { key: 'silboGatewayUnits', label: 'Silbo Gateways', singular: 'Silbo Gateway', hasTag: true },
-  { key: 'cctvCameraUnits', label: 'CCTV Cameras', singular: 'CCTV Camera', hasTag: true },
-  { key: 'hardDiskUnits', label: 'Hard Disks', singular: 'Hard Disk', hasTag: true },
+  {
+    key: 'smartMeterUnits',
+    label: 'Smart Meters',
+    singular: 'Smart Meter',
+    hasTag: true,
+  },
+  {
+    key: 'ctSplitUnits',
+    label: 'CT Splits',
+    singular: 'CT Split',
+    hasTag: true,
+  },
+  {
+    key: 'silboGatewayUnits',
+    label: 'Silbo Gateways',
+    singular: 'Silbo Gateway',
+    hasTag: true,
+  },
+  {
+    key: 'cctvCameraUnits',
+    label: 'CCTV Cameras',
+    singular: 'CCTV Camera',
+    hasTag: true,
+  },
+  {
+    key: 'hardDiskUnits',
+    label: 'Hard Disks',
+    singular: 'Hard Disk',
+    hasTag: true,
+  },
   { key: 'nvrUnits', label: 'NVRs', singular: 'NVR', hasTag: true },
 ];
 

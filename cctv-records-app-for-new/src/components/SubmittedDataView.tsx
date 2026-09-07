@@ -717,6 +717,38 @@ const SubmittedDataView: React.FC<{
           </View>
         </Card>
       )}
+      {site.otherSitePhotos && site.otherSitePhotos.length > 0 && (
+        <Card style={{ marginTop: spacing.md }}>
+          <AppText style={styles.cardTitle}>Other Site Photos</AppText>
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: spacing.sm,
+              marginTop: spacing.xs,
+            }}
+          >
+            {site.otherSitePhotos.map((url, idx) => (
+              <View key={`sub-other-photo-${idx}`}>
+                <TouchableOpacity
+                  onPress={() => onOpenImage(url)}
+                  style={{ marginTop: spacing.xs }}
+                >
+                  <Image source={{ uri: url }} style={styles.thumbLg} />
+                  <AppText
+                    style={[
+                      styles.thumbCaption,
+                      { textAlign: "center", marginTop: 2 },
+                    ]}
+                  >
+                    Photo #{idx + 1}
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        </Card>
+      )}
     </>
   );
 };

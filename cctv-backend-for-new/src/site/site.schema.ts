@@ -12,6 +12,8 @@ export enum RmsScope {
   RMS_SERVICE = 'RMS_SERVICE',
   SIM_SWAP = 'SIM_SWAP',
   CCTV = 'CCTV',
+  LEGACY_POO_METER = 'LEGACY_POO_METER',
+  COLLOCATION_METER = 'COLLOCATION_METER',
 }
 
 export const ALL_RMS_SCOPES: RmsScope[] = [
@@ -21,6 +23,8 @@ export const ALL_RMS_SCOPES: RmsScope[] = [
   RmsScope.RMS_SERVICE,
   RmsScope.SIM_SWAP,
   RmsScope.CCTV,
+  RmsScope.LEGACY_POO_METER,
+  RmsScope.COLLOCATION_METER,
 ];
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -217,6 +221,9 @@ export class Site {
   @Prop({ type: [String], default: [] }) cctvCameraPhotos?: string[];
   @Prop({ type: [String], default: [] }) cctvHardDiskPhotos?: string[];
   @Prop({ type: String, default: '' }) cctvFullSitePhoto?: string;
+
+  // ── Dynamic Other Site Photos ──────────────────────────────────────────
+  @Prop({ type: [String], default: [] }) otherSitePhotos?: string[];
 
   // ── SIM_SWAP specific fields ───────────────────────────────────────────
   @Prop({ type: String, default: '' }) simSwapComments?: string;

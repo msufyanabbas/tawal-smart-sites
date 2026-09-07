@@ -25,6 +25,7 @@ import {
   CurrentUser,
   CurrentUserPayload,
 } from '../decorators/current-user.decorator';
+import { Public } from '../decorators/public.decorator';
 
 @Controller('sites')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -38,6 +39,12 @@ export class SiteController {
     @CurrentUser() user: CurrentUserPayload,
   ) {
     return this.siteService.list(query, user);
+  }
+
+  @Public()
+  @Get('tags')
+  getSitesTags() {
+    return this.siteService.getSitesTags();
   }
 
   @Get(':id')

@@ -107,6 +107,8 @@ export const scopeColor: Record<RmsScope, string> = {
   RMS_SERVICE: colors.violet, // purple
   SIM_SWAP: colors.cyan, // cyan
   CCTV: "#64748B", // slate
+  LEGACY_POO_METER: "#D97706", // amber
+  COLLOCATION_METER: "#0D9488", // teal
 };
 
 export const roleColor: Record<Role, string> = {

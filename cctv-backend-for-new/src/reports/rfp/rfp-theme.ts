@@ -76,6 +76,8 @@ export const SCOPE_LABELS: Record<string, string> = {
   RMS_SERVICE: 'RMS Service Scope',
   SIM_SWAP: 'SIM Swap Scope',
   CCTV: 'CCTV Scope',
+  LEGACY_POO_METER: 'Legacy (POO) Meter Scope',
+  COLLOCATION_METER: 'Collocation Meter Scope',
 };
 
 export const scopeLabel = (scope?: string): string =>

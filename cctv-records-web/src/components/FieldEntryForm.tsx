@@ -16,7 +16,7 @@ import {
   type SiteUnitsPayload,
   type Site,
 } from "@/types";
-import { apiErrorMessage } from "@/utils/helpers";
+import { apiErrorMessage, readFileAsDataUrl } from "@/utils/helpers";
 import {
   buildFieldEntrySchema,
   getFirstZodError,
@@ -199,6 +199,44 @@ const relevantUnitGroups = (site: Site): UnitGroup[] => {
       count: site.numberOfNvr,
       needs: { serial: true, tag: true },
     });
+  } else if (site.rmsScope === RmsScope.LEGACY_POO_METER) {
+    out.push({
+      key: "smartMeterUnits",
+      label: "Smart Meters",
+      count: site.numberOfSmartMeters,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "ctSplitUnits",
+      label: "CT Splits",
+      count: site.numberOfCtSplits,
+      needs: { serial: true, tag: true },
+    });
+  } else if (site.rmsScope === RmsScope.COLLOCATION_METER) {
+    out.push({
+      key: "smartMeterUnits",
+      label: "Smart Meters",
+      count: site.numberOfSmartMeters,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "ctSplitUnits",
+      label: "CT Splits",
+      count: site.numberOfCtSplits,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "fenceLockUnits",
+      label: "Fence Locks",
+      count: site.numberOfFenceLocks,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "oduUnits",
+      label: "ODUs",
+      count: site.numberOfOdus,
+      needs: { serial: true, tag: false },
+    });
   }
   return out;
 };
@@ -286,16 +324,24 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
     const hdCount = Math.max(0, site.numberOfHardDisks ?? 0);
 
     const seededCameraPhotos = Array.from({ length: cCount }, (_, i) => {
-      return site.cctvCameraPhotos?.[i] ?? (i === 0 ? (site.cctvCameraPhoto ?? "") : "");
+      return (
+        site.cctvCameraPhotos?.[i] ??
+        (i === 0 ? (site.cctvCameraPhoto ?? "") : "")
+      );
     });
     const seededHardDiskPhotos = Array.from({ length: hdCount }, (_, i) => {
-      return site.cctvHardDiskPhotos?.[i] ?? (i === 0 ? (site.cctvHardDiskPhoto ?? "") : "");
+      return (
+        site.cctvHardDiskPhotos?.[i] ??
+        (i === 0 ? (site.cctvHardDiskPhoto ?? "") : "")
+      );
     });
 
     out.cctvCameraPhotos = seededCameraPhotos;
     out.cctvHardDiskPhotos = seededHardDiskPhotos;
     out.cctvCameraPhoto = seededCameraPhotos[0] ?? site.cctvCameraPhoto ?? "";
-    out.cctvHardDiskPhoto = seededHardDiskPhotos[0] ?? site.cctvHardDiskPhoto ?? "";
+    out.cctvHardDiskPhoto =
+      seededHardDiskPhotos[0] ?? site.cctvHardDiskPhoto ?? "";
+    out.otherSitePhotos = site.otherSitePhotos ?? [];
     return out;
   }, [site, groups]);
 
@@ -498,8 +544,10 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                 }
               };
 
-              const newSimErr = fieldErrors[`simSwapPairs.${i}.newSerialNumber`];
-              const oldSimErr = fieldErrors[`simSwapPairs.${i}.oldSerialNumber`];
+              const newSimErr =
+                fieldErrors[`simSwapPairs.${i}.newSerialNumber`];
+              const oldSimErr =
+                fieldErrors[`simSwapPairs.${i}.oldSerialNumber`];
 
               return (
                 <div key={i} className="rounded-lg border border-slate-200 p-4">
@@ -541,7 +589,9 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                               borderRadius: "0.5rem",
                               borderColor: newSimErr ? "#ef4444" : "#e2e8f0",
                               boxShadow: "none",
-                              "&:hover": { borderColor: newSimErr ? "#ef4444" : "#cbd5e1" },
+                              "&:hover": {
+                                borderColor: newSimErr ? "#ef4444" : "#cbd5e1",
+                              },
                             }),
                             input: (base) => ({
                               ...base,
@@ -549,7 +599,9 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                             }),
                           }}
                         />
-                        {newSimErr && <p className="helper-text">{newSimErr}</p>}
+                        {newSimErr && (
+                          <p className="helper-text">{newSimErr}</p>
+                        )}
                       </div>
                       {!readOnly ? (
                         <ImageUploadField
@@ -746,7 +798,8 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                       {g.needs.serial && (
                         <>
                           {(() => {
-                            const serialErr = fieldErrors[`${g.key}.${idx}.serialNumber`];
+                            const serialErr =
+                              fieldErrors[`${g.key}.${idx}.serialNumber`];
                             // Pick the right serial list based on the group key
                             const serialOptions =
                               g.key === "rmsUnits"
@@ -795,9 +848,15 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                                     control: (base) => ({
                                       ...base,
                                       borderRadius: "0.5rem",
-                                      borderColor: serialErr ? "#ef4444" : "#e2e8f0",
+                                      borderColor: serialErr
+                                        ? "#ef4444"
+                                        : "#e2e8f0",
                                       boxShadow: "none",
-                                      "&:hover": { borderColor: serialErr ? "#ef4444" : "#cbd5e1" },
+                                      "&:hover": {
+                                        borderColor: serialErr
+                                          ? "#ef4444"
+                                          : "#cbd5e1",
+                                      },
                                     }),
                                     input: (base) => ({
                                       ...base,
@@ -805,7 +864,9 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                                     }),
                                   }}
                                 />
-                                {serialErr && <p className="helper-text">{serialErr}</p>}
+                                {serialErr && (
+                                  <p className="helper-text">{serialErr}</p>
+                                )}
                               </div>
                             ) : (
                               <TextField
@@ -931,7 +992,10 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                     error={fieldErrors.cctvNvrMainBoxPhoto}
                     onChange={(v) => {
                       clearFieldError("cctvNvrMainBoxPhoto");
-                      setValues((prev) => ({ ...prev, cctvNvrMainBoxPhoto: v }));
+                      setValues((prev) => ({
+                        ...prev,
+                        cctvNvrMainBoxPhoto: v,
+                      }));
                     }}
                   />
                 ) : values.cctvNvrMainBoxPhoto ? (
@@ -944,7 +1008,9 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                     />
                   </div>
                 ) : (
-                  <p className="text-sm text-slate-400">No NVR main box photo</p>
+                  <p className="text-sm text-slate-400">
+                    No NVR main box photo
+                  </p>
                 )}
               </div>
 
@@ -1064,6 +1130,96 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
             readOnly={readOnly}
           />
         </>
+      )}
+
+      {/* Dynamic Other Site Photos card for Legacy (POO) Meter & Collocation Meter */}
+      {(site.rmsScope === RmsScope.LEGACY_POO_METER ||
+        site.rmsScope === RmsScope.COLLOCATION_METER) && (
+        <div className="card space-y-4 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="card-title">Other Site Photos</h3>
+              <p className="text-sm text-slate-500">
+                Upload additional photos of the site installation
+              </p>
+            </div>
+            {!readOnly && (
+              <button
+                type="button"
+                className="btn-secondary flex items-center gap-1.5 !px-3 !py-1.5 !text-xs font-semibold"
+                onClick={() => {
+                  const input = document.createElement("input");
+                  input.type = "file";
+                  input.accept = "image/*";
+                  input.onchange = async (e: Event) => {
+                    const target = e.target as HTMLInputElement;
+                    const file = target.files?.[0];
+                    if (file) {
+                      try {
+                        const url = await readFileAsDataUrl(file);
+                        setValues((prev) => ({
+                          ...prev,
+                          otherSitePhotos: [
+                            ...(prev.otherSitePhotos ?? []),
+                            url,
+                          ],
+                        }));
+                      } catch {
+                        toast.error("Failed to read image");
+                      }
+                    }
+                  };
+                  input.click();
+                }}
+              >
+                <span className="text-sm font-bold">+</span> Add Photo
+              </button>
+            )}
+          </div>
+
+          {values.otherSitePhotos && values.otherSitePhotos.length > 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {values.otherSitePhotos.map((url, idx) => (
+                <div
+                  key={`other-site-photo-${idx}`}
+                  className="group relative flex flex-col rounded-lg border border-slate-200 bg-slate-50 p-2"
+                >
+                  <div className="h-32 w-full overflow-hidden rounded-md bg-slate-200">
+                    <img
+                      src={url}
+                      alt={`Other Site Photo #${idx + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-600">
+                      Photo #{idx + 1}
+                    </span>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        className="text-xs font-medium text-red-600 hover:text-red-700"
+                        onClick={() => {
+                          setValues((prev) => {
+                            const arr = [...(prev.otherSitePhotos ?? [])];
+                            arr.splice(idx, 1);
+                            return { ...prev, otherSitePhotos: arr };
+                          });
+                        }}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm italic text-slate-400">
+              No other site photos added yet.
+            </p>
+          )}
+        </div>
       )}
 
       {!readOnly && (

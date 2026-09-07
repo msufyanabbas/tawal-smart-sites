@@ -198,9 +198,14 @@ const EditSiteScreen: React.FC = () => {
       payload.numberOfOdus = numericToInt(form.numberOfOdus);
     } else if (
       form.rmsScope === RmsScope.SMART_METER ||
-      form.rmsScope === RmsScope.RMS_SERVICE
+      form.rmsScope === RmsScope.RMS_SERVICE ||
+      form.rmsScope === RmsScope.LEGACY_POO_METER
     ) {
       payload.numberOfTenants = numericToInt(form.numberOfTenants);
+    } else if (form.rmsScope === RmsScope.COLLOCATION_METER) {
+      payload.numberOfTenants = numericToInt(form.numberOfTenants);
+      payload.numberOfFenceLocks = numericToInt(form.numberOfFenceLocks);
+      payload.numberOfOdus = numericToInt(form.numberOfOdus);
     } else if (form.rmsScope === RmsScope.SIM_SWAP) {
       payload.numberOfSims = numericToInt(form.numberOfSims);
       payload.hasSmartMeter = form.hasSmartMeter;
@@ -445,15 +450,70 @@ const EditSiteScreen: React.FC = () => {
             </>
           )}
 
-          {form.rmsScope === RmsScope.RMS_SERVICE && (
-            <Field
-              label="Number of tenants"
-              keyboardType="numeric"
-              value={form.numberOfTenants}
-              onChangeText={(t) =>
-                setField("numberOfTenants", t.replace(/[^0-9]/g, ""))
-              }
-            />
+          {form.rmsScope === RmsScope.LEGACY_POO_METER && (
+            <>
+              <Field
+                label="Number of tenants"
+                keyboardType="numeric"
+                value={form.numberOfTenants}
+                onChangeText={(t) =>
+                  setField("numberOfTenants", t.replace(/[^0-9]/g, ""))
+                }
+              />
+              <View style={styles.statRow}>
+                <ReadStat
+                  label="Smart Meters"
+                  value={derived.smartMeters}
+                  tint={colors.brand}
+                />
+                <ReadStat
+                  label="CT Splits"
+                  value={derived.ctSplits}
+                  tint={colors.cyan}
+                />
+              </View>
+            </>
+          )}
+
+          {form.rmsScope === RmsScope.COLLOCATION_METER && (
+            <>
+              <Field
+                label="Number of tenants"
+                keyboardType="numeric"
+                value={form.numberOfTenants}
+                onChangeText={(t) =>
+                  setField("numberOfTenants", t.replace(/[^0-9]/g, ""))
+                }
+              />
+              <Field
+                label="Number of fence locks"
+                keyboardType="numeric"
+                value={form.numberOfFenceLocks}
+                onChangeText={(t) =>
+                  setField("numberOfFenceLocks", t.replace(/[^0-9]/g, ""))
+                }
+              />
+              <Field
+                label="Number of ODUs"
+                keyboardType="numeric"
+                value={form.numberOfOdus}
+                onChangeText={(t) =>
+                  setField("numberOfOdus", t.replace(/[^0-9]/g, ""))
+                }
+              />
+              <View style={styles.statRow}>
+                <ReadStat
+                  label="Smart Meters"
+                  value={derived.smartMeters}
+                  tint={colors.brand}
+                />
+                <ReadStat
+                  label="CT Splits"
+                  value={derived.ctSplits}
+                  tint={colors.cyan}
+                />
+              </View>
+            </>
           )}
         </Card>
       </ScrollView>

@@ -93,6 +93,10 @@ export const rmsScopeLabel = (s: RmsScope): string => {
       return "SIM Swap";
     case RmsScope.CCTV:
       return "CCTV";
+    case RmsScope.LEGACY_POO_METER:
+      return "Legacy (POO) Meter";
+    case RmsScope.COLLOCATION_METER:
+      return "Collocation Meter";
     default:
       return String(s);
   }

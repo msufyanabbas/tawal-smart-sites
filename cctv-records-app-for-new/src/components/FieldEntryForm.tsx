@@ -30,7 +30,7 @@ import {
 } from "../utils/fieldEntryValidation";
 
 import { runOcr, scanSimSerialFromOcr } from "../utils/ocrUtils";
-import { colors, spacing } from "../theme";
+import { colors, radius, spacing } from "../theme";
 import { styles } from "../utils/Styles";
 
 const FieldEntryForm: React.FC<{
@@ -1119,6 +1119,71 @@ const FieldEntryForm: React.FC<{
     });
   };
 
+  const renderOtherSitePhotos = () => {
+    const list = values.otherSitePhotos ?? [];
+    const isReadOnly = !!site.status?.completed?.done;
+
+    return (
+      <Card style={{ marginTop: spacing.md }}>
+        <AppText style={styles.cardTitle}>Other Site Photos</AppText>
+        <AppText style={[styles.muted, { marginBottom: spacing.sm }]}>
+          Upload additional photos of the site installation
+        </AppText>
+
+        {list.length > 0 && (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md }}>
+            {list.map((uri, idx) => (
+              <View key={`other-site-photo-${idx}`} style={{ width: 100, marginBottom: spacing.xs }}>
+                <TouchableOpacity
+                  onPress={() => onOpenImage(uri)}
+                  onLongPress={() => {
+                    if (isReadOnly) return;
+                    Alert.alert(`Remove Photo #${idx + 1}?`, "", [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Remove",
+                        style: "destructive",
+                        onPress: () => {
+                          const updated = [...list];
+                          updated.splice(idx, 1);
+                          if (setUnitValues) {
+                            setUnitValues((prev) => ({ ...prev, otherSitePhotos: updated }));
+                          }
+                        },
+                      },
+                    ]);
+                  }}
+                >
+                  <Image source={{ uri }} style={{ width: 100, height: 100, borderRadius: radius.md }} />
+                  <AppText style={[styles.thumbCaption, { textAlign: "center", marginTop: 2 }]}>
+                    Photo #{idx + 1}
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {!isReadOnly && (
+          <View style={{ marginTop: spacing.xs }}>
+            <CustomImagePicker
+              imageUri={undefined}
+              onImageSelected={(pickedUri) => {
+                if (setUnitValues) {
+                  setUnitValues((prev) => ({
+                    ...prev,
+                    otherSitePhotos: [...(prev.otherSitePhotos ?? []), pickedUri],
+                  }));
+                }
+              }}
+              label="+ Add Photo"
+            />
+          </View>
+        )}
+      </Card>
+    );
+  };
+
   // ── SIM Swap 3-step Wizard rendering ──
   if (isSimSwap) {
     return (
@@ -1738,6 +1803,9 @@ const FieldEntryForm: React.FC<{
 
       {renderUnitGroups(groups)}
       {site.rmsScope === RmsScope.CCTV && renderCctvInstallationImages()}
+      {(site.rmsScope === RmsScope.LEGACY_POO_METER ||
+        site.rmsScope === RmsScope.COLLOCATION_METER) &&
+        renderOtherSitePhotos()}
     </>
   );
 };

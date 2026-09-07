@@ -217,6 +217,44 @@ const relevantUnitGroups = (site: Site): UnitGroup[] => {
       count: site.numberOfNvr,
       needs: { serial: true, tag: true },
     });
+  } else if (site.rmsScope === RmsScope.LEGACY_POO_METER) {
+    out.push({
+      key: "smartMeterUnits",
+      label: "Smart Meters",
+      count: site.numberOfSmartMeters,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "ctSplitUnits",
+      label: "CT Splits",
+      count: site.numberOfCtSplits,
+      needs: { serial: true, tag: true },
+    });
+  } else if (site.rmsScope === RmsScope.COLLOCATION_METER) {
+    out.push({
+      key: "smartMeterUnits",
+      label: "Smart Meters",
+      count: site.numberOfSmartMeters,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "ctSplitUnits",
+      label: "CT Splits",
+      count: site.numberOfCtSplits,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "fenceLockUnits",
+      label: "Fence Locks",
+      count: site.numberOfFenceLocks,
+      needs: { serial: true, tag: true },
+    });
+    out.push({
+      key: "oduUnits",
+      label: "ODUs",
+      count: site.numberOfOdus,
+      needs: { serial: true, tag: false },
+    });
   }
   return out;
 };
@@ -363,6 +401,7 @@ const SiteDetailScreen: React.FC = () => {
         });
         seeded.cctvCameraPhoto = seeded.cctvCameraPhotos[0] ?? res.data.cctvCameraPhoto ?? "";
         seeded.cctvHardDiskPhoto = seeded.cctvHardDiskPhotos[0] ?? res.data.cctvHardDiskPhoto ?? "";
+        seeded.otherSitePhotos = res.data.otherSitePhotos ?? [];
         // Seed counts
         seeded.numberOfRms = res.data.numberOfRms ?? 0;
         seeded.numberOfExpanders = res.data.numberOfExpanders ?? 0;

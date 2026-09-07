@@ -11,6 +11,9 @@ export const rmsScopeLabel = (scope: RmsScope): string => {
     case RmsScope.SMART_METER: return 'Smart Meter';
     case RmsScope.RMS_SERVICE: return 'RMS Service';
     case RmsScope.SIM_SWAP: return 'SIM Swap';
+    case RmsScope.CCTV: return 'CCTV';
+    case RmsScope.LEGACY_POO_METER: return 'Legacy (POO) Meter';
+    case RmsScope.COLLOCATION_METER: return 'Collocation Meter';
     default: return String(scope);
   }
 };

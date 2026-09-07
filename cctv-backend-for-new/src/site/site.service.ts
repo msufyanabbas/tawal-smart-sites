@@ -120,6 +120,25 @@ export class SiteService {
       out.numberOfCameras = input.numberOfCameras ?? 0;
       out.numberOfHardDisks = input.numberOfHardDisks ?? 0;
       out.numberOfNvr = input.numberOfNvr ?? 0;
+    } else if (scope === RmsScope.LEGACY_POO_METER) {
+      out.hasSmartMeter = true;
+      const tenants = input.numberOfTenants ?? 0;
+      out.numberOfTenants = tenants;
+      out.numberOfSmartMeters = SiteService.smartMetersFor(tenants, scope);
+      out.numberOfCtSplits = tenants * 3;
+      out.numberOfSilboGateways = 0;
+      out.numberOfSims = 0;
+    } else if (scope === RmsScope.COLLOCATION_METER) {
+      out.hasSmartMeter = true;
+      const tenants = input.numberOfTenants ?? 0;
+      out.numberOfTenants = tenants;
+      out.numberOfSmartMeters = SiteService.smartMetersFor(tenants, scope);
+      out.numberOfCtSplits = tenants * 3;
+      out.hasSmartLock = true;
+      out.numberOfFenceLocks = input.numberOfFenceLocks ?? 0;
+      out.numberOfOdus = input.numberOfOdus ?? 0;
+      out.numberOfSilboGateways = 0;
+      out.numberOfSims = 0;
     }
 
     return out;
@@ -584,4 +603,91 @@ export class SiteService {
     }
     return obj;
   }
+
+  // Public endpoint helper: returns sites details along with item codes, tag numbers, and serial numbers.
+  async getSitesTags() {
+    const sites = await this.siteModel.find().lean().exec();
+
+    return sites.map((site: any) => {
+      const unitGroups = [
+        { name: 'rmsUnits', units: site.rmsUnits || [] },
+        { name: 'expanderUnits', units: site.expanderUnits || [] },
+        { name: 'simCards', units: site.simCards || [] },
+        { name: 'fenceLockUnits', units: site.fenceLockUnits || [] },
+        { name: 'oduUnits', units: site.oduUnits || [] },
+        { name: 'smartMeterUnits', units: site.smartMeterUnits || [] },
+        { name: 'ctSplitUnits', units: site.ctSplitUnits || [] },
+        { name: 'silboGatewayUnits', units: site.silboGatewayUnits || [] },
+        { name: 'cctvCameraUnits', units: site.cctvCameraUnits || [] },
+        { name: 'hardDiskUnits', units: site.hardDiskUnits || [] },
+        { name: 'nvrUnits', units: site.nvrUnits || [] },
+      ];
+
+      const tagNumbersSet = new Set<string>();
+      const serialNumbersSet = new Set<string>();
+      const unitsList: Array<{ group: string; serialNumber?: string; tagNumber?: string }> = [];
+
+      for (const group of unitGroups) {
+        if (Array.isArray(group.units)) {
+          for (const item of group.units) {
+            const serial = item?.serialNumber?.trim();
+            const tag = item?.tagNumber?.trim();
+
+            if (serial) {
+              serialNumbersSet.add(serial);
+            }
+            if (tag) {
+              tagNumbersSet.add(tag);
+            }
+            if (serial || tag) {
+              unitsList.push({
+                group: group.name,
+                serialNumber: serial || '',
+                tagNumber: tag || '',
+              });
+            }
+          }
+        }
+      }
+
+      if (Array.isArray(site.simSwapPairs)) {
+        for (const pair of site.simSwapPairs) {
+          if (pair?.newSerialNumber?.trim()) {
+            serialNumbersSet.add(pair.newSerialNumber.trim());
+          }
+          if (pair?.oldSerialNumber?.trim()) {
+            serialNumbersSet.add(pair.oldSerialNumber.trim());
+          }
+        }
+      }
+
+      const itemCodesSet = new Set<string>();
+      if (site.itemCode?.trim()) {
+        itemCodesSet.add(site.itemCode.trim());
+      }
+      if (Array.isArray(site.itemCodes)) {
+        for (const code of site.itemCodes) {
+          if (typeof code === 'string' && code.trim()) {
+            itemCodesSet.add(code.trim());
+          }
+        }
+      }
+
+      return {
+        id: site._id ? site._id.toString() : '',
+        siteName: site.siteName || '',
+        tawalId: site.tawalId || '',
+        tcnNumber: site.tcnNumber || '',
+        region: site.region || '',
+        siteCity: site.siteCity || '',
+        rmsScope: site.rmsScope || '',
+        itemCode: site.itemCode || '',
+        itemCodes: Array.from(itemCodesSet),
+        tagNumbers: Array.from(tagNumbersSet),
+        serialNumbers: Array.from(serialNumbersSet),
+        units: unitsList,
+      };
+    });
+  }
 }
+
