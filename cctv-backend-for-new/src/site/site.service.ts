@@ -662,6 +662,7 @@ export class SiteService {
         id: site._id ? site._id.toString() : '',
         siteName: site.siteName || '',
         tagsByItemCode,
+        serialsByItemCode,
       };
     });
   }
