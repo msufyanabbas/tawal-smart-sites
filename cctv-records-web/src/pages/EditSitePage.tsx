@@ -516,7 +516,9 @@ export const EditSitePage: React.FC = () => {
                       type="number"
                       min={0}
                       label="Number of fence locks"
-                      {...register("numberOfFenceLocks", { valueAsNumber: true })}
+                      {...register("numberOfFenceLocks", {
+                        valueAsNumber: true,
+                      })}
                     />
                     <TextField
                       type="number"
