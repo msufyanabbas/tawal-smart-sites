@@ -552,6 +552,7 @@ export class SiteService {
       'cctvCameraPhotos',
       'cctvHardDiskPhotos',
       'cctvFullSitePhoto',
+      'otherSitePhotos',
       'numberOfRms',
       'numberOfExpanders',
       'numberOfSims',

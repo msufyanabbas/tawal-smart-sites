@@ -201,6 +201,11 @@ export class SubmitSiteDto {
   cctvFullSitePhoto?: string;
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  otherSitePhotos?: string[];
+
+  @IsOptional()
   @ValidateNested()
   @Type(() => MaterialCountsDto)
   materials?: MaterialCountsDto;
