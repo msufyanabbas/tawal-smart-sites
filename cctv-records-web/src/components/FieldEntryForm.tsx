@@ -1132,95 +1132,92 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
         </>
       )}
 
-      {/* Dynamic Other Site Photos card for Legacy (POO) Meter & Collocation Meter */}
-      {(site.rmsScope === RmsScope.LEGACY_POO_METER ||
-        site.rmsScope === RmsScope.COLLOCATION_METER) && (
-        <div className="card space-y-4 p-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="card-title">Other Site Photos</h3>
-              <p className="text-sm text-slate-500">
-                Upload additional photos of the site installation
-              </p>
-            </div>
-            {!readOnly && (
-              <button
-                type="button"
-                className="btn-secondary flex items-center gap-1.5 !px-3 !py-1.5 !text-xs font-semibold"
-                onClick={() => {
-                  const input = document.createElement("input");
-                  input.type = "file";
-                  input.accept = "image/*";
-                  input.onchange = async (e: Event) => {
-                    const target = e.target as HTMLInputElement;
-                    const file = target.files?.[0];
-                    if (file) {
-                      try {
-                        const url = await readFileAsDataUrl(file);
-                        setValues((prev) => ({
-                          ...prev,
-                          otherSitePhotos: [
-                            ...(prev.otherSitePhotos ?? []),
-                            url,
-                          ],
-                        }));
-                      } catch {
-                        toast.error("Failed to read image");
-                      }
-                    }
-                  };
-                  input.click();
-                }}
-              >
-                <span className="text-sm font-bold">+</span> Add Photo
-              </button>
-            )}
-          </div>
-
-          {values.otherSitePhotos && values.otherSitePhotos.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {values.otherSitePhotos.map((url, idx) => (
-                <div
-                  key={`other-site-photo-${idx}`}
-                  className="group relative flex flex-col rounded-lg border border-slate-200 bg-slate-50 p-2"
-                >
-                  <div className="h-32 w-full overflow-hidden rounded-md bg-slate-200">
-                    <img
-                      src={url}
-                      alt={`Other Site Photo #${idx + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-600">
-                      Photo #{idx + 1}
-                    </span>
-                    {!readOnly && (
-                      <button
-                        type="button"
-                        className="text-xs font-medium text-red-600 hover:text-red-700"
-                        onClick={() => {
-                          setValues((prev) => {
-                            const arr = [...(prev.otherSitePhotos ?? [])];
-                            arr.splice(idx, 1);
-                            return { ...prev, otherSitePhotos: arr };
-                          });
-                        }}
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm italic text-slate-400">
-              No other site photos added yet.
+      {/* Dynamic Other Site Photos card for all scopes */}
+      <div className="card space-y-4 p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="card-title">Other Site Photos</h3>
+            <p className="text-sm text-slate-500">
+              Upload additional photos of the site installation
             </p>
+          </div>
+          {!readOnly && (
+            <button
+              type="button"
+              className="btn-secondary flex items-center gap-1.5 !px-3 !py-1.5 !text-xs font-semibold"
+              onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*";
+                input.onchange = async (e: Event) => {
+                  const target = e.target as HTMLInputElement;
+                  const file = target.files?.[0];
+                  if (file) {
+                    try {
+                      const url = await readFileAsDataUrl(file);
+                      setValues((prev) => ({
+                        ...prev,
+                        otherSitePhotos: [
+                          ...(prev.otherSitePhotos ?? []),
+                          url,
+                        ],
+                      }));
+                    } catch {
+                      toast.error("Failed to read image");
+                    }
+                  }
+                };
+                input.click();
+              }}
+            >
+              <span className="text-sm font-bold">+</span> Add Photo
+            </button>
           )}
         </div>
-      )}
+
+        {values.otherSitePhotos && values.otherSitePhotos.length > 0 ? (
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {values.otherSitePhotos.map((url, idx) => (
+              <div
+                key={`other-site-photo-${idx}`}
+                className="group relative flex flex-col rounded-lg border border-slate-200 bg-slate-50 p-2"
+              >
+                <div className="h-32 w-full overflow-hidden rounded-md bg-slate-200">
+                  <img
+                    src={url}
+                    alt={`Other Site Photo #${idx + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-600">
+                    Photo #{idx + 1}
+                  </span>
+                  {!readOnly && (
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-red-600 hover:text-red-700"
+                      onClick={() => {
+                        setValues((prev) => {
+                          const arr = [...(prev.otherSitePhotos ?? [])];
+                          arr.splice(idx, 1);
+                          return { ...prev, otherSitePhotos: arr };
+                        });
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm italic text-slate-400">
+            No other site photos added yet.
+          </p>
+        )}
+      </div>
 
       {!readOnly && (
         <div className="flex justify-end gap-3">

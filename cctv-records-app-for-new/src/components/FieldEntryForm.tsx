@@ -231,8 +231,8 @@ const FieldEntryForm: React.FC<{
       const result = schema.safeParse(values);
       if (!result.success) {
         const errs = getZodFieldErrors(result);
-        const step1Errs = Object.entries(errs).filter(([k]) =>
-          k.startsWith("simSwapPairs") || k === "simSwapSiteType",
+        const step1Errs = Object.entries(errs).filter(
+          ([k]) => k.startsWith("simSwapPairs") || k === "simSwapSiteType",
         );
         if (step1Errs.length > 0) {
           setErrors((prev) => ({ ...prev, ...Object.fromEntries(step1Errs) }));
@@ -575,11 +575,15 @@ const FieldEntryForm: React.FC<{
   };
 
   const renderCctvCameraPhotoItem = (idx: number, count: number) => {
-    const label = count > 1 ? `CCTV Camera #${idx + 1} Photo` : "CCTV Camera Photo";
-    const uri = values.cctvCameraPhotos?.[idx] || (idx === 0 ? values.cctvCameraPhoto : undefined);
+    const label =
+      count > 1 ? `CCTV Camera #${idx + 1} Photo` : "CCTV Camera Photo";
+    const uri =
+      values.cctvCameraPhotos?.[idx] ||
+      (idx === 0 ? values.cctvCameraPhoto : undefined);
     const uploadKey = `cctvCameraPhotos.${idx}`;
     const isUp = isUploading(uploadKey);
-    const err = errors[uploadKey] || (idx === 0 ? errors.cctvCameraPhotos : undefined);
+    const err =
+      errors[uploadKey] || (idx === 0 ? errors.cctvCameraPhotos : undefined);
 
     return (
       <View key={`cctv-cam-${idx}`} style={{ marginTop: spacing.md }}>
@@ -602,7 +606,9 @@ const FieldEntryForm: React.FC<{
               {isUp && (
                 <View style={styles.uploadOverlay}>
                   <ActivityIndicator size="small" color="#fff" />
-                  <AppText style={{ color: "#fff", fontSize: 10, marginTop: 4 }}>
+                  <AppText
+                    style={{ color: "#fff", fontSize: 10, marginTop: 4 }}
+                  >
                     Saving…
                   </AppText>
                 </View>
@@ -615,14 +621,18 @@ const FieldEntryForm: React.FC<{
         ) : isUp ? (
           <View style={styles.uploadingPlaceholder}>
             <ActivityIndicator size="small" color={colors.brand} />
-            <AppText style={{ color: colors.brand, fontSize: 10, marginTop: 6 }}>
+            <AppText
+              style={{ color: colors.brand, fontSize: 10, marginTop: 6 }}
+            >
               Uploading {label}…
             </AppText>
           </View>
         ) : (
           <CustomImagePicker
             imageUri={undefined}
-            onImageSelected={(pickedUri) => handleCctvCameraPhotoPicked(idx, pickedUri)}
+            onImageSelected={(pickedUri) =>
+              handleCctvCameraPhotoPicked(idx, pickedUri)
+            }
             label={`Tap to add ${label}`}
           />
         )}
@@ -637,10 +647,13 @@ const FieldEntryForm: React.FC<{
 
   const renderCctvHardDiskPhotoItem = (idx: number, count: number) => {
     const label = count > 1 ? `Hard Disk #${idx + 1} Photo` : "Hard Disk Photo";
-    const uri = values.cctvHardDiskPhotos?.[idx] || (idx === 0 ? values.cctvHardDiskPhoto : undefined);
+    const uri =
+      values.cctvHardDiskPhotos?.[idx] ||
+      (idx === 0 ? values.cctvHardDiskPhoto : undefined);
     const uploadKey = `cctvHardDiskPhotos.${idx}`;
     const isUp = isUploading(uploadKey);
-    const err = errors[uploadKey] || (idx === 0 ? errors.cctvHardDiskPhotos : undefined);
+    const err =
+      errors[uploadKey] || (idx === 0 ? errors.cctvHardDiskPhotos : undefined);
 
     return (
       <View key={`cctv-hd-${idx}`} style={{ marginTop: spacing.md }}>
@@ -663,7 +676,9 @@ const FieldEntryForm: React.FC<{
               {isUp && (
                 <View style={styles.uploadOverlay}>
                   <ActivityIndicator size="small" color="#fff" />
-                  <AppText style={{ color: "#fff", fontSize: 10, marginTop: 4 }}>
+                  <AppText
+                    style={{ color: "#fff", fontSize: 10, marginTop: 4 }}
+                  >
                     Saving…
                   </AppText>
                 </View>
@@ -676,14 +691,18 @@ const FieldEntryForm: React.FC<{
         ) : isUp ? (
           <View style={styles.uploadingPlaceholder}>
             <ActivityIndicator size="small" color={colors.brand} />
-            <AppText style={{ color: colors.brand, fontSize: 10, marginTop: 6 }}>
+            <AppText
+              style={{ color: colors.brand, fontSize: 10, marginTop: 6 }}
+            >
               Uploading {label}…
             </AppText>
           </View>
         ) : (
           <CustomImagePicker
             imageUri={undefined}
-            onImageSelected={(pickedUri) => handleCctvHardDiskPhotoPicked(idx, pickedUri)}
+            onImageSelected={(pickedUri) =>
+              handleCctvHardDiskPhotoPicked(idx, pickedUri)
+            }
             label={`Tap to add ${label}`}
           />
         )}
@@ -1131,9 +1150,19 @@ const FieldEntryForm: React.FC<{
         </AppText>
 
         {list.length > 0 && (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md }}>
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: spacing.sm,
+              marginBottom: spacing.md,
+            }}
+          >
             {list.map((uri, idx) => (
-              <View key={`other-site-photo-${idx}`} style={{ width: 100, marginBottom: spacing.xs }}>
+              <View
+                key={`other-site-photo-${idx}`}
+                style={{ width: 100, marginBottom: spacing.xs }}
+              >
                 <TouchableOpacity
                   onPress={() => onOpenImage(uri)}
                   onLongPress={() => {
@@ -1147,15 +1176,26 @@ const FieldEntryForm: React.FC<{
                           const updated = [...list];
                           updated.splice(idx, 1);
                           if (setUnitValues) {
-                            setUnitValues((prev) => ({ ...prev, otherSitePhotos: updated }));
+                            setUnitValues((prev) => ({
+                              ...prev,
+                              otherSitePhotos: updated,
+                            }));
                           }
                         },
                       },
                     ]);
                   }}
                 >
-                  <Image source={{ uri }} style={{ width: 100, height: 100, borderRadius: radius.md }} />
-                  <AppText style={[styles.thumbCaption, { textAlign: "center", marginTop: 2 }]}>
+                  <Image
+                    source={{ uri }}
+                    style={{ width: 100, height: 100, borderRadius: radius.md }}
+                  />
+                  <AppText
+                    style={[
+                      styles.thumbCaption,
+                      { textAlign: "center", marginTop: 2 },
+                    ]}
+                  >
                     Photo #{idx + 1}
                   </AppText>
                 </TouchableOpacity>
@@ -1172,7 +1212,10 @@ const FieldEntryForm: React.FC<{
                 if (setUnitValues) {
                   setUnitValues((prev) => ({
                     ...prev,
-                    otherSitePhotos: [...(prev.otherSitePhotos ?? []), pickedUri],
+                    otherSitePhotos: [
+                      ...(prev.otherSitePhotos ?? []),
+                      pickedUri,
+                    ],
                   }));
                 }
               }}
@@ -1803,9 +1846,7 @@ const FieldEntryForm: React.FC<{
 
       {renderUnitGroups(groups)}
       {site.rmsScope === RmsScope.CCTV && renderCctvInstallationImages()}
-      {(site.rmsScope === RmsScope.LEGACY_POO_METER ||
-        site.rmsScope === RmsScope.COLLOCATION_METER) &&
-        renderOtherSitePhotos()}
+      {renderOtherSitePhotos()}
     </>
   );
 };
