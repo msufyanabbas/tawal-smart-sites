@@ -1157,10 +1157,7 @@ export const FieldEntryForm: React.FC<{ site: Site }> = ({ site }) => {
                       const url = await readFileAsDataUrl(file);
                       setValues((prev) => ({
                         ...prev,
-                        otherSitePhotos: [
-                          ...(prev.otherSitePhotos ?? []),
-                          url,
-                        ],
+                        otherSitePhotos: [...(prev.otherSitePhotos ?? []), url],
                       }));
                     } catch {
                       toast.error("Failed to read image");
