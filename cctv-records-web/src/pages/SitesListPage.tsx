@@ -9,6 +9,10 @@ import { SelectField } from "@/components/SelectField";
 import { Button } from "@/components/Button";
 import { Pagination } from "@/components/Pagination";
 import { BulkImportModal } from "@/components/BulkImportModal";
+import {
+  RfpReportDialog,
+  type RfpNarrative,
+} from "@/components/RfpReportDialog";
 import { Role, RmsScope, SiteStatusFilter } from "@/types";
 import {
   STATUS_STEPS,
@@ -17,6 +21,8 @@ import {
   rmsScopeLabel,
 } from "@/utils/helpers";
 import { downloadImportTemplate, downloadSitesExcel } from "@/utils/sitesExcel";
+import { downloadBulkSiteRfpReports } from "@/api/reports";
+import toast from "react-hot-toast";
 
 const StatusTick: React.FC<{ done: boolean; label: string }> = ({
   done,
@@ -87,6 +93,8 @@ export const SitesListPage: React.FC = () => {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [importOpen, setImportOpen] = useState(false);
+  const [rfpOpen, setRfpOpen] = useState(false);
+  const [rfpBusy, setRfpBusy] = useState(false);
 
   const filters = useMemo(
     () => ({
@@ -184,6 +192,43 @@ export const SitesListPage: React.FC = () => {
     downloadSitesExcel(subset, technicianNameById, "tawal-sites-selected.xlsx");
   };
 
+  // Builds one deck per selected site server-side and downloads them as a
+  // single archive. Each deck embeds every photo captured at its site, so a
+  // large selection takes appreciably longer than a single report.
+  const generateSelectedRfp = async (narrative: RfpNarrative) => {
+    const ids = sites.filter((s) => selected.has(s._id)).map((s) => s._id);
+    if (ids.length === 0) return;
+
+    setRfpBusy(true);
+    const toastId = toast.loading(
+      `Generating ${ids.length} RFP report${ids.length === 1 ? "" : "s"}…`,
+    );
+    try {
+      const { generated, failed } = await downloadBulkSiteRfpReports(
+        ids,
+        narrative,
+      );
+      setRfpOpen(false);
+      if (failed > 0) {
+        toast.success(
+          `Downloaded ${generated} report${generated === 1 ? "" : "s"}. ${failed} could not be generated — see _generation-errors.txt in the archive.`,
+          { id: toastId, duration: 8000 },
+        );
+      } else {
+        toast.success(
+          `Downloaded ${generated} RFP report${generated === 1 ? "" : "s"}`,
+          { id: toastId },
+        );
+      }
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Failed to generate RFP reports"), {
+        id: toastId,
+      });
+    } finally {
+      setRfpBusy(false);
+    }
+  };
+
   const selectionCount = selected.size;
 
   const handlePageChange = (newPage: number) => {
@@ -239,6 +284,15 @@ export const SitesListPage: React.FC = () => {
                   onClick={exportSelected}
                 >
                   Export Selected ({selectionCount})
+                </Button>
+              )}
+              {selectionCount > 0 && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setRfpOpen(true)}
+                >
+                  Generate RFP Reports ({selectionCount})
                 </Button>
               )}
             </>
@@ -455,6 +509,13 @@ export const SitesListPage: React.FC = () => {
       </div>
 
       <BulkImportModal open={importOpen} onClose={() => setImportOpen(false)} />
+      <RfpReportDialog
+        open={rfpOpen}
+        busy={rfpBusy}
+        subject={`${selectionCount} site${selectionCount === 1 ? "" : "s"} selected`}
+        onClose={() => setRfpOpen(false)}
+        onGenerate={generateSelectedRfp}
+      />
     </div>
   );
 };

@@ -15,8 +15,11 @@ import {
   addStat,
   addUnitCard,
   toPptxImageData,
+  imageSize,
   gridLayout,
+  photoGridLayout,
   MAX_PER_PAGE,
+  MAX_PHOTOS_PER_PAGE,
   PptxSlide,
 } from './rfp-layout';
 import { RfpUnitGroup, resolveUnitGroups } from './rfp-groups';
@@ -33,6 +36,10 @@ import { RfpUnitGroup, resolveUnitGroups } from './rfp-groups';
 const PptxGenJS: typeof import('pptxgenjs').default = require('pptxgenjs');
 type Pptx = InstanceType<typeof PptxGenJS>;
 
+/** Same CommonJS-interop reasoning as PptxGenJS above. */
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const JSZip: typeof import('jszip') = require('jszip');
+
 /**
  * Narrative fields the person generating the report fills in. Both are
  * optional; a blank field falls back to text derived from the site's status.
@@ -46,6 +53,24 @@ export interface RfpReportOptions {
 
 /** Guards against a pasted essay overflowing the conclusion cards. */
 export const RFP_NARRATIVE_MAX = 400;
+
+/**
+ * Ceiling on a single bulk request.
+ *
+ * Each deck carries every photo captured at the site, so a generated report is
+ * typically 2-5 MB and they are all held in memory until the archive is
+ * written. 25 keeps the worst case near ~125 MB, which the container tolerates;
+ * raising it meaningfully means streaming the archive to disk instead.
+ */
+export const RFP_BULK_MAX_SITES = 25;
+
+/** Outcome of a bulk run — some sites may fail without sinking the batch. */
+export interface RfpBulkResult {
+  buffer: Buffer;
+  filename: string;
+  generated: number;
+  failed: Array<{ siteId: string; reason: string }>;
+}
 
 @Injectable()
 export class RfpReportService {
@@ -89,6 +114,7 @@ export class RfpReportService {
       this.addSimSwapSlides(pres, site as Site);
     }
 
+    this.addOtherSitePhotoSlides(pres, site as Site);
     this.addSummarySlides(pres, site as Site, groups);
     this.addConclusionSlide(pres, site as Site, groups, options);
     this.addThankYouSlide(pres);
@@ -99,6 +125,101 @@ export class RfpReportService {
       .replace(/^_+|_+$/g, '') || 'Site';
 
     return { buffer, filename: `${safeName}_Site_RFP_Report.pptx` };
+  }
+
+  /**
+   * Builds a deck for each of `siteIds` and returns them zipped together.
+   *
+   * Decks are built one at a time rather than with `Promise.all`: each one
+   * holds a site's full set of base64 photos in memory while it renders, and
+   * running 25 of those concurrently is what would actually exhaust the
+   * container.
+   *
+   * A site that fails — deleted mid-request, bad id, corrupt image data — is
+   * recorded and skipped rather than sinking the whole batch; the archive then
+   * carries a `_generation-errors.txt` naming what went wrong. The request
+   * only fails outright if nothing at all could be generated.
+   */
+  async buildBulkSiteRfp(
+    siteIds: string[],
+    options: RfpReportOptions = {},
+  ): Promise<RfpBulkResult> {
+    // De-duplicate while preserving the order the user selected them in.
+    const ids = [...new Set(siteIds.map((id) => String(id ?? '').trim()))].filter(
+      Boolean,
+    );
+
+    if (!ids.length) {
+      throw new BadRequestException('Select at least one site');
+    }
+    if (ids.length > RFP_BULK_MAX_SITES) {
+      throw new BadRequestException(
+        `Cannot generate more than ${RFP_BULK_MAX_SITES} reports at once (received ${ids.length})`,
+      );
+    }
+
+    const zip = new JSZip();
+    const failed: RfpBulkResult['failed'] = [];
+    const used = new Set<string>();
+    let generated = 0;
+
+    for (const id of ids) {
+      try {
+        const { buffer, filename } = await this.buildSiteRfp(id, options);
+
+        // Two sites can share a name, and a duplicate path silently overwrites
+        // the earlier entry in the archive.
+        let name = filename;
+        if (used.has(name)) {
+          const stem = filename.replace(/\.pptx$/i, '');
+          let n = 2;
+          while (used.has(`${stem}_${n}.pptx`)) n++;
+          name = `${stem}_${n}.pptx`;
+        }
+        used.add(name);
+
+        zip.file(name, buffer);
+        generated++;
+      } catch (err: any) {
+        failed.push({
+          siteId: id,
+          reason: err?.message ?? 'Unknown error',
+        });
+      }
+    }
+
+    if (!generated) {
+      throw new BadRequestException(
+        `No reports could be generated. ${failed[0]?.reason ?? ''}`.trim(),
+      );
+    }
+
+    if (failed.length) {
+      zip.file(
+        '_generation-errors.txt',
+        [
+          'These sites were selected but could not be generated:',
+          '',
+          ...failed.map((f) => `  ${f.siteId}  —  ${f.reason}`),
+        ].join('\n'),
+      );
+    }
+
+    const buffer = (await zip.generateAsync({
+      type: 'nodebuffer',
+      // The payload is almost entirely already-compressed JPEG, so a higher
+      // level costs CPU for well under a percent of size.
+      compression: 'DEFLATE',
+      compressionOptions: { level: 1 },
+    })) as Buffer;
+
+    const ts = new Date().toISOString().slice(0, 10);
+    return {
+      buffer,
+      filename: `Site_RFP_Reports_${ts}.zip`,
+      generated,
+      failed,
+    };
   }
 
   // ── Slide 1: cover ───────────────────────────────────────────────────────
@@ -579,6 +700,74 @@ export class RfpReportService {
    * paging back through the photo sections. Spills onto further pages if the
    * site carries more rows than fit.
    */
+  // ── Loose site photos ────────────────────────────────────────────────────
+
+  /**
+   * Pages for `otherSitePhotos` — the free-form photos a technician adds
+   * beyond the per-unit serial/tag shots. The array holds the images
+   * themselves (base64 data URIs), with no identifiers attached, so these are
+   * laid out as a plain photo grid rather than unit cards.
+   *
+   * Six per page keeps each photo large enough to be worth including; past
+   * that the set spills onto further pages.
+   */
+  private addOtherSitePhotoSlides(pres: Pptx, site: Site): void {
+    const photos = (site.otherSitePhotos ?? [])
+      .map((p) => toPptxImageData(p))
+      .filter((p): p is string => !!p);
+
+    if (!photos.length) return;
+
+    const pages: string[][] = [];
+    for (let i = 0; i < photos.length; i += MAX_PHOTOS_PER_PAGE) {
+      pages.push(photos.slice(i, i + MAX_PHOTOS_PER_PAGE));
+    }
+
+    pages.forEach((page, pageIndex) => {
+      const slide = pres.addSlide();
+      addBackground(slide);
+      addContentHeader(
+        slide,
+        pages.length > 1
+          ? `Other Site Photos (${pageIndex + 1} of ${pages.length})`
+          : 'Other Site Photos',
+        `${site.siteName ?? ''} · ${site.tawalId ?? ''} · ${photos.length} photo${
+          photos.length === 1 ? '' : 's'
+        }`,
+      );
+
+      // Size the cards to the photos actually on this page. Median rather
+      // than mean so one stray landscape shot among portraits does not
+      // reshape the whole grid.
+      const ratios = page
+        .map((d) => imageSize(d))
+        .filter((s): s is { w: number; h: number } => !!s && s.w > 0 && s.h > 0)
+        .map((s) => s.w / s.h)
+        .sort((x, y) => x - y);
+      const aspect = ratios.length
+        ? ratios[Math.floor(ratios.length / 2)]
+        : 0.75;
+
+      const { cols, cardW, cardH, gap, originX, originY } = photoGridLayout(
+        page.length,
+        aspect,
+      );
+
+      page.forEach((data, i) => {
+        addPhotoFrame(slide, {
+          data,
+          x: originX + (i % cols) * (cardW + gap),
+          y: originY + Math.floor(i / cols) * (cardH + gap),
+          w: cardW,
+          h: cardH,
+          caption: `Photo ${pageIndex * MAX_PHOTOS_PER_PAGE + i + 1}`,
+        });
+      });
+
+      addFooter(slide, `Other Site Photos · ${site.tawalId ?? ''}`);
+    });
+  }
+
   private addSummarySlides(pres: Pptx, site: Site, groups: RfpUnitGroup[]): void {
     interface Row {
       type: string;

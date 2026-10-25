@@ -1,7 +1,9 @@
 import {
+  Body,
   Controller,
   Get,
   Header,
+  HttpCode,
   Param,
   Post,
   Query,
@@ -13,6 +15,7 @@ import { ReportsService } from './reports.service';
 import { RfpReportService } from './rfp/rfp-report.service';
 import { ReportQueryDto } from './dto/report-query.dto';
 import { RfpReportQueryDto } from './dto/rfp-report-query.dto';
+import { BulkRfpReportDto } from './dto/bulk-rfp-report.dto';
 import { JwtAuthGuard } from '../jwt/jwt-auth.guard';
 import { RolesGuard } from '../roles/roles.guard';
 import { Roles } from '../roles/roles.decorator';
@@ -76,6 +79,34 @@ export class ReportsController {
     // Exposed so the browser client can read the server-chosen filename off
     // the response rather than reconstructing it.
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+    res.send(buffer);
+  }
+
+  // Bulk variant: builds a deck per selected site and streams them back as a
+  // single .zip. POST because the site ids travel in the body — a selection of
+  // 25 would otherwise overflow practical URL length limits.
+  @Post('sites/rfp/bulk')
+  @HttpCode(200)
+  @Header('Content-Type', 'application/zip')
+  async generateBulkSiteRfp(
+    @Body() dto: BulkRfpReportDto,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    const { buffer, filename, generated, failed } =
+      await this.rfpReportService.buildBulkSiteRfp(dto.siteIds, {
+        currentStatus: dto.currentStatus,
+        nextAction: dto.nextAction,
+      });
+
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    // Partial failures cannot be reported in the body (it is the archive), so
+    // the counts ride along in headers the client surfaces as a warning.
+    res.setHeader('X-Reports-Generated', String(generated));
+    res.setHeader('X-Reports-Failed', String(failed.length));
+    res.setHeader(
+      'Access-Control-Expose-Headers',
+      'Content-Disposition, X-Reports-Generated, X-Reports-Failed',
+    );
     res.send(buffer);
   }
 }
