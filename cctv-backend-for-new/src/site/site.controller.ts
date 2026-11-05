@@ -80,6 +80,17 @@ export class SiteController {
     return this.siteService.update(id, dto, user);
   }
 
+  // Edit site data (field units, photos, sim swap, materials). Admin only.
+  @Patch(':id/data')
+  @Roles(Role.ADMIN)
+  updateSiteData(
+    @Param('id') id: string,
+    @Body() dto: SubmitSiteDto,
+    @CurrentUser() user: CurrentUserPayload,
+  ) {
+    return this.siteService.updateSiteData(id, dto, user);
+  }
+
   @Delete(':id')
   @Roles(Role.ADMIN)
   remove(@Param('id') id: string, @CurrentUser() user: CurrentUserPayload) {

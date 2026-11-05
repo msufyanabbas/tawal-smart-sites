@@ -42,6 +42,7 @@ export interface SimSwapPair {
 export interface SimSwapTenant {
   tenantName?: string;
   tenantCtCapacities?: string[];
+  meterPhoto?: string;
   ctPhasePhotos?: string[];
 }
 
@@ -207,6 +208,8 @@ export interface SiteUnitsPayload {
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
   simSwapTenants?: SimSwapTenant[];
+  simSwapCtMainPhoto?: string;
+  simSwapMeterPhoto?: string;
   // CCTV Site Installation Images
   cctvNvrPhoto?: string;
   cctvNvrMainBoxPhoto?: string;

@@ -125,3 +125,15 @@ export const useReviewSiteMutation = () => {
     },
   });
 };
+
+export const useUpdateSiteDataMutation = () => {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: SiteUnitsPayload }) =>
+      api.updateSiteData(id, payload),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: sitesKeys.all });
+      if (data?._id) qc.setQueryData(sitesKeys.detail(data._id), data);
+    },
+  });
+};

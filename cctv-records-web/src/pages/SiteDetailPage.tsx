@@ -27,6 +27,7 @@ import { SiteInfoCard } from "@/components/SiteInfoCard";
 import { CountsCard } from "@/components/CountCard";
 import { FieldEntryForm } from "@/components/FieldEntryForm";
 import { SubmittedDataView } from "@/components/SubmittedDataView";
+import { AdminSiteDataEditor } from "@/components/AdminSiteDataEditor";
 
 // All unit arrays surfaced in the admin/manager read-only view. Order matches
 // the field-entry form so the two views feel familiar.
@@ -105,6 +106,7 @@ export const SiteDetailPage: React.FC = () => {
   const [rfpOpen, setRfpOpen] = useState(false);
   const [rfpStatus, setRfpStatus] = useState("");
   const [rfpNextAction, setRfpNextAction] = useState("");
+  const [isEditingData, setIsEditingData] = useState(false);
 
   if (isLoading) return <FullPageSpinner />;
   if (error || !site) {
@@ -205,6 +207,14 @@ export const SiteDetailPage: React.FC = () => {
             </Button>
           )}
           {isAdmin && (
+            <Button
+              variant={isEditingData ? "secondary" : "primary"}
+              onClick={() => setIsEditingData((prev) => !prev)}
+            >
+              {isEditingData ? "Cancel edit site data" : "Edit site data"}
+            </Button>
+          )}
+          {isAdmin && (
             <Link to={`/sites/${site._id}/edit`} className="btn-secondary">
               Edit site
             </Link>
@@ -258,12 +268,23 @@ export const SiteDetailPage: React.FC = () => {
       <SiteInfoCard site={site} />
       <CountsCard site={site} />
 
-      {canAssign && <AssignPanel site={site} />}
-      {(showFieldEntry || (isTech && site.status?.completed?.done)) && (
-        <FieldEntryForm site={site} />
-      )}
+      {canAssign && !isEditingData && <AssignPanel site={site} />}
 
-      {showSubmittedView && <SubmittedDataView site={site} />}
+      {isAdmin && isEditingData ? (
+        <AdminSiteDataEditor
+          site={site}
+          onCancel={() => setIsEditingData(false)}
+          onSuccess={() => setIsEditingData(false)}
+        />
+      ) : (
+        <>
+          {(showFieldEntry || (isTech && site.status?.completed?.done)) && (
+            <FieldEntryForm site={site} />
+          )}
+
+          {showSubmittedView && <SubmittedDataView site={site} />}
+        </>
+      )}
       {isTech && !site.status?.processing?.done && (
         <div className="card">
           <div className="card-body text-sm text-slate-500">

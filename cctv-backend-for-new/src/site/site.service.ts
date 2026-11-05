@@ -402,6 +402,23 @@ export class SiteService {
     return this.serialize(doc);
   }
 
+  // Update site field data (units, photos, sim swap, materials) directly by Admin.
+  async updateSiteData(
+    id: string,
+    dto: SubmitSiteDto,
+    actor: CurrentUserPayload,
+  ) {
+    if (actor.role !== Role.ADMIN) {
+      throw new ForbiddenException('Only admins can edit site data');
+    }
+    const doc = await this.siteModel.findById(id);
+    if (!doc) throw new NotFoundException('Site not found');
+
+    this.applyUnitArrays(doc, dto);
+    await doc.save();
+    return this.serialize(doc);
+  }
+
   async remove(id: string, actor: CurrentUserPayload) {
     if (actor.role !== Role.ADMIN) {
       throw new ForbiddenException('Only admins can delete sites');
@@ -565,7 +582,10 @@ export class SiteService {
       'numberOfSilboGateways',
     ];
     for (const k of keys) {
-      if (dto[k] !== undefined) (doc as any)[k] = dto[k];
+      if (dto[k] !== undefined) {
+        (doc as any)[k] = dto[k];
+        doc.markModified(k);
+      }
     }
     // Synchronize array and legacy single photo fields for CCTV
     if (
@@ -576,6 +596,8 @@ export class SiteService {
       (doc as any).cctvCameraPhoto = dto.cctvCameraPhotos[0] || '';
     } else if (dto.cctvCameraPhoto && !dto.cctvCameraPhotos) {
       (doc as any).cctvCameraPhotos = [dto.cctvCameraPhoto];
+    } else if (dto.cctvCameraPhotos && dto.cctvCameraPhotos.length === 0) {
+      (doc as any).cctvCameraPhoto = '';
     }
     if (
       dto.cctvHardDiskPhotos &&
@@ -585,11 +607,14 @@ export class SiteService {
       (doc as any).cctvHardDiskPhoto = dto.cctvHardDiskPhotos[0] || '';
     } else if (dto.cctvHardDiskPhoto && !dto.cctvHardDiskPhotos) {
       (doc as any).cctvHardDiskPhotos = [dto.cctvHardDiskPhoto];
+    } else if (dto.cctvHardDiskPhotos && dto.cctvHardDiskPhotos.length === 0) {
+      (doc as any).cctvHardDiskPhoto = '';
     }
     // Handle nested materials object - store ONLY as a nested sub-document
     // (separate from admin-set top-level counts)
     if (dto.materials !== undefined) {
       (doc as any).materials = dto.materials;
+      doc.markModified('materials');
     }
   }
 

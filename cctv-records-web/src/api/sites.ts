@@ -200,6 +200,14 @@ export const submitSite = async (
   return data;
 };
 
+export const updateSiteData = async (
+  id: string,
+  payload: SiteUnitsPayload,
+): Promise<Site> => {
+  const { data } = await apiClient.patch<Site>(`/sites/${id}/data`, payload);
+  return data;
+};
+
 export const reviewSite = async (
   id: string,
   remarks?: string,
