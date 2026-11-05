@@ -110,3 +110,57 @@ export const downloadSiteRfpReport = async (
   a.remove();
   URL.revokeObjectURL(url);
 };
+
+/** Outcome of a bulk run, so the caller can warn about partial failures. */
+export interface BulkRfpResult {
+  generated: number;
+  failed: number;
+}
+
+/**
+ * Generates an RFP deck for each selected site and downloads them as one .zip.
+ *
+ * POST rather than GET because the site ids travel in the body — a selection
+ * of 25 would otherwise overflow practical URL length limits. The archive can
+ * be large and each deck is built server-side, so the caller should expect
+ * this to take appreciably longer than a single report.
+ */
+export const downloadBulkSiteRfpReports = async (
+  siteIds: string[],
+  narrative?: { currentStatus?: string; nextAction?: string },
+): Promise<BulkRfpResult> => {
+  const body: Record<string, unknown> = { siteIds };
+  if (narrative?.currentStatus?.trim())
+    body.currentStatus = narrative.currentStatus.trim();
+  if (narrative?.nextAction?.trim())
+    body.nextAction = narrative.nextAction.trim();
+
+  const response = await apiClient.post<Blob>(
+    "/reports/sites/rfp/bulk",
+    body,
+    { responseType: "blob" },
+  );
+
+  const disposition = String(response.headers?.["content-disposition"] ?? "");
+  const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+
+  const blob = new Blob([response.data], { type: "application/zip" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = match?.[1]
+    ? decodeURIComponent(match[1])
+    : `Site_RFP_Reports_${new Date().toISOString().slice(0, 10)}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  // The body is the archive, so the server reports counts in headers.
+  const generated = Number(response.headers?.["x-reports-generated"]);
+  const failed = Number(response.headers?.["x-reports-failed"]);
+  return {
+    generated: Number.isFinite(generated) ? generated : siteIds.length,
+    failed: Number.isFinite(failed) ? failed : 0,
+  };
+};

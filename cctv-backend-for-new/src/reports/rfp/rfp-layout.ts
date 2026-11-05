@@ -340,6 +340,81 @@ export const gridLayout = (
   };
 };
 
+/** Most loose site photos we place on one page before spilling onto a second. */
+export const MAX_PHOTOS_PER_PAGE = 6;
+
+/** Padding and caption strip `addPhotoFrame` reserves inside each card. */
+const FRAME_PAD = 0.14;
+const FRAME_CAPTION = 0.32;
+
+/**
+ * Geometry for a page of plain photos (no serial/tag captions).
+ *
+ * Separate from `gridLayout` because these cards hold nothing but a picture,
+ * so the card is sized to the picture rather than the other way round: the
+ * column count is chosen to give cells closest to the photos' own aspect
+ * ratio, then each card is shrunk to exactly fit that ratio and the whole
+ * block is centred. Without this, portrait phone photos — which is most of
+ * them — sit in wide landscape cards with dead space either side.
+ *
+ * `aspect` is width / height of a typical photo on the page.
+ */
+export const photoGridLayout = (
+  count: number,
+  aspect = 0.75,
+): { cols: number; cardW: number; cardH: number; originX: number; originY: number; gap: number } => {
+  const gap = 0.24;
+  const safeAspect = aspect > 0 && Number.isFinite(aspect) ? aspect : 0.75;
+
+  // Try every column count and keep the one whose cards come out largest
+  // once fitted to the photo aspect — that is the arrangement wasting least.
+  let best = { cols: 1, cardW: 0, cardH: 0, area: -1 };
+  for (let cols = 1; cols <= Math.min(count, 4); cols++) {
+    const rows = Math.ceil(count / cols);
+    const cellW = (GRID.w - gap * (cols - 1)) / cols;
+    const cellH = (GRID.h - gap * (rows - 1)) / rows;
+
+    // Fit the photo's aspect into the cell's usable interior.
+    const maxInnerW = cellW - FRAME_PAD * 2;
+    const maxInnerH = cellH - FRAME_PAD * 2 - FRAME_CAPTION;
+    if (maxInnerW <= 0.3 || maxInnerH <= 0.3) continue;
+
+    let innerH = maxInnerH;
+    let innerW = innerH * safeAspect;
+    if (innerW > maxInnerW) {
+      innerW = maxInnerW;
+      innerH = innerW / safeAspect;
+    }
+
+    const area = innerW * innerH;
+    if (area > best.area) {
+      best = {
+        cols,
+        cardW: innerW + FRAME_PAD * 2,
+        cardH: innerH + FRAME_PAD * 2 + FRAME_CAPTION,
+        area,
+      };
+    }
+  }
+
+  const { cols, cardW, cardH } = best.area > 0
+    ? best
+    : { cols: Math.min(count, 3), cardW: GRID.w / 3, cardH: GRID.h / 2 };
+
+  const rows = Math.ceil(count / cols);
+  const blockW = cols * cardW + gap * (cols - 1);
+  const blockH = rows * cardH + gap * (rows - 1);
+
+  return {
+    cols,
+    cardW,
+    cardH,
+    gap,
+    originX: GRID.x + Math.max(0, (GRID.w - blockW) / 2),
+    originY: GRID.y + Math.max(0, (GRID.h - blockH) / 2),
+  };
+};
+
 /** Bare photo slot with no card of its own — used inside a unit card. */
 const addInnerPhoto = (
   slide: PptxSlide,
