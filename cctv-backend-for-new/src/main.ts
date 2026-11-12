@@ -2,7 +2,11 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as bodyParser from 'body-parser';
+import * as path from 'path';
 import * as dotenv from 'dotenv';
+
+// Look for .env in project root or current working directory
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
 async function bootstrap() {
@@ -33,6 +37,9 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(3000, '0.0.0.0');
+  const port = process.env.PORT || 3000;
+  // Listen on all interfaces (IPv4 and IPv6)
+  await app.listen(port);
+  console.log(`Backend server is running on http://localhost:${port}`);
 }
 bootstrap();

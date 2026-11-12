@@ -120,9 +120,19 @@ export class AuthService implements OnModuleInit {
   }
 
   async requestPasswordReset(email: string) {
-    // Always return the same shape so we don't leak which emails exist.
-    const user: any = await this.userService.findByEmail(email);
-    if (!user || !user.isApproved) {
+    const normalizedEmail = (email || '').toLowerCase().trim();
+    // Always return the same public shape to prevent user enumeration
+    const user: any = await this.userService.findByEmail(normalizedEmail);
+    if (!user) {
+      this.logger.warn(
+        `Password reset requested for non-existent email "${normalizedEmail}". No email dispatched.`,
+      );
+      return { message: 'If that account exists, a reset link has been sent.' };
+    }
+    if (!user.isApproved) {
+      this.logger.warn(
+        `Password reset requested for unapproved user "${normalizedEmail}". No email dispatched.`,
+      );
       return { message: 'If that account exists, a reset link has been sent.' };
     }
     const resetToken = await this.tokenService.saveResetToken(user._id);
