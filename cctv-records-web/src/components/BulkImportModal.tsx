@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Button } from '@/components/Button';
 import { bulkCreateSites } from '@/api/sites';
 import { sitesKeys } from '@/hooks/useSites';
+import { useUsersQuery } from '@/hooks/useUsers';
 import { parseImportFile, type ParsedRow } from '@/utils/sitesExcel';
 import { apiErrorMessage } from '@/utils/helpers';
 
@@ -16,6 +17,12 @@ interface Props {
 export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
+  const { data: allUsers = [] } = useUsersQuery();
+  const existingUserEmails = useMemo(
+    () => new Set(allUsers.map((u) => u.email.toLowerCase().trim())),
+    [allUsers],
+  );
+
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState<string>('');
   const [parsing, setParsing] = useState(false);
@@ -40,7 +47,7 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
     setParsing(true);
     setResult(null);
     try {
-      const parsed = await parseImportFile(f);
+      const parsed = await parseImportFile(f, existingUserEmails);
       setRows(parsed);
       setFileName(f.name);
     } catch (err) {
@@ -131,6 +138,7 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
                           <th className="px-3 py-2 font-semibold">Tawal ID</th>
                           <th className="px-3 py-2 font-semibold">Region</th>
                           <th className="px-3 py-2 font-semibold">Scope</th>
+                          <th className="px-3 py-2 font-semibold">Assigned email</th>
                           <th className="px-3 py-2 font-semibold">Errors</th>
                         </tr>
                       </thead>
@@ -151,6 +159,7 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
                               <td className="px-3 py-1.5">{r.payload.tawalId}</td>
                               <td className="px-3 py-1.5">{r.payload.region}</td>
                               <td className="px-3 py-1.5">{r.payload.rmsScope}</td>
+                              <td className="px-3 py-1.5">{r.payload.assignedToEmail || '–'}</td>
                               <td className="px-3 py-1.5 text-red-700">
                                 {r.errors.join('; ')}
                               </td>

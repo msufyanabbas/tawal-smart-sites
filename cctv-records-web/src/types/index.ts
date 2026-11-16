@@ -82,6 +82,7 @@ export interface Site {
   tcnNumber: string;
   rmsScope: RmsScope;
   itemCode?: string;
+  assignedToEmail?: string;
 
   numberOfRms: number;
   numberOfExpanders: number;
@@ -150,6 +151,7 @@ export interface SiteCreatePayload {
   tcnNumber: string;
   rmsScope: RmsScope;
   itemCode?: string;
+  assignedToEmail?: string;
   numberOfRms?: number;
   numberOfExpanders?: number;
   numberOfSims?: number;

@@ -18,6 +18,7 @@ export const IMPORT_COLUMNS = [
   "siteCity",
   "tcnNumber",
   "rmsScope",
+  "assignedToEmail",
   // ── RMS scope fields ───────────────────────────────────────────────────
   "numberOfRms",
   "numberOfExpanders",
@@ -49,6 +50,7 @@ const IMPORT_DISPLAY_HEADERS: Record<(typeof IMPORT_COLUMNS)[number], string> =
     siteCity: "City",
     tcnNumber: "TCN Number",
     rmsScope: "RMS Scope",
+    assignedToEmail: "Assigned Email",
     numberOfRms: "# RMS Units",
     numberOfExpanders: "# Expanders",
     numberOfSims: "# SIMs",
@@ -115,6 +117,10 @@ export const downloadImportTemplate = () => {
     ],
     ["tcnNumber", "Required. Free text."],
     ["rmsScope", `Required. One of: ${Object.values(RmsScope).join(", ")}`],
+    [
+      "assignedToEmail",
+      "Optional. Email of the user/technician to auto-assign the site to upon import. Must match an existing user in the database.",
+    ],
 
     // ── RMS scope ─────────────────────────────────────────────────────────
     ["--- RMS scope fields (rmsScope = RMS) ---", ""],
@@ -234,7 +240,10 @@ const coerceInt = (v: unknown): number | undefined => {
 const isCellEmpty = (cell: unknown): boolean =>
   cell === undefined || cell === null || String(cell).trim() === "";
 
-export const parseImportFile = async (file: File): Promise<ParsedRow[]> => {
+export const parseImportFile = async (
+  file: File,
+  existingUserEmails?: Set<string>,
+): Promise<ParsedRow[]> => {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const sheet = wb.Sheets[wb.SheetNames[0]];
@@ -269,7 +278,7 @@ export const parseImportFile = async (file: File): Promise<ParsedRow[]> => {
 
     // Spreadsheet row number is the array index + 4 (1-based), so the user
     // can locate the failing row in Excel even after we skip blank rows.
-    out.push(validateRow(obj, i + 4));
+    out.push(validateRow(obj, i + 4, existingUserEmails));
   }
   return out;
 };
@@ -292,6 +301,7 @@ const matchEnum = <T extends string>(
 const validateRow = (
   row: Record<string, unknown>,
   rowNumber: number,
+  existingUserEmails?: Set<string>,
 ): ParsedRow => {
   normalizeScopeInput(row);
 
@@ -321,6 +331,26 @@ const validateRow = (
     );
   }
 
+  // Assigned email (optional): accept assignedToEmail, technicianEmail, or email
+  const emailRaw =
+    str("assignedToEmail") || str("technicianEmail") || str("email");
+  let assignedToEmail: string | undefined = undefined;
+  if (emailRaw) {
+    assignedToEmail = emailRaw.toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(assignedToEmail)) {
+      errors.push("assignedToEmail must be a valid email address");
+    } else if (
+      existingUserEmails &&
+      existingUserEmails.size > 0 &&
+      !existingUserEmails.has(assignedToEmail)
+    ) {
+      errors.push(
+        `User with email "${assignedToEmail}" does not exist in the database`,
+      );
+    }
+  }
+
   // SIM Swap optional admin pre-fill fields
   const simSwapSiteTypeRaw = str("simSwapSiteType");
   const simSwapSiteType = simSwapSiteTypeRaw
@@ -343,6 +373,7 @@ const validateRow = (
     siteCity,
     tcnNumber,
     rmsScope: rmsScope as RmsScope,
+    ...(assignedToEmail ? { assignedToEmail } : {}),
     numberOfRms: coerceInt(row.numberOfRms),
     numberOfExpanders: coerceInt(row.numberOfExpanders),
     numberOfSims: coerceInt(row.numberOfSims),
