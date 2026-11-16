@@ -39,6 +39,9 @@ export class CreateSiteDto {
 
   @IsOptional() @IsString() itemCode?: string;
 
+  // Optional user/technician email to auto-assign the site upon creation/import
+  @IsOptional() @IsString() assignedToEmail?: string;
+
   // ── Counts (optional at the DTO level; service validates per scope) ────
   @IsOptional() @IsInt() @Min(0) numberOfRms?: number;
   @IsOptional() @IsInt() @Min(0) numberOfExpanders?: number;

@@ -162,6 +162,10 @@ export class Site {
   @Prop({ type: String, default: '' })
   itemCode?: string;
 
+  // Assigned user/technician email
+  @Prop({ type: String, default: '' })
+  assignedToEmail?: string;
+
   // ── Scope-specific counts (admin-supplied; see service for validation) ─
   @Prop({ type: Number, default: 0, min: 0 }) numberOfRms: number;
   @Prop({ type: Number, default: 0, min: 0 }) numberOfExpanders: number;

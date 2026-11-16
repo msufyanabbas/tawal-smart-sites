@@ -155,12 +155,35 @@ export class SiteService {
     const exists = await this.siteModel.findOne({ tawalId: dto.tawalId });
     if (exists) throw new BadRequestException('tawalId already exists');
 
+    let assignedStatus: any = { done: false };
+    let assignedEmail = '';
+    if (dto.assignedToEmail && dto.assignedToEmail.trim()) {
+      const email = dto.assignedToEmail.toLowerCase().trim();
+      const user = await this.userModel.findOne({ email });
+      if (!user) {
+        throw new BadRequestException(
+          `User with email "${dto.assignedToEmail.trim()}" does not exist in the database`,
+        );
+      }
+      assignedEmail = user.email;
+      assignedStatus = {
+        done: true,
+        at: new Date(),
+        assignedTo: user._id,
+        assignedBy: new Types.ObjectId(actor.userId),
+      };
+    }
+
     const counts = this.deriveCounts(dto);
     const doc = new this.siteModel({
       ...dto,
       ...counts,
+      assignedToEmail: assignedEmail,
       createdBy: new Types.ObjectId(actor.userId),
-      status: { created: { done: true, at: new Date() } },
+      status: {
+        created: { done: true, at: new Date() },
+        assigned: assignedStatus,
+      },
     });
     await doc.save();
     return this.serialize(doc);
@@ -186,12 +209,36 @@ export class SiteService {
       try {
         const exists = await this.siteModel.findOne({ tawalId: dto.tawalId });
         if (exists) throw new Error(`tawalId ${dto.tawalId} already exists`);
+
+        let assignedStatus: any = { done: false };
+        let assignedEmail = '';
+        if (dto.assignedToEmail && dto.assignedToEmail.trim()) {
+          const email = dto.assignedToEmail.toLowerCase().trim();
+          const user = await this.userModel.findOne({ email });
+          if (!user) {
+            throw new Error(
+              `User with email "${dto.assignedToEmail.trim()}" does not exist in the database`,
+            );
+          }
+          assignedEmail = user.email;
+          assignedStatus = {
+            done: true,
+            at: new Date(),
+            assignedTo: user._id,
+            assignedBy: new Types.ObjectId(actor.userId),
+          };
+        }
+
         const counts = this.deriveCounts(dto);
         const doc = new this.siteModel({
           ...dto,
           ...counts,
+          assignedToEmail: assignedEmail,
           createdBy: new Types.ObjectId(actor.userId),
-          status: { created: { done: true, at: new Date() } },
+          status: {
+            created: { done: true, at: new Date() },
+            assigned: assignedStatus,
+          },
         });
         await doc.save();
         created++;
@@ -455,6 +502,7 @@ export class SiteService {
       assignedTo: new Types.ObjectId(technicianId),
       assignedBy: new Types.ObjectId(actor.userId),
     } as any;
+    doc.assignedToEmail = technician.email;
     // Re-assigning a previously-completed site resets later milestones so the
     // newly-assigned technician starts from "processing".
     doc.status.processing = { done: false } as any;

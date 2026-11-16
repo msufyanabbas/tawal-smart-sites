@@ -1,13 +1,13 @@
-import { useMemo, useRef, useState } from 'react';
-import toast from 'react-hot-toast';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMemo, useRef, useState } from "react";
+import toast from "react-hot-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
-import { Button } from '@/components/Button';
-import { bulkCreateSites } from '@/api/sites';
-import { sitesKeys } from '@/hooks/useSites';
-import { useUsersQuery } from '@/hooks/useUsers';
-import { parseImportFile, type ParsedRow } from '@/utils/sitesExcel';
-import { apiErrorMessage } from '@/utils/helpers';
+import { Button } from "@/components/Button";
+import { bulkCreateSites } from "@/api/sites";
+import { sitesKeys } from "@/hooks/useSites";
+import { useUsersQuery } from "@/hooks/useUsers";
+import { parseImportFile, type ParsedRow } from "@/utils/sitesExcel";
+import { apiErrorMessage } from "@/utils/helpers";
 
 interface Props {
   open: boolean;
@@ -24,10 +24,13 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
   );
 
   const [rows, setRows] = useState<ParsedRow[]>([]);
-  const [fileName, setFileName] = useState<string>('');
+  const [fileName, setFileName] = useState<string>("");
   const [parsing, setParsing] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [result, setResult] = useState<{ created: number; failed: Array<{ row: number; reason: string }> } | null>(null);
+  const [result, setResult] = useState<{
+    created: number;
+    failed: Array<{ row: number; reason: string }>;
+  } | null>(null);
 
   if (!open) return null;
 
@@ -36,9 +39,9 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
 
   const reset = () => {
     setRows([]);
-    setFileName('');
+    setFileName("");
     setResult(null);
-    if (fileRef.current) fileRef.current.value = '';
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,7 +54,7 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
       setRows(parsed);
       setFileName(f.name);
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to parse file'));
+      toast.error(apiErrorMessage(err, "Failed to parse file"));
     } finally {
       setParsing(false);
     }
@@ -59,7 +62,7 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
 
   const onConfirm = async () => {
     if (validRows.length === 0) {
-      toast.error('No valid rows to import');
+      toast.error("No valid rows to import");
       return;
     }
     setImporting(true);
@@ -67,9 +70,9 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
       const r = await bulkCreateSites(validRows.map((v) => v.payload));
       setResult(r);
       qc.invalidateQueries({ queryKey: sitesKeys.all });
-      toast.success(`Imported ${r.created} site${r.created === 1 ? '' : 's'}`);
+      toast.success(`Imported ${r.created} site${r.created === 1 ? "" : "s"}`);
     } catch (err) {
-      toast.error(apiErrorMessage(err, 'Failed to import sites'));
+      toast.error(apiErrorMessage(err, "Failed to import sites"));
     } finally {
       setImporting(false);
     }
@@ -87,7 +90,9 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
         className="w-full max-w-5xl rounded-xl bg-white shadow-2xl"
       >
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <h2 className="text-lg font-semibold text-slate-900">Bulk import sites</h2>
+          <h2 className="text-lg font-semibold text-slate-900">
+            Bulk import sites
+          </h2>
           <button
             type="button"
             onClick={onClose}
@@ -107,13 +112,18 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
                   type="file"
                   accept=".xlsx,.xls"
                   onChange={onPick}
-                  className="block text-sm text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-700 hover:file:bg-brand-100"
+                  className="block text-sm text-black file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-black/80 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-brand-100  "
                 />
+
                 {fileName && (
-                  <span className="text-xs text-slate-500">Loaded: {fileName}</span>
+                  <span className="text-xs text-slate-500">
+                    Loaded: {fileName}
+                  </span>
                 )}
                 {rows.length > 0 && (
-                  <Button type="button" variant="secondary" onClick={reset}>Clear</Button>
+                  <Button type="button" variant="secondary" onClick={reset}>
+                    Clear
+                  </Button>
                 )}
               </div>
 
@@ -122,10 +132,18 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
               {rows.length > 0 && (
                 <>
                   <div className="text-sm text-slate-600">
-                    {rows.length} row{rows.length === 1 ? '' : 's'} ·{' '}
-                    <span className="font-semibold text-green-700">{validRows.length} valid</span>
+                    {rows.length} row{rows.length === 1 ? "" : "s"} ·{" "}
+                    <span className="font-semibold text-green-700">
+                      {validRows.length} valid
+                    </span>
                     {invalidCount > 0 && (
-                      <> · <span className="font-semibold text-red-700">{invalidCount} with errors</span></>
+                      <>
+                        {" "}
+                        ·{" "}
+                        <span className="font-semibold text-red-700">
+                          {invalidCount} with errors
+                        </span>
+                      </>
                     )}
                   </div>
                   <div className="max-h-96 overflow-auto rounded-lg border border-slate-200">
@@ -138,7 +156,9 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
                           <th className="px-3 py-2 font-semibold">Tawal ID</th>
                           <th className="px-3 py-2 font-semibold">Region</th>
                           <th className="px-3 py-2 font-semibold">Scope</th>
-                          <th className="px-3 py-2 font-semibold">Assigned email</th>
+                          <th className="px-3 py-2 font-semibold">
+                            Assigned email
+                          </th>
                           <th className="px-3 py-2 font-semibold">Errors</th>
                         </tr>
                       </thead>
@@ -146,22 +166,41 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
                         {rows.map((r) => {
                           const ok = r.errors.length === 0;
                           return (
-                            <tr key={r.rowNumber} className={ok ? '' : 'bg-red-50'}>
-                              <td className="px-3 py-1.5 text-slate-500">{r.rowNumber}</td>
+                            <tr
+                              key={r.rowNumber}
+                              className={ok ? "" : "bg-red-50"}
+                            >
+                              <td className="px-3 py-1.5 text-slate-500">
+                                {r.rowNumber}
+                              </td>
                               <td className="px-3 py-1.5">
                                 {ok ? (
-                                  <span className="font-semibold text-green-700">✓ valid</span>
+                                  <span className="font-semibold text-green-700">
+                                    ✓ valid
+                                  </span>
                                 ) : (
-                                  <span className="font-semibold text-red-700">✗ error</span>
+                                  <span className="font-semibold text-red-700">
+                                    ✗ error
+                                  </span>
                                 )}
                               </td>
-                              <td className="px-3 py-1.5">{r.payload.siteName}</td>
-                              <td className="px-3 py-1.5">{r.payload.tawalId}</td>
-                              <td className="px-3 py-1.5">{r.payload.region}</td>
-                              <td className="px-3 py-1.5">{r.payload.rmsScope}</td>
-                              <td className="px-3 py-1.5">{r.payload.assignedToEmail || '–'}</td>
+                              <td className="px-3 py-1.5">
+                                {r.payload.siteName}
+                              </td>
+                              <td className="px-3 py-1.5">
+                                {r.payload.tawalId}
+                              </td>
+                              <td className="px-3 py-1.5">
+                                {r.payload.region}
+                              </td>
+                              <td className="px-3 py-1.5">
+                                {r.payload.rmsScope}
+                              </td>
+                              <td className="px-3 py-1.5">
+                                {r.payload.assignedToEmail || "–"}
+                              </td>
                               <td className="px-3 py-1.5 text-red-700">
-                                {r.errors.join('; ')}
+                                {r.errors.join("; ")}
                               </td>
                             </tr>
                           );
@@ -177,17 +216,21 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
           {result && (
             <div className="space-y-3">
               <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-                Created <span className="font-semibold">{result.created}</span> site
-                {result.created === 1 ? '' : 's'}.
+                Created <span className="font-semibold">{result.created}</span>{" "}
+                site
+                {result.created === 1 ? "" : "s"}.
               </div>
               {result.failed.length > 0 && (
                 <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
                   <p className="text-sm font-semibold text-red-800">
-                    {result.failed.length} row{result.failed.length === 1 ? '' : 's'} failed:
+                    {result.failed.length} row
+                    {result.failed.length === 1 ? "" : "s"} failed:
                   </p>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-red-700">
                     {result.failed.map((f) => (
-                      <li key={f.row}>Row {f.row}: {f.reason}</li>
+                      <li key={f.row}>
+                        Row {f.row}: {f.reason}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -198,10 +241,20 @@ export const BulkImportModal: React.FC<Props> = ({ open, onClose }) => {
 
         <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
           {result ? (
-            <Button type="button" onClick={() => { reset(); onClose(); }}>Done</Button>
+            <Button
+              type="button"
+              onClick={() => {
+                reset();
+                onClose();
+              }}
+            >
+              Done
+            </Button>
           ) : (
             <>
-              <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
+              <Button type="button" variant="secondary" onClick={onClose}>
+                Cancel
+              </Button>
               <Button
                 type="button"
                 onClick={onConfirm}
