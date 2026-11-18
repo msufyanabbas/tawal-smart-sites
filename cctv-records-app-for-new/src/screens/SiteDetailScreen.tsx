@@ -394,13 +394,21 @@ const SiteDetailScreen: React.FC = () => {
         const hdCount = Math.max(0, res.data.numberOfHardDisks ?? 0);
 
         seeded.cctvCameraPhotos = Array.from({ length: cCount }, (_, i) => {
-          return res.data.cctvCameraPhotos?.[i] ?? (i === 0 ? (res.data.cctvCameraPhoto ?? "") : "");
+          return (
+            res.data.cctvCameraPhotos?.[i] ??
+            (i === 0 ? (res.data.cctvCameraPhoto ?? "") : "")
+          );
         });
         seeded.cctvHardDiskPhotos = Array.from({ length: hdCount }, (_, i) => {
-          return res.data.cctvHardDiskPhotos?.[i] ?? (i === 0 ? (res.data.cctvHardDiskPhoto ?? "") : "");
+          return (
+            res.data.cctvHardDiskPhotos?.[i] ??
+            (i === 0 ? (res.data.cctvHardDiskPhoto ?? "") : "")
+          );
         });
-        seeded.cctvCameraPhoto = seeded.cctvCameraPhotos[0] ?? res.data.cctvCameraPhoto ?? "";
-        seeded.cctvHardDiskPhoto = seeded.cctvHardDiskPhotos[0] ?? res.data.cctvHardDiskPhoto ?? "";
+        seeded.cctvCameraPhoto =
+          seeded.cctvCameraPhotos[0] ?? res.data.cctvCameraPhoto ?? "";
+        seeded.cctvHardDiskPhoto =
+          seeded.cctvHardDiskPhotos[0] ?? res.data.cctvHardDiskPhoto ?? "";
         seeded.otherSitePhotos = res.data.otherSitePhotos ?? [];
         // Seed counts
         seeded.numberOfRms = res.data.numberOfRms ?? 0;
