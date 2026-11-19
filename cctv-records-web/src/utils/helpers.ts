@@ -39,13 +39,90 @@ export const apiErrorMessage = (error: unknown, fallback = 'Something went wrong
   return fallback;
 };
 
+export const compressDataUrlImage = (
+  dataUrl: string,
+  maxDimension = 1024,
+  quality = 0.6,
+): Promise<string> =>
+  new Promise((resolve) => {
+    if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+      resolve(dataUrl);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width >= height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, width);
+        canvas.height = Math.max(1, height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(dataUrl);
+          return;
+        }
+        // Fill white background before drawing so transparent PNGs don't turn black in JPEG
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed.length < dataUrl.length ? compressed : dataUrl);
+      } catch {
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+
 export const readFileAsDataUrl = (file: File): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(reader.error);
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = async () => {
+      const raw = reader.result as string;
+      const compressed = await compressDataUrlImage(raw);
+      resolve(compressed);
+    };
     reader.readAsDataURL(file);
   });
+
+export const compressPayloadImages = async <T>(
+  node: T,
+  thresholdBytes = 120 * 1024,
+): Promise<T> => {
+  if (typeof node === 'string') {
+    if (node.startsWith('data:image/') && node.length > thresholdBytes) {
+      return (await compressDataUrlImage(node)) as unknown as T;
+    }
+    return node;
+  }
+  if (Array.isArray(node)) {
+    const out = await Promise.all(
+      node.map((item) => compressPayloadImages(item, thresholdBytes)),
+    );
+    return out as unknown as T;
+  }
+  if (node && typeof node === 'object') {
+    const entries = await Promise.all(
+      Object.entries(node as Record<string, unknown>).map(async ([k, v]) => [
+        k,
+        await compressPayloadImages(v, thresholdBytes),
+      ]),
+    );
+    return Object.fromEntries(entries) as T;
+  }
+  return node;
+};
 
 // Five status milestones in their canonical display order.
 export const STATUS_STEPS: Array<{

@@ -2,6 +2,7 @@
 import type PptxGenJS from 'pptxgenjs';
 import { SMART_LIFE_LOGO } from './rfp-assets';
 import { COLORS, FONT, PANEL_W, SIZE, SLIDE_H, SLIDE_W, STRIPE } from './rfp-theme';
+import { resolveStoredImage } from '../../site/image-storage.util';
 
 /** Convenience alias — `Slide` lives on the pptxgenjs namespace. */
 export type PptxSlide = PptxGenJS.Slide;
@@ -14,8 +15,9 @@ export type PptxSlide = PptxGenJS.Slide;
 
 /** Strip a `data:` URI prefix; pptxgenjs wants `image/jpeg;base64,...`. */
 export const toPptxImageData = (value?: string): string | null => {
-  if (!value) return null;
-  const v = value.trim();
+  const resolved = resolveStoredImage(value);
+  if (!resolved) return null;
+  const v = resolved.trim();
   if (!v) return null;
   if (v.startsWith('data:')) {
     const payload = v.slice(5);

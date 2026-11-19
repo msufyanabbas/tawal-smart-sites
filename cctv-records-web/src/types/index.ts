@@ -39,11 +39,34 @@ export interface SimSwapPair {
   oldSerialImage?: string;
 }
 
+export interface MeterLineDetails {
+  redLineVoltage?: string;
+  redLineVoltageImage?: string;
+  yellowLineVoltage?: string;
+  yellowLineVoltageImage?: string;
+  blueLineVoltage?: string;
+  blueLineVoltageImage?: string;
+
+  redLineCurrent?: string;
+  redLineCurrentImage?: string;
+  yellowLineCurrent?: string;
+  yellowLineCurrentImage?: string;
+  blueLineCurrent?: string;
+  blueLineCurrentImage?: string;
+}
+
 export interface SimSwapTenant {
   tenantName?: string;
   tenantCtCapacities?: string[];
   meterPhoto?: string;
   ctPhasePhotos?: string[];
+}
+
+export interface AssignedTenantOnSiteDetails {
+  tenantName?: string;
+  smartMeterDetails?: MeterLineDetails;
+  multiMeterDetails?: MeterLineDetails;
+  itocDetails?: MeterLineDetails;
 }
 
 export type SimSwapSiteType = "green_field" | "roof_top";
@@ -107,6 +130,7 @@ export interface Site {
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
   simSwapTenants?: SimSwapTenant[];
+  assignedTenantsOnSIteDetails?: AssignedTenantOnSiteDetails[];
   simSwapCtMainPhoto?: string;
   simSwapMeterPhoto?: string;
 
@@ -210,6 +234,7 @@ export interface SiteUnitsPayload {
   simSwapLatitude?: number | null;
   simSwapLongitude?: number | null;
   simSwapTenants?: SimSwapTenant[];
+  assignedTenantsOnSIteDetails?: AssignedTenantOnSiteDetails[];
   simSwapCtMainPhoto?: string;
   simSwapMeterPhoto?: string;
   // CCTV Site Installation Images
@@ -224,6 +249,7 @@ export interface SiteUnitsPayload {
   // Materials (nested object for material counts)
   materials?: SiteMaterialsPayload;
   // Counts (kept for backward compatibility)
+  numberOfTenants?: number;
   numberOfRms?: number;
   numberOfExpanders?: number;
   numberOfSims?: number;

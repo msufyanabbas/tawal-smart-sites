@@ -17,6 +17,10 @@ import {
 import { Role } from '../user/role.enum';
 import { User, UserDocument } from '../user/user.schema';
 import { CurrentUserPayload } from '../decorators/current-user.decorator';
+import {
+  externalizeLargeImages,
+  hydrateExternalizedImages,
+} from './image-storage.util';
 
 @Injectable()
 export class SiteService {
@@ -344,6 +348,42 @@ export class SiteService {
       simSwapMeterPhoto: 0,
       'simSwapTenants.meterPhoto': 0,
       'simSwapTenants.ctPhasePhotos': 0,
+      'simSwapTenants.smartMeterDetails.redLineVoltageImage': 0,
+      'simSwapTenants.smartMeterDetails.yellowLineVoltageImage': 0,
+      'simSwapTenants.smartMeterDetails.blueLineVoltageImage': 0,
+      'simSwapTenants.smartMeterDetails.redLineCurrentImage': 0,
+      'simSwapTenants.smartMeterDetails.yellowLineCurrentImage': 0,
+      'simSwapTenants.smartMeterDetails.blueLineCurrentImage': 0,
+      'simSwapTenants.multiMeterDetails.redLineVoltageImage': 0,
+      'simSwapTenants.multiMeterDetails.yellowLineVoltageImage': 0,
+      'simSwapTenants.multiMeterDetails.blueLineVoltageImage': 0,
+      'simSwapTenants.multiMeterDetails.redLineCurrentImage': 0,
+      'simSwapTenants.multiMeterDetails.yellowLineCurrentImage': 0,
+      'simSwapTenants.multiMeterDetails.blueLineCurrentImage': 0,
+      'simSwapTenants.itocDetails.redLineVoltageImage': 0,
+      'simSwapTenants.itocDetails.yellowLineVoltageImage': 0,
+      'simSwapTenants.itocDetails.blueLineVoltageImage': 0,
+      'simSwapTenants.itocDetails.redLineCurrentImage': 0,
+      'simSwapTenants.itocDetails.yellowLineCurrentImage': 0,
+      'simSwapTenants.itocDetails.blueLineCurrentImage': 0,
+      'assignedTenantsOnSIteDetails.smartMeterDetails.redLineVoltageImage': 0,
+      'assignedTenantsOnSIteDetails.smartMeterDetails.yellowLineVoltageImage': 0,
+      'assignedTenantsOnSIteDetails.smartMeterDetails.blueLineVoltageImage': 0,
+      'assignedTenantsOnSIteDetails.smartMeterDetails.redLineCurrentImage': 0,
+      'assignedTenantsOnSIteDetails.smartMeterDetails.yellowLineCurrentImage': 0,
+      'assignedTenantsOnSIteDetails.smartMeterDetails.blueLineCurrentImage': 0,
+      'assignedTenantsOnSIteDetails.multiMeterDetails.redLineVoltageImage': 0,
+      'assignedTenantsOnSIteDetails.multiMeterDetails.yellowLineVoltageImage': 0,
+      'assignedTenantsOnSIteDetails.multiMeterDetails.blueLineVoltageImage': 0,
+      'assignedTenantsOnSIteDetails.multiMeterDetails.redLineCurrentImage': 0,
+      'assignedTenantsOnSIteDetails.multiMeterDetails.yellowLineCurrentImage': 0,
+      'assignedTenantsOnSIteDetails.multiMeterDetails.blueLineCurrentImage': 0,
+      'assignedTenantsOnSIteDetails.itocDetails.redLineVoltageImage': 0,
+      'assignedTenantsOnSIteDetails.itocDetails.yellowLineVoltageImage': 0,
+      'assignedTenantsOnSIteDetails.itocDetails.blueLineVoltageImage': 0,
+      'assignedTenantsOnSIteDetails.itocDetails.redLineCurrentImage': 0,
+      'assignedTenantsOnSIteDetails.itocDetails.yellowLineCurrentImage': 0,
+      'assignedTenantsOnSIteDetails.itocDetails.blueLineCurrentImage': 0,
       cctvNvrPhoto: 0,
       cctvNvrMainBoxPhoto: 0,
       cctvCameraPhoto: 0,
@@ -609,6 +649,7 @@ export class SiteService {
       'simSwapLatitude',
       'simSwapLongitude',
       'simSwapTenants',
+      'assignedTenantsOnSIteDetails',
       'simSwapCtMainPhoto',
       'simSwapMeterPhoto',
       'cctvNvrPhoto',
@@ -619,6 +660,7 @@ export class SiteService {
       'cctvHardDiskPhotos',
       'cctvFullSitePhoto',
       'otherSitePhotos',
+      'numberOfTenants',
       'numberOfRms',
       'numberOfExpanders',
       'numberOfSims',
@@ -631,8 +673,31 @@ export class SiteService {
     ];
     for (const k of keys) {
       if (dto[k] !== undefined) {
-        (doc as any)[k] = dto[k];
+        (doc as any)[k] = externalizeLargeImages(dto[k], 60 * 1024);
         doc.markModified(k);
+      } else if ((doc as any)[k] !== undefined) {
+        // Also externalize any large images already stored inline on doc
+        const cleaned = externalizeLargeImages(
+          typeof (doc as any)[k]?.toObject === 'function'
+            ? (doc as any)[k].toObject()
+            : (doc as any)[k],
+          60 * 1024,
+        );
+        (doc as any)[k] = cleaned;
+        doc.markModified(k);
+      }
+    }
+    // Enforce max 4 tenants and keep numberOfTenants synced with simSwapTenants
+    if (Array.isArray(dto.simSwapTenants)) {
+      const boundedTenants = externalizeLargeImages(
+        dto.simSwapTenants.slice(0, 4),
+        60 * 1024,
+      );
+      (doc as any).simSwapTenants = boundedTenants;
+      doc.markModified('simSwapTenants');
+      if (dto.numberOfTenants === undefined) {
+        (doc as any).numberOfTenants = boundedTenants.length;
+        doc.markModified('numberOfTenants');
       }
     }
     // Synchronize array and legacy single photo fields for CCTV
@@ -684,7 +749,7 @@ export class SiteService {
     if (obj.status?.reviewed?.reviewedBy) {
       obj.status.reviewed.reviewedBy = String(obj.status.reviewed.reviewedBy);
     }
-    return obj;
+    return hydrateExternalizedImages(obj);
   }
 
   // Public endpoint helper: returns concise sites details with non-empty tagsByItemCode and serialsByItemCode.

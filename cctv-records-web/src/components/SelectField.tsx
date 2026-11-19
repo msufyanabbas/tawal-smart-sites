@@ -1,9 +1,10 @@
-import clsx from 'clsx';
-import { forwardRef, SelectHTMLAttributes } from 'react';
+import clsx from "clsx";
+import { forwardRef, SelectHTMLAttributes } from "react";
 
 interface Option {
   label: string;
   value: string;
+  disabled?: boolean;
 }
 
 interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
@@ -14,7 +15,10 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
 }
 
 export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
-  ({ label, error, options, placeholder = 'Select…', className, id, ...rest }, ref) => {
+  (
+    { label, error, options, placeholder = "Select…", className, id, ...rest },
+    ref,
+  ) => {
     const selectId = id ?? rest.name;
     return (
       <div className="w-full">
@@ -26,12 +30,12 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
         <select
           ref={ref}
           id={selectId}
-          className={clsx('input', error && 'input-error', className)}
+          className={clsx("input", error && "input-error", className)}
           {...rest}
         >
           <option value="">{placeholder}</option>
           {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+            <option key={opt.value} value={opt.value} disabled={opt.disabled}>
               {opt.label}
             </option>
           ))}
@@ -41,4 +45,4 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
     );
   },
 );
-SelectField.displayName = 'SelectField';
+SelectField.displayName = "SelectField";

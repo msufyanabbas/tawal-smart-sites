@@ -1,5 +1,7 @@
 import {
   type ImagedSerialTag,
+  type MeterLineDetails,
+  type AssignedTenantOnSiteDetails,
   type Site,
   RmsScope,
   SiteUnitsPayload,
@@ -56,12 +58,354 @@ export const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
       (m.numberOfSilboGateways ?? 0) > 0);
 
   const hasOtherSitePhotos = (site.otherSitePhotos?.length ?? 0) > 0;
+  const assignedTenants: AssignedTenantOnSiteDetails[] =
+    site.assignedTenantsOnSIteDetails &&
+    site.assignedTenantsOnSIteDetails.length > 0
+      ? site.assignedTenantsOnSIteDetails
+      : ((site.simSwapTenants ?? []) as any);
+  const hasAssignedTenants = assignedTenants.length > 0;
+  const hasTenants = (site.simSwapTenants?.length ?? 0) > 0 || hasAssignedTenants;
+  const hasSmartMeterGroup = groups.some((g) => g.key === "smartMeterUnits");
+
+  const hasMeterLineData = (d?: MeterLineDetails) =>
+    !!d &&
+    Boolean(
+      d.redLineVoltage ||
+        d.yellowLineVoltage ||
+        d.blueLineVoltage ||
+        d.redLineCurrent ||
+        d.yellowLineCurrent ||
+        d.blueLineCurrent ||
+        d.redLineVoltageImage ||
+        d.yellowLineVoltageImage ||
+        d.blueLineVoltageImage ||
+        d.redLineCurrentImage ||
+        d.yellowLineCurrentImage ||
+        d.blueLineCurrentImage,
+    );
+
+  const renderTenantDetailsSection = () => {
+    if (!hasAssignedTenants) return null;
+    const tenants = assignedTenants;
+    const sections = [
+      {
+        key: "smartMeterDetails" as const,
+        title: "Smart Meter Details",
+        shortVoltage: "SM",
+        shortCurrent: "SM",
+      },
+      {
+        key: "multiMeterDetails" as const,
+        title: "Multi Meter Details",
+        shortVoltage: "Multi Meter",
+        shortCurrent: "Clamp Meter",
+      },
+      {
+        key: "itocDetails" as const,
+        title: "ITOC Details",
+        shortVoltage: "iTOC",
+        shortCurrent: "ITOC",
+      },
+    ] as const;
+
+    const lines = [
+      {
+        code: "R",
+        name: "Red Line",
+        badgeClass: "bg-red-100 text-red-700 border-red-200",
+        voltageKey: "redLineVoltage" as const,
+        voltageImageKey: "redLineVoltageImage" as const,
+        currentKey: "redLineCurrent" as const,
+        currentImageKey: "redLineCurrentImage" as const,
+        voltageLabel: "Red Line Voltage",
+        voltageImageLabel: "Red Line Voltage Image",
+        currentLabel: "Red Line Current",
+        currentImageLabel: "Red Line Current Image",
+      },
+      {
+        code: "Y",
+        name: "Yellow Line",
+        badgeClass: "bg-amber-100 text-amber-700 border-amber-200",
+        voltageKey: "yellowLineVoltage" as const,
+        voltageImageKey: "yellowLineVoltageImage" as const,
+        currentKey: "yellowLineCurrent" as const,
+        currentImageKey: "yellowLineCurrentImage" as const,
+        voltageLabel: "Yellow Line Voltage",
+        voltageImageLabel: "Yellow Line Voltage Image",
+        currentLabel: "Yellow Line Current",
+        currentImageLabel: "Yellow Line Current Image",
+      },
+      {
+        code: "B",
+        name: "Blue Line",
+        badgeClass: "bg-blue-100 text-blue-700 border-blue-200",
+        voltageKey: "blueLineVoltage" as const,
+        voltageImageKey: "blueLineVoltageImage" as const,
+        currentKey: "blueLineCurrent" as const,
+        currentImageKey: "blueLineCurrentImage" as const,
+        voltageLabel: "Blue Line Voltage",
+        voltageImageLabel: "Blue Line Voltage Image",
+        currentLabel: "Blue Line Current",
+        currentImageLabel: "Blue Line Current Image",
+      },
+    ] as const;
+
+    return (
+      <div className="space-y-5">
+        <div className="card">
+          <div className="card-body space-y-3">
+            <h3 className="card-title">Tenant Details ({tenants.length})</h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {tenants.map((t, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-lg border border-slate-200 p-4 bg-slate-50/50 space-y-2"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Tenant {idx + 1}
+                  </p>
+                  <p className="font-medium text-slate-800">
+                    {t.tenantName || (
+                      <span className="italic text-slate-400">
+                        Not specified
+                      </span>
+                    )}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {tenants.map((tenant, idx) => {
+          const sm = tenant.smartMeterDetails ?? {};
+          const mm = tenant.multiMeterDetails ?? {};
+          const itoc = tenant.itocDetails ?? {};
+          const hasAnyForTenant =
+            Boolean(tenant.tenantName) ||
+            hasMeterLineData(sm) ||
+            hasMeterLineData(mm) ||
+            hasMeterLineData(itoc);
+          if (!hasAnyForTenant) return null;
+
+          const tenantLabel = tenant.tenantName
+            ? `Tenant ${idx + 1} — ${tenant.tenantName}`
+            : `Tenant ${idx + 1}`;
+
+          return (
+            <div
+              key={idx}
+              className="rounded-xl border-2 border-slate-200 bg-slate-50/40 p-4 space-y-4"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                <h3 className="text-base font-bold text-slate-800">
+                  {tenantLabel} — Meter Readings
+                </h3>
+                <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 border border-indigo-200">
+                  {tenantLabel}
+                </span>
+              </div>
+
+              {/* Summary Table: Voltage (SM / Multi Meter / iTOC) & Current (SM / Clamp Meter / ITOC) */}
+              <div className="overflow-x-auto rounded-lg border border-slate-300 bg-white">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr>
+                      <th
+                        colSpan={3}
+                        className="bg-slate-900 text-white font-bold py-2 px-3 text-center border-r border-slate-700"
+                      >
+                        Voltage
+                      </th>
+                      <th
+                        colSpan={3}
+                        className="bg-emerald-800 text-white font-bold py-2 px-3 text-center"
+                      >
+                        Current
+                      </th>
+                    </tr>
+                    <tr>
+                      <th className="bg-sky-100 text-slate-800 font-semibold py-1.5 px-3 border border-slate-300 text-center">
+                        SM
+                      </th>
+                      <th className="bg-sky-100 text-slate-800 font-semibold py-1.5 px-3 border border-slate-300 text-center">
+                        Multi Meter
+                      </th>
+                      <th className="bg-sky-100 text-slate-800 font-semibold py-1.5 px-3 border border-slate-300 text-center">
+                        iTOC
+                      </th>
+                      <th className="bg-emerald-100 text-slate-800 font-semibold py-1.5 px-3 border border-slate-300 text-center">
+                        SM
+                      </th>
+                      <th className="bg-emerald-100 text-slate-800 font-semibold py-1.5 px-3 border border-slate-300 text-center">
+                        Clamp Meter (Multi Meter)
+                      </th>
+                      <th className="bg-emerald-100 text-slate-800 font-semibold py-1.5 px-3 border border-slate-300 text-center">
+                        ITOC
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      {[
+                        {
+                          r: sm.redLineVoltage,
+                          y: sm.yellowLineVoltage,
+                          b: sm.blueLineVoltage,
+                        },
+                        {
+                          r: mm.redLineVoltage,
+                          y: mm.yellowLineVoltage,
+                          b: mm.blueLineVoltage,
+                        },
+                        {
+                          r: itoc.redLineVoltage,
+                          y: itoc.yellowLineVoltage,
+                          b: itoc.blueLineVoltage,
+                        },
+                        {
+                          r: sm.redLineCurrent,
+                          y: sm.yellowLineCurrent,
+                          b: sm.blueLineCurrent,
+                        },
+                        {
+                          r: mm.redLineCurrent,
+                          y: mm.yellowLineCurrent,
+                          b: mm.blueLineCurrent,
+                        },
+                        {
+                          r: itoc.redLineCurrent,
+                          y: itoc.yellowLineCurrent,
+                          b: itoc.blueLineCurrent,
+                        },
+                      ].map((cell, cIdx) => (
+                        <td
+                          key={cIdx}
+                          className="border border-slate-300 p-2.5 align-top font-mono text-slate-700 space-y-1"
+                        >
+                          <div>
+                            <span className="font-bold text-red-600">R-</span>{" "}
+                            {cell.r || "-"}
+                          </div>
+                          <div>
+                            <span className="font-bold text-amber-600">Y-</span>{" "}
+                            {cell.y || "-"}
+                          </div>
+                          <div>
+                            <span className="font-bold text-blue-600">B-</span>{" "}
+                            {cell.b || "-"}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {sections.map((sec) => {
+                const d = tenant[sec.key];
+                if (!hasMeterLineData(d)) return null;
+                return (
+                  <div key={sec.key} className="card">
+                    <div className="card-body space-y-4">
+                      <h4 className="card-title text-sm">
+                        {sec.title} ({tenantLabel})
+                      </h4>
+                      <div className="space-y-3">
+                        {lines.map((line) => {
+                          const vVal = d?.[line.voltageKey];
+                          const vImg = d?.[line.voltageImageKey];
+                          const cVal = d?.[line.currentKey];
+                          const cImg = d?.[line.currentImageKey];
+                          return (
+                            <div
+                              key={line.code}
+                              className="rounded-lg border border-slate-200 p-4 bg-slate-50/50 space-y-3"
+                            >
+                              <div>
+                                <span
+                                  className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-bold ${line.badgeClass}`}
+                                >
+                                  {line.code}- {line.name}
+                                </span>
+                              </div>
+                              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                                    {line.voltageLabel} ({sec.shortVoltage})
+                                  </p>
+                                  <p className="mt-0.5 font-medium text-slate-800 break-all">
+                                    {vVal || (
+                                      <span className="italic text-slate-400">
+                                        Not specified
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                    {line.voltageImageLabel}
+                                  </p>
+                                  {vImg ? (
+                                    <ZoomableImage
+                                      src={vImg}
+                                      alt={line.voltageImageLabel}
+                                    />
+                                  ) : (
+                                    <p className="text-sm italic text-slate-400">
+                                      No image uploaded
+                                    </p>
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide text-slate-500">
+                                    {line.currentLabel} ({sec.shortCurrent})
+                                  </p>
+                                  <p className="mt-0.5 font-medium text-slate-800 break-all">
+                                    {cVal || (
+                                      <span className="italic text-slate-400">
+                                        Not specified
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+                                    {line.currentImageLabel}
+                                  </p>
+                                  {cImg ? (
+                                    <ZoomableImage
+                                      src={cImg}
+                                      alt={line.currentImageLabel}
+                                    />
+                                  ) : (
+                                    <p className="text-sm italic text-slate-400">
+                                      No image uploaded
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   if (
     groups.length === 0 &&
     !hasSimSwapFields &&
     !hasMaterialDetails &&
-    !hasOtherSitePhotos
+    !hasOtherSitePhotos &&
+    !hasTenants
   ) {
     return (
       <div className="card">
@@ -246,7 +590,9 @@ export const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
                 )}
             </div>
 
-            {site.simSwapTenants && site.simSwapTenants.length > 0 && (
+            {site.simSwapTenants &&
+              site.simSwapTenants.length > 0 &&
+              !hasSmartMeterGroup && (
               <div className="space-y-3 mt-4 pt-4 border-t border-slate-100">
                 <p className="text-sm font-semibold text-slate-700">
                   Tenant Details
@@ -414,7 +760,8 @@ export const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
       {groups.map((g) => {
         const singular = g.label.endsWith("s") ? g.label.slice(0, -1) : g.label;
         return (
-          <div key={g.key} className="card">
+          <div key={g.key} className="space-y-5">
+            <div className="card">
             <div className="card-body space-y-3">
               <h3 className="card-title">
                 {g.label} ({g.units.length})
@@ -490,8 +837,17 @@ export const SubmittedDataView: React.FC<{ site: Site }> = ({ site }) => {
               </div>
             </div>
           </div>
+
+            {g.key === "smartMeterUnits" && renderTenantDetailsSection()}
+          </div>
         );
       })}
+
+      {/* Fallback Tenant Details when no Smart Meter group or SIM Swap card rendered it */}
+      {hasTenants &&
+        !hasSmartMeterGroup &&
+        !hasSimSwapFields &&
+        renderTenantDetailsSection()}
 
       {/* CCTV Site Installation Images */}
       {(site.rmsScope === RmsScope.CCTV ||

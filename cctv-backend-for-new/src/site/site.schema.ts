@@ -56,6 +56,39 @@ export class ImagedSerialTag {
 export const ImagedSerialTagSchema =
   SchemaFactory.createForClass(ImagedSerialTag);
 
+@Schema({ _id: false })
+export class MeterLineDetails {
+  @Prop({ type: String, default: '' }) redLineVoltage?: string;
+  @Prop({ type: String, default: '' }) redLineVoltageImage?: string;
+  @Prop({ type: String, default: '' }) yellowLineVoltage?: string;
+  @Prop({ type: String, default: '' }) yellowLineVoltageImage?: string;
+  @Prop({ type: String, default: '' }) blueLineVoltage?: string;
+  @Prop({ type: String, default: '' }) blueLineVoltageImage?: string;
+
+  @Prop({ type: String, default: '' }) redLineCurrent?: string;
+  @Prop({ type: String, default: '' }) redLineCurrentImage?: string;
+  @Prop({ type: String, default: '' }) yellowLineCurrent?: string;
+  @Prop({ type: String, default: '' }) yellowLineCurrentImage?: string;
+  @Prop({ type: String, default: '' }) blueLineCurrent?: string;
+  @Prop({ type: String, default: '' }) blueLineCurrentImage?: string;
+}
+export const MeterLineDetailsSchema =
+  SchemaFactory.createForClass(MeterLineDetails);
+
+@Schema({ _id: false })
+export class AssignedTenantOnSiteDetails {
+  @Prop({ type: String, default: '' }) tenantName?: string;
+  @Prop({ type: MeterLineDetailsSchema, default: () => ({}) })
+  smartMeterDetails?: MeterLineDetails;
+  @Prop({ type: MeterLineDetailsSchema, default: () => ({}) })
+  multiMeterDetails?: MeterLineDetails;
+  @Prop({ type: MeterLineDetailsSchema, default: () => ({}) })
+  itocDetails?: MeterLineDetails;
+}
+export const AssignedTenantOnSiteDetailsSchema = SchemaFactory.createForClass(
+  AssignedTenantOnSiteDetails,
+);
+
 // ────────────────────────────────────────────────────────────────────────────
 // Status sub-documents: 5 milestones with timestamps and (where relevant) actors
 // ────────────────────────────────────────────────────────────────────────────
@@ -270,6 +303,13 @@ export class Site {
     meterPhoto?: string;
     ctPhasePhotos?: string[];
   }>;
+
+  // ── Assigned Tenants on Site (Smart Meter / Multi Meter / ITOC details) ──
+  @Prop({
+    type: [AssignedTenantOnSiteDetailsSchema],
+    default: [],
+  })
+  assignedTenantsOnSIteDetails?: AssignedTenantOnSiteDetails[];
 
   // ── Technician material counts (separate from admin-set counts) ────────
   @Prop({ type: MaterialCountsSchema, default: () => ({}) })

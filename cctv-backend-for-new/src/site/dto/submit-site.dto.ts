@@ -1,9 +1,12 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsNumber,
   IsOptional,
   IsString,
+  Max,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -21,6 +24,22 @@ export class SimSwapPairDto {
   @IsOptional() @IsString() oldSerialImage?: string;
 }
 
+export class MeterLineDetailsDto {
+  @IsOptional() @IsString() redLineVoltage?: string;
+  @IsOptional() @IsString() redLineVoltageImage?: string;
+  @IsOptional() @IsString() yellowLineVoltage?: string;
+  @IsOptional() @IsString() yellowLineVoltageImage?: string;
+  @IsOptional() @IsString() blueLineVoltage?: string;
+  @IsOptional() @IsString() blueLineVoltageImage?: string;
+
+  @IsOptional() @IsString() redLineCurrent?: string;
+  @IsOptional() @IsString() redLineCurrentImage?: string;
+  @IsOptional() @IsString() yellowLineCurrent?: string;
+  @IsOptional() @IsString() yellowLineCurrentImage?: string;
+  @IsOptional() @IsString() blueLineCurrent?: string;
+  @IsOptional() @IsString() blueLineCurrentImage?: string;
+}
+
 export class SimSwapTenantDto {
   @IsOptional() @IsString() tenantName?: string;
   @IsOptional()
@@ -31,7 +50,32 @@ export class SimSwapTenantDto {
   @IsOptional() @IsArray() @IsString({ each: true }) ctPhasePhotos?: string[];
 }
 
+export class AssignedTenantOnSiteDetailsDto {
+  @IsOptional() @IsString() tenantName?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MeterLineDetailsDto)
+  smartMeterDetails?: MeterLineDetailsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MeterLineDetailsDto)
+  multiMeterDetails?: MeterLineDetailsDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MeterLineDetailsDto)
+  itocDetails?: MeterLineDetailsDto;
+}
+
 export class MaterialCountsDto {
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(4)
+  numberOfTenants?: number;
+
   @IsOptional()
   @IsNumber()
   numberOfRms?: number;
@@ -160,9 +204,17 @@ export class SubmitSiteDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(4)
   @ValidateNested({ each: true })
   @Type(() => SimSwapTenantDto)
   simSwapTenants?: SimSwapTenantDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(4)
+  @ValidateNested({ each: true })
+  @Type(() => AssignedTenantOnSiteDetailsDto)
+  assignedTenantsOnSIteDetails?: AssignedTenantOnSiteDetailsDto[];
 
   @IsOptional()
   @IsString()
@@ -209,6 +261,12 @@ export class SubmitSiteDto {
   @ValidateNested()
   @Type(() => MaterialCountsDto)
   materials?: MaterialCountsDto;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(4)
+  numberOfTenants?: number;
 
   @IsOptional()
   @IsNumber()
